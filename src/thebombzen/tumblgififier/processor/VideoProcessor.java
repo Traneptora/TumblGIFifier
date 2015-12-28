@@ -298,7 +298,8 @@ public class VideoProcessor {
 		
 		writer.println("Scaling Video... Done.");
 		
-		writer.print("Generating Palette...\r");
+		writer.print("Generating Palette... \r");
+		writer.flush();
 		
 		MainFrame.exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen", "-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
 		
