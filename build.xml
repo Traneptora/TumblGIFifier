@@ -28,7 +28,10 @@
     <mkdir dir="${dist}"/>
 
     <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-    <jar jarfile="${jar}" basedir="${build}"/>
+    <manifest file="MANIFEST.MF">
+		<attribute name="Main-Class" value="thebombzen.tumblgififier.gui.MainFrame"/>
+	</manifest>
+    <jar jarfile="${jar}" basedir="${build}" manifest="MANIFEST.MF" />
   </target>
 
   <target name="clean"
@@ -36,5 +39,6 @@
     <!-- Delete the ${build} and ${dist} directory trees -->
     <delete dir="${build}"/>
     <delete file="${jar}"/>
+    <delete file="MANIFEST.MF"/>
   </target>
 </project>
