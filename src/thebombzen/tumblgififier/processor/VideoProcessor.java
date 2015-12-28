@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.process;
+package thebombzen.tumblgififier.processor;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -10,10 +10,11 @@ import java.nio.file.Files;
 import javax.imageio.ImageIO;
 
 import thebombzen.tumblgififier.gui.MainFrame;
+import thebombzen.tumblgififier.gui.StatusProcessorArea;
 
-public class VideoScan {
+public class VideoProcessor {
 	
-	public static VideoScan scanFile(StatusProcessor processor, String filename) throws IOException {
+	public static VideoProcessor scanFile(StatusProcessor processor, String filename) throws IOException {
 		
 		String ffprobe = FFmpegManager.getFFmpegManager().getFFprobeLocation();
 		
@@ -95,7 +96,7 @@ public class VideoScan {
 			return null;
 		}
 		
-		return new VideoScan(width, height, duration, filename, framerate);
+		return new VideoProcessor(width, height, duration, filename, framerate);
 	}
 	
 	private final int width;
@@ -117,7 +118,7 @@ public class VideoScan {
 	private File paletteFile;
 	private File mkvFile;
 	
-	public VideoScan(int width, int height, double duration, String location, double framerate){
+	public VideoProcessor(int width, int height, double duration, String location, double framerate){
 		this.width = width;
 		this.height = height;
 		this.duration = duration;
@@ -156,7 +157,7 @@ public class VideoScan {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		VideoScan other = (VideoScan) obj;
+		VideoProcessor other = (VideoProcessor) obj;
 		if (Double.doubleToLongBits(duration) != Double
 				.doubleToLongBits(other.duration))
 			return false;

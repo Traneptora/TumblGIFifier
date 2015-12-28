@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.process;
+package thebombzen.tumblgififier.processor;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -14,7 +14,6 @@ import java.util.zip.ZipInputStream;
 
 import org.tukaani.xz.XZInputStream;
 
-import thebombzen.tumblgififier.RuntimeIOException;
 import thebombzen.tumblgififier.gui.MainFrame;
 
 public class FFmpegManager {
@@ -151,7 +150,7 @@ public class FFmpegManager {
 			localAppDataLocation = localAppDataFile.getCanonicalPath();
 			return localAppDataLocation;
 		} catch (IOException ioe){
-			throw new RuntimeIOException(ioe);
+			throw new RuntimeException(ioe);
 		}	
 	}
 	

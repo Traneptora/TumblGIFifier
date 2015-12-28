@@ -28,10 +28,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
-import thebombzen.tumblgififier.process.FFmpegManager;
-import thebombzen.tumblgififier.process.StatusProcessor;
-import thebombzen.tumblgififier.process.StatusProcessorArea;
-import thebombzen.tumblgififier.process.VideoScan;
+import thebombzen.tumblgififier.processor.FFmpegManager;
+import thebombzen.tumblgififier.processor.StatusProcessor;
+import thebombzen.tumblgififier.processor.VideoProcessor;
 
 public class MainPanel extends JPanel {
 	
@@ -42,7 +41,7 @@ public class MainPanel extends JPanel {
 	private ImagePanel previewImageEndPanel;
 	private JSlider startSlider;
 	private JSlider endSlider;
-	private VideoScan scan;
+	private VideoProcessor scan;
 	private JTextField maxSizeTextField;
 	private JSlider sizeThresholdSlider;
 	private JLabel sizeThresholdLabel;
@@ -51,7 +50,7 @@ public class MainPanel extends JPanel {
 	private StatusProcessorArea statusArea;
 	private JCheckBox maxSizeCheckBox;
 	private JButton playButton;
-	public MainPanel(VideoScan scan){
+	public MainPanel(VideoProcessor scan){
 		this.scan = scan;
 		if (scan == null){
 			throw new NullPointerException();

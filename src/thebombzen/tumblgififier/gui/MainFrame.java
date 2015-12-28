@@ -23,10 +23,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import thebombzen.tumblgififier.process.FFmpegManager;
-import thebombzen.tumblgififier.process.StatusProcessor;
-import thebombzen.tumblgififier.process.StatusProcessorArea;
-import thebombzen.tumblgififier.process.VideoScan;
+import thebombzen.tumblgififier.processor.FFmpegManager;
+import thebombzen.tumblgififier.processor.StatusProcessor;
+import thebombzen.tumblgififier.processor.VideoProcessor;
 
 public class MainFrame extends JFrame {
 
@@ -126,7 +125,7 @@ public class MainFrame extends JFrame {
 						new Thread(new Runnable(){
 							public void run(){
 								try {
-									final VideoScan scan = VideoScan.scanFile(statusArea, file.getAbsolutePath());
+									final VideoProcessor scan = VideoProcessor.scanFile(statusArea, file.getAbsolutePath());
 									if (scan != null){
 										EventQueue.invokeLater(new Runnable(){
 											public void run(){

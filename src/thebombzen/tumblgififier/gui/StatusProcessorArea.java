@@ -1,9 +1,11 @@
-package thebombzen.tumblgififier.process;
+package thebombzen.tumblgififier.gui;
 
 import java.awt.EventQueue;
 
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
+
+import thebombzen.tumblgififier.processor.StatusProcessor;
 
 public class StatusProcessorArea extends JTextArea  implements StatusProcessor {
 
