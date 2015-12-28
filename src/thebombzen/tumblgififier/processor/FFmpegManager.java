@@ -73,12 +73,15 @@ public class FFmpegManager {
 					}
 				}
 				if (!f.exists()) {
+					processor.appendStatus("Checking for " + name + "... not found.");
 					needDL = true;
-					break;
+				} else {
+					processor.replaceStatus("Checking for " + name + "... found.");
+					f.setExecutable(true);
 				}
 			}
 			if (needDL){
-				processor.appendStatus("FFmpeg not found. Downloading FFmpeg from the internet...");
+				processor.appendStatus("Downloading FFmpeg from the internet...");
 				File tempFile = new File(getLocalAppDataLocation(), getFFprogName());
 				FileOutputStream fos = new FileOutputStream(tempFile);
 				URL website = new URL(getFFprogDownloadLocation());
@@ -90,16 +93,20 @@ public class FFmpegManager {
 				ZipEntry entry;
 				while (null != (entry = zin.getNextEntry())){
 					String name = entry.getName();
+					processor.appendStatus("Extracting " + name + "...");
 					File path = new File(getLocalAppDataLocation(), name);
 					if (path.exists()){
 						path.delete();
 					}
 					Files.copy(zin, path.toPath());
+					path.setExecutable(true);
+					processor.appendStatus("Extracting " + name + "... extracted.");
 				}
 				zin.close();
 				tempFile.delete();
+				processor.appendStatus("Done downloading.");
 			} else {
-				processor.appendStatus("FFmpeg found! :-)");
+				processor.appendStatus("FFmpeg found.");
 			}
 			return true;
 		} catch (IOException ioe){

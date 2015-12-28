@@ -173,12 +173,19 @@ public class MainFrame extends JFrame {
 				JOptionPane.showMessageDialog(MainFrame.this, "Initializing Engine. This may take a while on the first execution because we have to download FFmpeg from the internet.", "Initializing", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
-		boolean success = FFmpegManager.getFFmpegManager().intitilizeFFmpeg(statusArea);
-		if (success){
-			setEnabled(this, true);
-		} else {
-			JOptionPane.showMessageDialog(this, "Error Initializing.", "Error", JOptionPane.ERROR_MESSAGE);
-		}
+		new Thread(new Runnable(){
+			public void run() {
+				boolean success = FFmpegManager.getFFmpegManager()
+						.intitilizeFFmpeg(statusArea);
+				if (success) {
+					setEnabled(MainFrame.this, true);
+				} else {
+					JOptionPane.showMessageDialog(MainFrame.this, "Error Initializing.",
+							"Error", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		}).start();
+			
 		
 	}
 	
