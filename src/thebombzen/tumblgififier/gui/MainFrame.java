@@ -30,6 +30,9 @@ import thebombzen.tumblgififier.process.VideoScan;
 
 public class MainFrame extends JFrame {
 
+	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
+	
 	private static final long serialVersionUID = 1L;
 	
 	private JPanel defaultPanel = new JPanel();

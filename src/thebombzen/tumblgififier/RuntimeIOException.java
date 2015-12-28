@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.util;
+package thebombzen.tumblgififier;
 
 import java.io.Closeable;
 import java.io.IOException;

@@ -14,8 +14,8 @@ import java.util.zip.ZipInputStream;
 
 import org.tukaani.xz.XZInputStream;
 
-import thebombzen.tumblgififier.util.Constants;
-import thebombzen.tumblgififier.util.RuntimeIOException;
+import thebombzen.tumblgififier.RuntimeIOException;
+import thebombzen.tumblgififier.gui.MainFrame;
 
 public class FFmpegManager {
 	
@@ -116,7 +116,7 @@ public class FFmpegManager {
 	
 	private String getXLocation(String x){
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
-		String name = x + Constants.EXE_EXTENSION;
+		String name = x + MainFrame.EXE_EXTENSION;
 		for (String el : pathElements){
 			if (new File(el, name).exists()){
 				return new File(el, name).getPath();
