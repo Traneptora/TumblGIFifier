@@ -1,0 +1,50 @@
+package thebombzen.tumblgififier.processor;
+
+import java.io.Writer;
+
+public class StatusProcessorWriter extends SimpleWriter {
+	
+	private StatusProcessor processor;
+	private boolean haveReturn = false;
+	private boolean shouldReplace = false;
+	private StringBuffer lineBuffer = new StringBuffer();
+	
+	public StatusProcessorWriter(StatusProcessor processor){
+		this.processor = processor;
+	}
+
+	public void write(char c){
+		switch (c){
+		case '\r':
+			haveReturn = true;
+			break;
+		case '\n':
+			flushLine();
+			shouldReplace = false;
+			haveReturn = false;
+			break;
+		default:
+			if (haveReturn){
+				flushLine();
+				shouldReplace = true;
+				haveReturn = false;
+			}
+			lineBuffer.append(c);
+			break;
+		}
+	}
+	
+	public void flush(){
+		flushLine();
+	}
+	
+	private void flushLine(){
+		if (shouldReplace){
+			processor.replaceStatus(lineBuffer.toString());
+		} else {
+			processor.appendStatus(lineBuffer.toString());
+		}
+		lineBuffer = new StringBuffer();
+	}
+
+}
