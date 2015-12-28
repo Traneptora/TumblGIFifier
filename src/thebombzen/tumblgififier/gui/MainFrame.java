@@ -168,11 +168,7 @@ public class MainFrame extends JFrame {
 			}
 		});
 		setEnabled(this, false);
-		EventQueue.invokeLater(new Runnable(){
-			public void run(){
-				JOptionPane.showMessageDialog(MainFrame.this, "Initializing Engine. This may take a while on the first execution because we have to download FFmpeg from the internet.", "Initializing", JOptionPane.INFORMATION_MESSAGE);
-			}
-		});
+		statusArea.appendStatus("Initializing Engine. This may take a while on the first execution.");
 		new Thread(new Runnable(){
 			public void run() {
 				boolean success = FFmpegManager.getFFmpegManager()
@@ -180,13 +176,10 @@ public class MainFrame extends JFrame {
 				if (success) {
 					setEnabled(MainFrame.this, true);
 				} else {
-					JOptionPane.showMessageDialog(MainFrame.this, "Error Initializing.",
-							"Error", JOptionPane.ERROR_MESSAGE);
+					statusArea.appendStatus("Error initializing.");
 				}
 			}
 		}).start();
-			
-		
 	}
 	
 	public void quit(){
@@ -202,7 +195,11 @@ public class MainFrame extends JFrame {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new MainFrame().setVisible(true);
+		EventQueue.invokeLater(new Runnable(){
+			public void run(){
+				new MainFrame().setVisible(true);
+			}
+		});
 	}
 
 	public static void join(Process p){

@@ -73,7 +73,7 @@ public class FFmpegManager {
 					}
 				}
 				if (!f.exists()) {
-					processor.appendStatus("Checking for " + name + "... not found.");
+					processor.replaceStatus("Checking for " + name + "... not found.");
 					needDL = true;
 				} else {
 					processor.replaceStatus("Checking for " + name + "... found.");
@@ -100,7 +100,7 @@ public class FFmpegManager {
 					}
 					Files.copy(zin, path.toPath());
 					path.setExecutable(true);
-					processor.appendStatus("Extracting " + name + "... extracted.");
+					processor.replaceStatus("Extracting " + name + "... extracted.");
 				}
 				zin.close();
 				tempFile.delete();
