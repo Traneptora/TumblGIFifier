@@ -1,6 +1,5 @@
 package thebombzen.tumblgififier.processor;
 
-import java.io.Writer;
 
 public class StatusProcessorWriter extends SimpleWriter {
 	

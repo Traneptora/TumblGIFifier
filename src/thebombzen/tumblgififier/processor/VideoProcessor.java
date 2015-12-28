@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.nio.file.Files;
 import java.util.Scanner;
 
@@ -275,11 +274,12 @@ public class VideoProcessor {
 						nfe.printStackTrace();
 					}
 				}
-
+				sc2.close();
 				double percent = realTime * 100D / length;
 				writer.format("%s%.2f%%\r", prefix, percent);
 			}
 		}
+		scanner.close();
 	}
 	
 	private void createGif() throws IOException {
