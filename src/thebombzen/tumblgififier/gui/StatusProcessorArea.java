@@ -49,13 +49,27 @@ public class StatusProcessorArea extends JTextArea  implements StatusProcessor {
 		});
 	}
 	
+	public static String join(String conjunction, String[] list) {
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for (String item : list) {
+			if (first){
+				first = false;
+			} else {
+				sb.append(conjunction);
+			}
+			sb.append(item);
+		}
+		return sb.toString();
+	}
+	
 	public void replaceStatus(final String status){
 		EventQueue.invokeLater(new Runnable(){
 			public void run(){
 				String text = getText();
 				String[] lines = text.split(String.format("%n"));
 				lines[lines.length - 1] = status;
-				text = String.join(String.format("%n"), lines);
+				text = join(String.format("%n"), lines);
 				setText(text);
 			}
 		});
