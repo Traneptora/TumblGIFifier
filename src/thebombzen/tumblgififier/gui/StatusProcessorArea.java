@@ -15,6 +15,7 @@ public class StatusProcessorArea extends JTextArea  implements StatusProcessor {
 		setEditable(false);
 		DefaultCaret caret = (DefaultCaret)getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		this.setLineWrap(true);
 	}
 	
 	@Override
@@ -47,20 +48,7 @@ public class StatusProcessorArea extends JTextArea  implements StatusProcessor {
 				setText(text);
 			}
 		});
-	}
-	
-	public static String join(String conjunction, String[] list) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for (String item : list) {
-			if (first){
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
-		}
-		return sb.toString();
+		System.out.println(status);
 	}
 	
 	public void replaceStatus(final String status){
@@ -69,10 +57,11 @@ public class StatusProcessorArea extends JTextArea  implements StatusProcessor {
 				String text = getText();
 				String[] lines = text.split(String.format("%n"));
 				lines[lines.length - 1] = status;
-				text = join(String.format("%n"), lines);
+				text = MainFrame.join(String.format("%n"), lines);
 				setText(text);
 			}
 		});
+		System.out.println('\r' + status);
 	}
 	
 }

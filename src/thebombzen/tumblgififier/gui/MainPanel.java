@@ -355,6 +355,10 @@ public class MainPanel extends JPanel {
 					public void run(){
 						playButton.setEnabled(true);
 						MainFrame.setBusy(false);
+						MainFrame.getMainFrame().toFront();
+						MainFrame.getMainFrame().setAlwaysOnTop(true);
+						MainFrame.getMainFrame().setAlwaysOnTop(false);
+						MainFrame.getMainFrame().requestFocus();
 					}
 				});
 			}

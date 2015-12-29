@@ -11,6 +11,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import thebombzen.tumblgififier.processor.FFmpegManager;
+import thebombzen.tumblgififier.processor.NullOutputStream;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 
@@ -73,8 +75,16 @@ public class MainFrame extends JFrame {
 		MainFrame.busy = busy;
 		setEnabled(mainFrame, !busy);
 	}
-
+	
 	public static synchronized InputStream exec(boolean join, String... args) throws IOException {
+		if (join){
+			return exec(new NullOutputStream(), args);
+		} else {
+			return exec(null, args);
+		}
+	}
+
+	public static synchronized InputStream exec(OutputStream copyTo, String... args) throws IOException {
 		if (cleaningUp){
 			return null;
 		}
@@ -82,10 +92,16 @@ public class MainFrame extends JFrame {
 		pbuilder.redirectErrorStream(true);
 		Process p = pbuilder.start();
 		processes.add(p);
-		if (join){
-			join(p);
+		if (copyTo != null){
+			p.getOutputStream().close();
+			InputStream str = p.getInputStream();
+			int i;
+			while (-1 != (i = str.read())){
+				copyTo.write(i);
+			}
 		}
 		return p.getInputStream();
+		
 	}
 	
 	public MainFrame(){
@@ -194,6 +210,20 @@ public class MainFrame extends JFrame {
 		}
 	}
 	
+	public static String join(String conjunction, String[] list) {
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for (String item : list) {
+			if (first){
+				first = false;
+			} else {
+				sb.append(conjunction);
+			}
+			sb.append(item);
+		}
+		return sb.toString();
+	}
+
 	public static void main(String[] args) throws Exception {
 		EventQueue.invokeLater(new Runnable(){
 			public void run(){
@@ -202,15 +232,4 @@ public class MainFrame extends JFrame {
 		});
 	}
 
-	public static void join(Process p){
-		boolean done = false;
-		while(!done){
-			try {
-				p.waitFor();
-				done = true;
-			} catch (InterruptedException e){
-				continue;
-			}
-		}
-	}
 }
