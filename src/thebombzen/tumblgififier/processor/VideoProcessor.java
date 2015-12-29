@@ -19,6 +19,8 @@ public class VideoProcessor {
 	
 	public static VideoProcessor scanFile(StatusProcessor processor, String filename) throws IOException {
 		
+		processor.appendStatus("Scanning File... ");
+		
 		String ffprobe = FFmpegManager.getFFmpegManager().getFFprobeLocation();
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(MainFrame.exec(false, ffprobe, "-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)));
@@ -28,7 +30,7 @@ public class VideoProcessor {
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
-		try{ 
+		try { 
 			while (null != (line = br.readLine())) {
 				if (line.contains("streams.stream.0.width=")) {
 					try {
