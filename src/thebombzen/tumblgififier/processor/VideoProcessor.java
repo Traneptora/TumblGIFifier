@@ -32,6 +32,7 @@ public class VideoProcessor {
 		double framerate = -1;
 		try { 
 			while (null != (line = br.readLine())) {
+				//System.err.println(line);
 				if (line.contains("streams.stream.0.width=")) {
 					try {
 						width = Integer.parseInt(line.replace(

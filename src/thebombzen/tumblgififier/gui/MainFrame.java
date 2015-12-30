@@ -4,18 +4,22 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
+import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -45,6 +49,7 @@ public class MainFrame extends JFrame {
 	private static volatile boolean cleaningUp = false;
 	
 	private static MainFrame mainFrame;
+	private String mostRecentOpenDirectory = null;
 	
 	public static MainFrame getMainFrame(){
 		return mainFrame;
@@ -130,17 +135,28 @@ public class MainFrame extends JFrame {
 				if (isBusy()){
 					JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
 				} else {
-					JFileChooser jfc = new JFileChooser();
-					jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-					jfc.setMultiSelectionEnabled(false);
 					
-					int result = jfc.showOpenDialog(MainFrame.this);
-					if (result == JFileChooser.APPROVE_OPTION){
-						final File file = jfc.getSelectedFile();
+					FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File", FileDialog.LOAD);
+					fileDialog.setMultipleMode(false);
+					
+					if (mostRecentOpenDirectory != null){
+						fileDialog.setDirectory(mostRecentOpenDirectory);
+					}
+					
+					fileDialog.setVisible(true);
+					final String filename = fileDialog.getFile(); 
+					
+					if (filename != null){
+						mostRecentOpenDirectory = fileDialog.getDirectory();
+						final File file = new File(mostRecentOpenDirectory, filename);
 						setEnabled(MainFrame.this, false);
 						new Thread(new Runnable(){
 							public void run(){
 								try {
+									File recentOpenFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_open.txt");
+									FileWriter recentOpenWriter = new FileWriter(recentOpenFile);
+									recentOpenWriter.write(mostRecentOpenDirectory);
+									recentOpenWriter.close();
 									final VideoProcessor scan = VideoProcessor.scanFile(statusArea, file.getAbsolutePath());
 									if (scan != null){
 										EventQueue.invokeLater(new Runnable(){
@@ -196,6 +212,28 @@ public class MainFrame extends JFrame {
 				}
 			}
 		}).start();
+		File recentOpenFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_open.txt");
+			BufferedReader br = null;
+			if (recentOpenFile.exists()){
+				try {
+					br = new BufferedReader(new FileReader(recentOpenFile));
+					mostRecentOpenDirectory = br.readLine();
+				} catch (IOException ioe){
+					mostRecentOpenDirectory = null;
+				} finally {
+					if (br != null){
+						closeQuietly(br);
+					}
+				}
+			}
+	}
+	
+	public static void closeQuietly(Closeable cl){
+		try {
+			cl.close();
+		} catch (IOException ioe){
+			// do nothing
+		}
 	}
 	
 	public void quit(){

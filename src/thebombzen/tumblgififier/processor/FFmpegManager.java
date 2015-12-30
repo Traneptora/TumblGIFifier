@@ -143,7 +143,7 @@ public class FFmpegManager {
 		return getXLocation("ffplay");
 	}
 	
-	private String getLocalAppDataLocation() {
+	public String getLocalAppDataLocation() {
 		if (localAppDataLocation != null){
 			return localAppDataLocation;
 		}

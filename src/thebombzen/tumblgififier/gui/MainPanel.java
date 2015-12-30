@@ -4,19 +4,23 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -26,7 +30,6 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.filechooser.FileFilter;
 
 import thebombzen.tumblgififier.processor.FFmpegManager;
 import thebombzen.tumblgififier.processor.StatusProcessor;
@@ -50,6 +53,7 @@ public class MainPanel extends JPanel {
 	private StatusProcessorArea statusArea;
 	private JCheckBox maxSizeCheckBox;
 	private JButton playButton;
+	private String mostRecentGIFDirectory = null;
 	public MainPanel(VideoProcessor scan){
 		this.scan = scan;
 		if (scan == null){
@@ -262,26 +266,37 @@ public class MainPanel extends JPanel {
 		fireButton.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final JFileChooser jfc = new JFileChooser();
-				jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-				jfc.setMultiSelectionEnabled(false);
-				jfc.setDialogTitle("Choose GIF File to save");
-				jfc.setFileFilter(new FileFilter(){
+
+				FileDialog fileDialog = new FileDialog(MainFrame.getMainFrame(), "Save GIF as...", FileDialog.SAVE);
+				fileDialog.setMultipleMode(false);
+				
+				if (mostRecentGIFDirectory != null){
+					fileDialog.setDirectory(mostRecentGIFDirectory);
+				}
+				
+				fileDialog.setFilenameFilter(new FilenameFilter(){
 
 					@Override
-					public boolean accept(File f) {
-						return !f.isFile() || f.getName().endsWith(".gif");
+					public boolean accept(File dir, String name) {
+						return name.toLowerCase().endsWith(".gif");
 					}
 
-					@Override
-					public String getDescription() {
-						return "GIF Images";
-					}
-					
 				});
-				int value = jfc.showDialog(MainPanel.this, "Create GIF");
-				if (value == JFileChooser.APPROVE_OPTION){
-					createGIF(jfc.getSelectedFile().getAbsolutePath());
+				
+				fileDialog.setVisible(true);
+				final String filename = fileDialog.getFile(); 
+				
+				if (filename != null){
+					File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_gif.txt");
+					mostRecentGIFDirectory = fileDialog.getDirectory();
+					try {
+						FileWriter recentGIFWriter = new FileWriter(recentGIFFile);
+						recentGIFWriter.write(mostRecentGIFDirectory);
+						recentGIFWriter.close();
+					} catch (IOException ioe){
+						ioe.printStackTrace();
+					}
+					createGIF(new File(mostRecentGIFDirectory, filename).getAbsolutePath());
 				}
 				
 			}
@@ -297,6 +312,21 @@ public class MainPanel extends JPanel {
 		scrollPane.setViewportView(statusArea);
 		scrollPanePanel.add(scrollPane, BorderLayout.CENTER);
 		leftPanel.add(scrollPanePanel);
+		File recentGIFFile = new File(FFmpegManager.getFFmpegManager()
+				.getLocalAppDataLocation(), "recent_gif.txt");
+		BufferedReader br = null;
+		if (recentGIFFile.exists()) {
+			try {
+				br = new BufferedReader(new FileReader(recentGIFFile));
+				mostRecentGIFDirectory = br.readLine();
+			} catch (IOException ioe) {
+				mostRecentGIFDirectory = null;
+			} finally {
+				if (br != null) {
+					MainFrame.closeQuietly(br);
+				}
+			}
+		}
 	}
 	
 	private void createGIF(final String path){
