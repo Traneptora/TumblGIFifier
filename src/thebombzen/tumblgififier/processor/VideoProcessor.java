@@ -15,21 +15,19 @@ import thebombzen.tumblgififier.gui.StatusProcessorArea;
 
 public class VideoProcessor {
 	
-	public static VideoProcessor scanFile(StatusProcessor processor, String filename) throws IOException {
+	public static VideoProcessor scanFile(StatusProcessor processor, String filename) {
 		
 		processor.appendStatus("Scanning File... ");
 		
 		String ffprobe = FFmpegManager.getFFmpegManager().getFFprobeLocation();
-		
-		BufferedReader br = new BufferedReader(new InputStreamReader(MainFrame.exec(false, ffprobe, "-select_streams",
-				"v", "-of", "flat", "-show_streams", "-show_format", filename)));
 		
 		String line = null;
 		int width = -1;
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
-		try {
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(MainFrame.exec(false, ffprobe, "-select_streams",
+				"v", "-of", "flat", "-show_streams", "-show_format", filename)))){
 			while (null != (line = br.readLine())) {
 				// System.err.println(line);
 				if (line.contains("streams.stream.0.width=")) {
@@ -81,8 +79,8 @@ public class VideoProcessor {
 					}
 				}
 			}
-		} finally {
-			br.close();
+		} catch (IOException ioe){
+			ioe.printStackTrace();
 		}
 		
 		if (duration < 0 || height < 0 || width < 0 || framerate < 0) {
@@ -146,8 +144,8 @@ public class VideoProcessor {
 		this.statusProcessor.appendStatus(sb.toString());
 	}
 	
-	public void convert(StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
-			long minSize, long maxSize, boolean halveFramerate) throws IOException {
+	public boolean convert(StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
+			long minSize, long maxSize, boolean halveFramerate) {
 		scale = 1D;
 		lowscale = 1D;
 		highscale = 1D;
@@ -159,9 +157,15 @@ public class VideoProcessor {
 		this.maxSize = maxSize;
 		this.halveFramerate = halveFramerate;
 		
-		this.gifFile = File.createTempFile("tumblgififier", ".tmp");
-		this.mkvFile = File.createTempFile("tumblgififier", ".tmp");
-		this.paletteFile = File.createTempFile("tumblgififier", ".tmp");
+		try {
+			this.gifFile = File.createTempFile("tumblgififier", ".tmp");
+			this.mkvFile = File.createTempFile("tumblgififier", ".tmp");
+			this.paletteFile = File.createTempFile("tumblgififier", ".tmp");
+		} catch (IOException ioe){
+			ioe.printStackTrace();
+			return false;
+		}
+		
 		gifFile.deleteOnExit();
 		mkvFile.deleteOnExit();
 		paletteFile.deleteOnExit();
@@ -177,11 +181,18 @@ public class VideoProcessor {
 			newFile.delete();
 		}
 		
-		Files.copy(gifFile.toPath(), newFile.toPath());
+		try {
+			Files.copy(gifFile.toPath(), newFile.toPath());
+		} catch (IOException ioe){
+			ioe.printStackTrace();
+			return false;
+		}
+		
+		return true;
 		
 	}
 	
-	private void createGif() throws IOException {
+	private void createGif() {
 		int newWidth = (int) (width * scale);
 		int newHeight = (int) (height * scale);
 		
@@ -313,26 +324,29 @@ public class VideoProcessor {
 		scanner.close();
 	}
 	
-	public BufferedImage screenShot(double time) throws IOException {
+	public BufferedImage screenShot(double time) {
 		return screenShot(time, width, height);
 	}
 	
-	public BufferedImage screenShot(double time, double scale) throws IOException {
+	public BufferedImage screenShot(double time, double scale) {
 		return screenShot(time, (int) (width * scale), (int) (height * scale));
 	}
 	
-	public BufferedImage screenShot(double time, int shotWidth, int shotHeight) throws IOException {
+	public BufferedImage screenShot(double time, int shotWidth, int shotHeight) {
 		if (time < 0 || time > duration) {
 			throw new IllegalArgumentException("Time out of bounds!");
 		}
-		String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
-		File shotFile = File.createTempFile("tumblgififier", ".tmp");
-		shotFile.deleteOnExit();
-		MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-t",
-				Double.toString(0.5D / framerate), "-s", shotWidth + "x" + shotHeight, "-qscale", "5", "-pix_fmt",
-				"yuvj420p", "-c", "mjpeg", "-f", "image2", shotFile.getAbsolutePath());
+		File shotFile = null;
 		try {
+			String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
+			shotFile = File.createTempFile("tumblgififier", ".tmp");
+			shotFile.deleteOnExit();
+			MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-t",
+					Double.toString(0.5D / framerate), "-s", shotWidth + "x" + shotHeight, "-qscale", "5", "-pix_fmt",
+					"yuvj420p", "-c", "mjpeg", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
+		} catch (IOException ioe){
+			return null;
 		} finally {
 			shotFile.delete();
 		}

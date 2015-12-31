@@ -80,14 +80,12 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				try {
-					scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes, halveFramerate);
-					MainFrame.setBusy(false);
+				boolean success = scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes, halveFramerate);
+				MainFrame.setBusy(false);
+				if (success){
 					statusArea.appendStatus("Done!");
 					JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
-				} catch (IOException ioe) {
-					MainFrame.setBusy(false);
-					ioe.printStackTrace();
+				} else {
 					statusArea.appendStatus("Some error occured :(");
 					JOptionPane.showMessageDialog(MainPanel.this, "Some error occured :(", "Error",
 							JOptionPane.ERROR_MESSAGE);
@@ -105,7 +103,7 @@ public class MainPanel extends JPanel {
 		return statusArea;
 	}
 	
-	private void playClipFast() throws IOException {
+	private void playClipFast() {
 		
 		MainFrame.setBusy(true);
 		
@@ -120,8 +118,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				try {
-					if (w < scan.getWidth()) {
+				if (w < scan.getWidth()) {
 						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
 								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", "scale="
 										+ w + ":-1");
@@ -133,10 +130,6 @@ public class MainPanel extends JPanel {
 						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
 								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
 					}
-					
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-				}
 				EventQueue.invokeLater(new Runnable(){
 					
 					@Override
@@ -149,7 +142,7 @@ public class MainPanel extends JPanel {
 		}).start();
 	}
 	
-	private void playClipSlow() throws IOException {
+	private void playClipSlow() {
 		MainFrame.setBusy(true);
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
@@ -162,23 +155,25 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				try {
-					statusArea.appendStatus("Rendering Clip... ");
-					File tempFile = File.createTempFile("tumblrgififier", ".tmp");
-					tempFile.deleteOnExit();
+				File tempFile = null;
+				statusArea.appendStatus("Rendering Clip... ");
+					try {
+						tempFile = File.createTempFile("tumblrgififier", ".tmp");
+						tempFile.deleteOnExit();
+					} catch (IOException ioe){
+						ioe.printStackTrace();
+						statusArea.appendStatus("Error rendering clip :(");
+						return;
+					}
 					MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i", scan.getLocation(),
 							"-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt", "yuv420p", "-vf",
 							"scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
 					MainFrame.exec(true, ffplay, tempFile.getAbsolutePath());
 					tempFile.delete();
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-				}
 				EventQueue.invokeLater(new Runnable(){
 					
 					@Override
 					public void run() {
-						playButton.setEnabled(true);
 						MainFrame.setBusy(false);
 						MainFrame.getMainFrame().toFront();
 						MainFrame.getMainFrame().setAlwaysOnTop(true);
@@ -192,18 +187,12 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void setupLayout() {
-		BufferedImage previewImageStart;
-		BufferedImage previewImageEnd;
-		try {
-			previewImageStart = scan.screenShot(1D / 3D * scan.getDuration());
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
+		BufferedImage previewImageStart = scan.screenShot(1D / 3D * scan.getDuration());
+		BufferedImage previewImageEnd = scan.screenShot(2D / 3D * scan.getDuration());
+		if (previewImageStart == null) {
 			previewImageStart = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
 		}
-		try {
-			previewImageEnd = scan.screenShot(2D / 3D * scan.getDuration());
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
+		if (previewImageEnd == null) {
 			previewImageEnd = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
 		}
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -232,12 +221,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				try {
-					playClipFast();
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-					statusArea.appendStatus("Some error occurred :(");
-				}
+				playClipFast();
 			}
 		});
 		
@@ -246,12 +230,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				try {
-					playClipSlow();
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-					statusArea.appendStatus("Some error occurred :(");
-				}
+				playClipSlow();
 			}
 		});
 		
@@ -421,11 +400,11 @@ public class MainPanel extends JPanel {
 					File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(),
 							"recent_gif.txt");
 					mostRecentGIFDirectory = fileDialog.getDirectory();
-					try {
-						FileWriter recentGIFWriter = new FileWriter(recentGIFFile);
+					try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)){
 						recentGIFWriter.write(mostRecentGIFDirectory);
-						recentGIFWriter.close();
 					} catch (IOException ioe) {
+						// we don't care much if this fails
+						// but knowing on standard error is nice
 						ioe.printStackTrace();
 					}
 					createGIF(new File(mostRecentGIFDirectory, filename).getAbsolutePath());
@@ -445,17 +424,11 @@ public class MainPanel extends JPanel {
 		scrollPanePanel.add(scrollPane, BorderLayout.CENTER);
 		leftPanel.add(scrollPanePanel);
 		File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_gif.txt");
-		BufferedReader br = null;
 		if (recentGIFFile.exists()) {
-			try {
-				br = new BufferedReader(new FileReader(recentGIFFile));
+			try (BufferedReader br = new BufferedReader(new FileReader(recentGIFFile))) {
 				mostRecentGIFDirectory = br.readLine();
 			} catch (IOException ioe) {
 				mostRecentGIFDirectory = null;
-			} finally {
-				if (br != null) {
-					MainFrame.closeQuietly(br);
-				}
 			}
 		}
 	}
@@ -465,11 +438,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				try {
-					previewImageEndPanel.setImage(scan.screenShot(endSlider.getValue() * 0.25D));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				previewImageEndPanel.setImage(scan.screenShot(endSlider.getValue() * 0.25D));
 			}
 		}).start();
 	}
@@ -479,11 +448,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				try {
-					previewImageStartPanel.setImage(scan.screenShot(startSlider.getValue() * 0.25D));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				previewImageStartPanel.setImage(scan.screenShot(startSlider.getValue() * 0.25D));
 			}
 		}).start();
 	}

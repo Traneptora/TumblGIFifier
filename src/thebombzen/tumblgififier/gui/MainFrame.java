@@ -28,6 +28,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.processor.FFmpegManager;
+import thebombzen.tumblgififier.processor.NullInputStream;
 import thebombzen.tumblgififier.processor.NullOutputStream;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
@@ -92,14 +93,20 @@ public class MainFrame extends JFrame {
 	 * @param join If this is set to true, this method will block until the process terminates. If it's set to false, it will return immediately.
 	 * @param args The program name and arguments to execute. This is NOT passed to a shell so you have to be careful with spacing or with empty strings.
 	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to block then this InputStream will have reached End-Of-File.
-	 * @throws IOException If an I/O error occurs. 
 	 */
-	public static synchronized InputStream exec(boolean join, String... args) throws IOException {
-		if (join) {
-			return exec(new NullOutputStream(), args);
-		} else {
-			return exec(null, args);
+	public static synchronized InputStream exec(boolean join, String... args) {
+		try {
+			if (join) {
+				return exec(new NullOutputStream(), args);
+			} else {
+				return exec(null, args);
+			}
+		} catch (IOException ioe){
+			// NullOutputStream doesn't throw IOException, so if we get one here it's really weird.
+			ioe.printStackTrace();
+			return new NullInputStream();
 		}
+		
 	}
 	
 	/**
@@ -295,57 +302,53 @@ public class MainFrame extends JFrame {
 				if (isBusy()) {
 					JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
 				} else {
-					
 					FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File", FileDialog.LOAD);
 					fileDialog.setMultipleMode(false);
-					
 					if (mostRecentOpenDirectory != null) {
 						fileDialog.setDirectory(mostRecentOpenDirectory);
 					}
-					
 					fileDialog.setVisible(true);
 					final String filename = fileDialog.getFile();
-					
 					if (filename != null) {
 						mostRecentOpenDirectory = fileDialog.getDirectory();
 						final File file = new File(mostRecentOpenDirectory, filename);
-						setEnabled(MainFrame.this, false);
+						setBusy(true);
 						new Thread(new Runnable(){
 							
 							@Override
 							public void run() {
-								try {
-									File recentOpenFile = new File(FFmpegManager.getFFmpegManager()
-											.getLocalAppDataLocation(), "recent_open.txt");
-									FileWriter recentOpenWriter = new FileWriter(recentOpenFile);
+								File recentOpenFile = new File(FFmpegManager.getFFmpegManager()
+										.getLocalAppDataLocation(), "recent_open.txt");
+								try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
 									recentOpenWriter.write(mostRecentOpenDirectory);
 									recentOpenWriter.close();
-									final VideoProcessor scan = VideoProcessor.scanFile(statusArea,
-											file.getAbsolutePath());
-									if (scan != null) {
-										EventQueue.invokeLater(new Runnable(){
-											
-											@Override
-											public void run() {
-												if (mainPanel != null) {
-													MainFrame.this.remove(mainPanel);
-												} else {
-													MainFrame.this.remove(defaultPanel);
-												}
-												mainPanel = new MainPanel(scan);
-												MainFrame.this.add(mainPanel);
-												MainFrame.this.pack();
-												setLocationRelativeTo(null);
-											}
-										});
-									} else {
-										statusArea.appendStatus("Error scanning video file.");
-									}
-									
 								} catch (IOException ioe) {
+									// we don't really care if this fails, but
+									// we'd like to know on standard error
 									ioe.printStackTrace();
 								}
-								setEnabled(MainFrame.this, true);
+								
+								final VideoProcessor scan = VideoProcessor.scanFile(statusArea, file.getAbsolutePath());
+								if (scan != null) {
+									EventQueue.invokeLater(new Runnable(){
+										
+										@Override
+										public void run() {
+											if (mainPanel != null) {
+												MainFrame.this.remove(mainPanel);
+											} else {
+												MainFrame.this.remove(defaultPanel);
+											}
+											mainPanel = new MainPanel(scan);
+											MainFrame.this.add(mainPanel);
+											MainFrame.this.pack();
+											setLocationRelativeTo(null);
+										}
+									});
+								} else {
+									statusArea.appendStatus("Error scanning video file.");
+								}
+								setBusy(false);
 							}
 						}).start();
 					}
@@ -367,7 +370,7 @@ public class MainFrame extends JFrame {
 				quit();
 			}
 		});
-		setEnabled(this, false);
+		setBusy(true);
 		statusArea.appendStatus("Initializing Engine. This may take a while on the first execution.");
 		new Thread(new Runnable(){
 			
@@ -375,24 +378,18 @@ public class MainFrame extends JFrame {
 			public void run() {
 				boolean success = FFmpegManager.getFFmpegManager().intitilizeFFmpeg(statusArea);
 				if (success) {
-					setEnabled(MainFrame.this, true);
+					setBusy(false);
 				} else {
 					statusArea.appendStatus("Error initializing.");
 				}
 			}
 		}).start();
 		File recentOpenFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_open.txt");
-		BufferedReader br = null;
 		if (recentOpenFile.exists()) {
-			try {
-				br = new BufferedReader(new FileReader(recentOpenFile));
+			try (BufferedReader br =  new BufferedReader(new FileReader(recentOpenFile))){
 				mostRecentOpenDirectory = br.readLine();
 			} catch (IOException ioe) {
 				mostRecentOpenDirectory = null;
-			} finally {
-				if (br != null) {
-					closeQuietly(br);
-				}
 			}
 		}
 	}
