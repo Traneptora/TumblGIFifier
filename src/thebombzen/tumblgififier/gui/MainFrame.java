@@ -39,9 +39,10 @@ import thebombzen.tumblgififier.processor.VideoProcessor;
 public class MainFrame extends JFrame {
 	
 	/**
-	 * I don't like to suppress warnings so this is here 
+	 * File extension for executable files, with the period included.
+	 * On windows, it's ".exe" and on other platforms it's the empty string.
 	 */
-	private static final long serialVersionUID = 1L;
+	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
 	
 	/**
 	 * True if the system is detected as a windows system, false otherwise. 
@@ -49,33 +50,14 @@ public class MainFrame extends JFrame {
 	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
 	
 	/**
-	 * File extension for executable files, with the period included.
-	 * On windows, it's ".exe" and on other platforms it's the empty string.
-	 */
-	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
-	
-	/**
-	 * True if the program is marked as "busy," i.e. the interface should be disabled.
-	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
-	 */
-	private volatile boolean busy = false;
-	
-	/**
-	 * A flag used to determine if we're cleaning up all the subprocesses we've started.
-	 * Normally, ending a process will just cause the next stage in the GIF creation to continue.
-	 * If this flag is set, we won't create any more processes.
-	 */
-	private volatile boolean cleaningUp = false;
-	
-	/**
 	 * The singleton instance of MainFrame.
 	 */
 	private static MainFrame mainFrame;
 	
 	/**
-	 * This is a list of all processes started by our program. It's used so we can end them all upon exit.
+	 * I don't like to suppress warnings so this is here 
 	 */
-	private volatile List<Process> processes = new ArrayList<>();
+	private static final long serialVersionUID = 1L;
 	
 	/**
 	 * Close a stream quietly because we honestly don't care if a stream.close() throws IOException
@@ -89,89 +71,10 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * Create a subprocess and execute the arguments. This automatically redirects standard error to standard out. 
-	 * @param join If this is set to true, this method will block until the process terminates. If it's set to false, it will return immediately.
-	 * @param args The program name and arguments to execute. This is NOT passed to a shell so you have to be careful with spacing or with empty strings.
-	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to block then this InputStream will have reached End-Of-File.
-	 */
-	public synchronized InputStream exec(boolean join, String... args) {
-		try {
-			if (join) {
-				return exec(new NullOutputStream(), args);
-			} else {
-				return exec(null, args);
-			}
-		} catch (IOException ioe){
-			// NullOutputStream doesn't throw IOException, so if we get one here it's really weird.
-			ioe.printStackTrace();
-			return new NullInputStream();
-		}
-		
-	}
-	
-	/**
-	 * Create a subprocess and execute the arguments. This automatically redirects standard error to standard out.
-	 * If the stream copyTo is not null, it will automatically copy the standard output of that process to the OutputStream copyTo.
-	 * Copying the stream will cause this method to block. Declining to copy will cause this method to return immediately.
-	 * @param copyTo If this is not null, this method will block until the process terminates, and all the output of that process will be copied to the stream. If it's set to mull, it will return immediately and no copying will occur.
-	 * @param args The program name and arguments to execute. This is NOT passed to a shell so you have to be careful with spacing or with empty strings.
-	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to copy then this InputStream will have reached End-Of-File.
-	 * @throws IOException If an I/O error occurs.
-	 */
-	public synchronized InputStream exec(OutputStream copyTo, String... args) throws IOException {
-		if (cleaningUp) {
-			return null;
-		}
-		ProcessBuilder pbuilder = new ProcessBuilder(args);
-		pbuilder.redirectErrorStream(true);
-		Process p = pbuilder.start();
-		processes.add(p);
-		if (copyTo != null) {
-			p.getOutputStream().close();
-			InputStream str = p.getInputStream();
-			int i;
-			while (-1 != (i = str.read())) {
-				copyTo.write(i);
-			}
-		}
-		return p.getInputStream();
-		
-	}
-	
-	/**
 	 * Return the singleton instance of MainFrame.
 	 */
 	public static MainFrame getMainFrame() {
 		return mainFrame;
-	}
-	
-	/**
-	 * True if the program is marked as "busy," i.e. the interface should be disabled.
-	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
-	 */
-	public boolean isBusy() {
-		return busy;
-	}
-	
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard library? >_>
-	 * @param conjunction The delimiter with which to conjoin the strings.
-	 * @param list The array of strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public static String join(String conjunction, String[] list) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for (String item : list) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
-		}
-		return sb.toString();
 	}
 	
 	/**
@@ -218,6 +121,27 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
+	 * Utility method to join an array of Strings based on a delimiter.
+	 * Seriously, why did it take until Java 8 to add this thing to the standard library? >_>
+	 * @param conjunction The delimiter with which to conjoin the strings.
+	 * @param list The array of strings to conjoin.
+	 * @return The conjoined string.
+	 */
+	public static String join(String conjunction, String[] list) {
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for (String item : list) {
+			if (first) {
+				first = false;
+			} else {
+				sb.append(conjunction);
+			}
+			sb.append(item);
+		}
+		return sb.toString();
+	}
+	
+	/**
 	 * Run our program.
 	 */
 	public static void main(String[] args) {
@@ -231,25 +155,17 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * Set to true if the program is marked as "busy," i.e. the interface should be disabled.
+	 * True if the program is marked as "busy," i.e. the interface should be disabled.
 	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
 	 */
-	public void setBusy(boolean busy) {
-		this.busy = busy;
-		setEnabled(mainFrame, !busy);
-	}
+	private volatile boolean busy = false;
 	
 	/**
-	 * Recursively enable or disable a component and all of its children.
+	 * A flag used to determine if we're cleaning up all the subprocesses we've started.
+	 * Normally, ending a process will just cause the next stage in the GIF creation to continue.
+	 * If this flag is set, we won't create any more processes.
 	 */
-	public void setEnabled(Component component, boolean enabled) {
-		component.setEnabled(enabled);
-		if (component instanceof Container) {
-			for (Component child : ((Container) component).getComponents()) {
-				setEnabled(child, enabled);
-			}
-		}
-	}
+	private volatile boolean cleaningUp = false;
 	
 	/**
 	 * We use this panel on startup. It contains nothing but a StatusProcessorArea.
@@ -265,6 +181,11 @@ public class MainFrame extends JFrame {
 	 * This is the last directory used by the "Open..." command. We make sure we return to the same location as last time.
 	 */
 	private String mostRecentOpenDirectory = null;
+	
+	/**
+	 * This is a list of all processes started by our program. It's used so we can end them all upon exit.
+	 */
+	private volatile List<Process> processes = new ArrayList<>();
 	
 	/**
 	 * This is the StatusProcessorArea inside the default panel.
@@ -395,6 +316,56 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
+	 * Create a subprocess and execute the arguments. This automatically redirects standard error to standard out. 
+	 * @param join If this is set to true, this method will block until the process terminates. If it's set to false, it will return immediately.
+	 * @param args The program name and arguments to execute. This is NOT passed to a shell so you have to be careful with spacing or with empty strings.
+	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to block then this InputStream will have reached End-Of-File.
+	 */
+	public synchronized InputStream exec(boolean join, String... args) {
+		try {
+			if (join) {
+				return exec(new NullOutputStream(), args);
+			} else {
+				return exec(null, args);
+			}
+		} catch (IOException ioe){
+			// NullOutputStream doesn't throw IOException, so if we get one here it's really weird.
+			ioe.printStackTrace();
+			return new NullInputStream();
+		}
+		
+	}
+	
+	/**
+	 * Create a subprocess and execute the arguments. This automatically redirects standard error to standard out.
+	 * If the stream copyTo is not null, it will automatically copy the standard output of that process to the OutputStream copyTo.
+	 * Copying the stream will cause this method to block. Declining to copy will cause this method to return immediately.
+	 * @param copyTo If this is not null, this method will block until the process terminates, and all the output of that process will be copied to the stream. If it's set to mull, it will return immediately and no copying will occur.
+	 * @param args The program name and arguments to execute. This is NOT passed to a shell so you have to be careful with spacing or with empty strings.
+	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to copy then this InputStream will have reached End-Of-File.
+	 * @throws IOException If an I/O error occurs.
+	 */
+	public synchronized InputStream exec(OutputStream copyTo, String... args) throws IOException {
+		if (cleaningUp) {
+			return null;
+		}
+		ProcessBuilder pbuilder = new ProcessBuilder(args);
+		pbuilder.redirectErrorStream(true);
+		Process p = pbuilder.start();
+		processes.add(p);
+		if (copyTo != null) {
+			p.getOutputStream().close();
+			InputStream str = p.getInputStream();
+			int i;
+			while (-1 != (i = str.read())) {
+				copyTo.write(i);
+			}
+		}
+		return p.getInputStream();
+		
+	}
+	
+	/**
 	 * We do our cleaning up code here, just in case someone ends the process without closing the window or hitting "quit."
 	 */
 	@Override
@@ -418,12 +389,41 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
+	 * True if the program is marked as "busy," i.e. the interface should be disabled.
+	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
+	 */
+	public boolean isBusy() {
+		return busy;
+	}
+	
+	/**
 	 * Quit the program.
 	 * Destroys all currently executing sub-processes and then exits.
 	 */
 	public void quit() {
 		finalize();
 		System.exit(0);
+	}
+	
+	/**
+	 * Set to true if the program is marked as "busy," i.e. the interface should be disabled.
+	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
+	 */
+	public void setBusy(boolean busy) {
+		this.busy = busy;
+		setEnabled(mainFrame, !busy);
+	}
+	
+	/**
+	 * Recursively enable or disable a component and all of its children.
+	 */
+	public void setEnabled(Component component, boolean enabled) {
+		component.setEnabled(enabled);
+		if (component instanceof Container) {
+			for (Component child : ((Container) component).getComponents()) {
+				setEnabled(child, enabled);
+			}
+		}
 	}
 	
 }
