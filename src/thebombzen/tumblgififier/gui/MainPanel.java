@@ -70,16 +70,14 @@ public class MainPanel extends JPanel {
 		BufferedImage previewImageStart;
 		BufferedImage previewImageEnd;
 		try {
-			previewImageStart = scan.screenShot(1D / 3D * scan.getDuration(),
-					480, 270);
+			previewImageStart = scan.screenShot(1D / 3D * scan.getDuration());
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			previewImageStart = new BufferedImage(480, 270,
 					BufferedImage.TYPE_INT_RGB);
 		}
 		try {
-			previewImageEnd = scan.screenShot(2D / 3D * scan.getDuration(),
-					480, 270);
+			previewImageEnd = scan.screenShot(2D / 3D * scan.getDuration());
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			previewImageEnd = new BufferedImage(480, 270,
@@ -451,7 +449,7 @@ public class MainPanel extends JPanel {
 		new Thread(new Runnable(){
 			public void run(){
 				try {
-					previewImageStartPanel.setImage(scan.screenShot(startSlider.getValue() * 0.25D, 480, 270));
+					previewImageStartPanel.setImage(scan.screenShot(startSlider.getValue() * 0.25D));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -463,7 +461,7 @@ public class MainPanel extends JPanel {
 		new Thread(new Runnable(){
 			public void run(){
 				try {
-					previewImageEndPanel.setImage(scan.screenShot(endSlider.getValue() * 0.25D, 480, 270));
+					previewImageEndPanel.setImage(scan.screenShot(endSlider.getValue() * 0.25D));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

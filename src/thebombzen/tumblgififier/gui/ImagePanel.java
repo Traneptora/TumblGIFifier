@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.gui;
 
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
@@ -18,6 +19,10 @@ public class ImagePanel extends JPanel {
 		paint(g);
 	}
 	public void paint(Graphics g){
+		if (image == null){
+			g.setColor(Color.RED);
+			g.fillRect(0, 0, this.getWidth(), this.getHeight());
+		}
 		double thisAspect = (double)this.getWidth() / (double)this.getHeight();
 		double imageAspect = (double)image.getWidth() / (double)image.getHeight();
 		if (thisAspect > imageAspect){
