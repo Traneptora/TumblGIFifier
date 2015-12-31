@@ -6,9 +6,16 @@ import java.io.Writer;
 public abstract class SimpleWriter extends Writer {
 	
 	@Override
-	public void write(int i) throws IOException {
-		write((char) (i & 0xFF_FF));
+	public void close() throws IOException {
+		
 	}
+	
+	@Override
+	public void flush() throws IOException {
+		
+	}
+	
+	public abstract void write(char c) throws IOException;
 	
 	@Override
 	public void write(char[] buf) throws IOException {
@@ -22,16 +29,9 @@ public abstract class SimpleWriter extends Writer {
 		}
 	}
 	
-	public abstract void write(char c) throws IOException;
-	
 	@Override
-	public void flush() throws IOException {
-		
-	}
-	
-	@Override
-	public void close() throws IOException {
-		
+	public void write(int i) throws IOException {
+		write((char) (i & 0xFF_FF));
 	}
 	
 }

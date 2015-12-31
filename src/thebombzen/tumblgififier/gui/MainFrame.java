@@ -33,50 +33,22 @@ import thebombzen.tumblgififier.processor.VideoProcessor;
 
 public class MainFrame extends JFrame {
 	
-	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
-	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
-	
 	private static final long serialVersionUID = 1L;
 	
-	private JPanel defaultPanel = new JPanel();
-	private MainPanel mainPanel;
-	private StatusProcessorArea statusArea = new StatusProcessorArea();
-	
-	private static volatile List<Process> processes = new ArrayList<>();
+	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
+		
 	private static volatile boolean busy = false;
 	private static volatile boolean cleaningUp = false;
-	
 	private static MainFrame mainFrame;
-	private String mostRecentOpenDirectory = null;
-	
-	public static MainFrame getMainFrame() {
-		return mainFrame;
-	}
-	
-	public StatusProcessor getStatusProcessor() {
-		if (mainPanel != null) {
-			return mainPanel.getStatusProcessor();
-		} else {
-			return statusArea;
+	private static volatile List<Process> processes = new ArrayList<>();
+		
+	public static void closeQuietly(Closeable cl) {
+		try {
+			cl.close();
+		} catch (IOException ioe) {
+			// do nothing
 		}
-	}
-	
-	public static void setEnabled(Component component, boolean enabled) {
-		component.setEnabled(enabled);
-		if (component instanceof Container) {
-			for (Component child : ((Container) component).getComponents()) {
-				setEnabled(child, enabled);
-			}
-		}
-	}
-	
-	public static boolean isBusy() {
-		return busy;
-	}
-	
-	public static void setBusy(boolean busy) {
-		MainFrame.busy = busy;
-		setEnabled(mainFrame, !busy);
 	}
 	
 	public static synchronized InputStream exec(boolean join, String... args) throws IOException {
@@ -106,6 +78,60 @@ public class MainFrame extends JFrame {
 		return p.getInputStream();
 		
 	}
+	
+	public static MainFrame getMainFrame() {
+		return mainFrame;
+	}
+	
+	public static boolean isBusy() {
+		return busy;
+	}
+	
+	public static String join(String conjunction, String[] list) {
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for (String item : list) {
+			if (first) {
+				first = false;
+			} else {
+				sb.append(conjunction);
+			}
+			sb.append(item);
+		}
+		return sb.toString();
+	}
+	
+	public static void main(String[] args) throws Exception {
+		EventQueue.invokeLater(new Runnable(){
+			
+			@Override
+			public void run() {
+				new MainFrame().setVisible(true);
+			}
+		});
+	}
+	
+	public static void setBusy(boolean busy) {
+		MainFrame.busy = busy;
+		setEnabled(mainFrame, !busy);
+	}
+	
+	public static void setEnabled(Component component, boolean enabled) {
+		component.setEnabled(enabled);
+		if (component instanceof Container) {
+			for (Component child : ((Container) component).getComponents()) {
+				setEnabled(child, enabled);
+			}
+		}
+	}
+	
+	private JPanel defaultPanel = new JPanel();
+	
+	private MainPanel mainPanel;
+	
+	private String mostRecentOpenDirectory = null;
+	
+	private StatusProcessorArea statusArea = new StatusProcessorArea();
 	
 	public MainFrame() {
 		mainFrame = this;
@@ -237,19 +263,6 @@ public class MainFrame extends JFrame {
 		}
 	}
 	
-	public static void closeQuietly(Closeable cl) {
-		try {
-			cl.close();
-		} catch (IOException ioe) {
-			// do nothing
-		}
-	}
-	
-	public void quit() {
-		finalize();
-		System.exit(0);
-	}
-	
 	@Override
 	protected void finalize() {
 		cleaningUp = true;
@@ -258,28 +271,17 @@ public class MainFrame extends JFrame {
 		}
 	}
 	
-	public static String join(String conjunction, String[] list) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for (String item : list) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
+	public StatusProcessor getStatusProcessor() {
+		if (mainPanel != null) {
+			return mainPanel.getStatusProcessor();
+		} else {
+			return statusArea;
 		}
-		return sb.toString();
 	}
 	
-	public static void main(String[] args) throws Exception {
-		EventQueue.invokeLater(new Runnable(){
-			
-			@Override
-			public void run() {
-				new MainFrame().setVisible(true);
-			}
-		});
+	public void quit() {
+		finalize();
+		System.exit(0);
 	}
 	
 }

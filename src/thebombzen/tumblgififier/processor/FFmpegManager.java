@@ -16,6 +16,8 @@ import thebombzen.tumblgififier.gui.MainFrame;
 
 public class FFmpegManager {
 	
+	private static FFmpegManager manager = new FFmpegManager();
+	
 	private static String getApplicationDataLocation() {
 		String name = System.getProperty("os.name");
 		if (name.toLowerCase().contains("windows")) {
@@ -26,6 +28,14 @@ public class FFmpegManager {
 		} else {
 			return System.getProperty("user.home");
 		}
+	}
+	
+	public static FFmpegManager getFFmpegManager() {
+		return manager;
+	}
+	
+	private static String getFFprogDownloadLocation() {
+		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/" + getFFprogName();
 	}
 	
 	private static String getFFprogName() {
@@ -40,17 +50,52 @@ public class FFmpegManager {
 		}
 	}
 	
-	private static String getFFprogDownloadLocation() {
-		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/" + getFFprogName();
-	}
-	
-	private static FFmpegManager manager = new FFmpegManager();
-	
-	public static FFmpegManager getFFmpegManager() {
-		return manager;
-	}
-	
 	private String localAppDataLocation = null;
+	
+	private FFmpegManager() {
+		
+	}
+	
+	public String getFFmpegLocation() {
+		return getXLocation("ffmpeg");
+	}
+	
+	public String getFFplayLocation() {
+		return getXLocation("ffplay");
+	}
+	
+	public String getFFprobeLocation() {
+		return getXLocation("ffprobe");
+	}
+	
+	public String getLocalAppDataLocation() {
+		if (localAppDataLocation != null) {
+			return localAppDataLocation;
+		}
+		try {
+			String appData = getApplicationDataLocation();
+			File localAppDataFile = new File(appData, ".tumblgififier").getCanonicalFile();
+			if (localAppDataFile.exists() && !localAppDataFile.isDirectory()) {
+				localAppDataFile.delete();
+			}
+			localAppDataFile.mkdirs();
+			localAppDataLocation = localAppDataFile.getCanonicalPath();
+			return localAppDataLocation;
+		} catch (IOException ioe) {
+			throw new RuntimeException(ioe);
+		}
+	}
+	
+	private String getXLocation(String x) {
+		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
+		String name = x + MainFrame.EXE_EXTENSION;
+		for (String el : pathElements) {
+			if (new File(el, name).exists()) {
+				return new File(el, name).getPath();
+			}
+		}
+		return new File(getLocalAppDataLocation(), name).getPath();
+	}
 	
 	public boolean intitilizeFFmpeg(StatusProcessor processor) {
 		try {
@@ -110,51 +155,6 @@ public class FFmpegManager {
 			// this should not occur
 			ioe.printStackTrace();
 			return false;
-		}
-	}
-	
-	private FFmpegManager() {
-		
-	}
-	
-	private String getXLocation(String x) {
-		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
-		String name = x + MainFrame.EXE_EXTENSION;
-		for (String el : pathElements) {
-			if (new File(el, name).exists()) {
-				return new File(el, name).getPath();
-			}
-		}
-		return new File(getLocalAppDataLocation(), name).getPath();
-	}
-	
-	public String getFFmpegLocation() {
-		return getXLocation("ffmpeg");
-	}
-	
-	public String getFFprobeLocation() {
-		return getXLocation("ffprobe");
-	}
-	
-	public String getFFplayLocation() {
-		return getXLocation("ffplay");
-	}
-	
-	public String getLocalAppDataLocation() {
-		if (localAppDataLocation != null) {
-			return localAppDataLocation;
-		}
-		try {
-			String appData = getApplicationDataLocation();
-			File localAppDataFile = new File(appData, ".tumblgififier").getCanonicalFile();
-			if (localAppDataFile.exists() && !localAppDataFile.isDirectory()) {
-				localAppDataFile.delete();
-			}
-			localAppDataFile.mkdirs();
-			localAppDataLocation = localAppDataFile.getCanonicalPath();
-			return localAppDataLocation;
-		} catch (IOException ioe) {
-			throw new RuntimeException(ioe);
 		}
 	}
 	

@@ -38,21 +38,21 @@ public class MainPanel extends JPanel {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private ImagePanel previewImageStartPanel;
-	private JPanel leftPanel;
-	private ImagePanel previewImageEndPanel;
-	private JSlider startSlider;
-	private JSlider endSlider;
-	private VideoProcessor scan;
-	private JTextField maxSizeTextField;
-	private JSlider sizeThresholdSlider;
-	private JLabel sizeThresholdLabel;
-	private int maxSize = 2000;
 	private JCheckBox cutFramerateInHalfCheckBox;
-	private StatusProcessorArea statusArea;
+	private JSlider endSlider;
+	private JPanel leftPanel;
+	private int maxSize = 2000;
 	private JCheckBox maxSizeCheckBox;
-	private JButton playButton;
+	private JTextField maxSizeTextField;
 	private String mostRecentGIFDirectory = null;
+	private JButton playButton;
+	private ImagePanel previewImageEndPanel;
+	private ImagePanel previewImageStartPanel;
+	private VideoProcessor scan;
+	private JLabel sizeThresholdLabel;
+	private JSlider sizeThresholdSlider;
+	private JSlider startSlider;
+	private StatusProcessorArea statusArea;
 	
 	public MainPanel(VideoProcessor scan) {
 		this.scan = scan;
@@ -62,8 +62,133 @@ public class MainPanel extends JPanel {
 		setupLayout();
 	}
 	
+	private void createGIF(final String path) {
+		MainFrame.setBusy(true);
+		final int maxSizeBytes;
+		final int minSizeBytes;
+		if (maxSizeCheckBox.isSelected()) {
+			maxSizeBytes = 1000 * maxSize;
+			minSizeBytes = 1000 * (maxSize - maxSize * sizeThresholdSlider.getValue() / 100);
+		} else {
+			maxSizeBytes = Integer.MAX_VALUE;
+			minSizeBytes = 1;
+		}
+		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
+		final double clipStart = startSlider.getValue() * 0.25D;
+		final double clipEnd = endSlider.getValue() * 0.25D;
+		new Thread(new Runnable(){
+			
+			@Override
+			public void run() {
+				try {
+					scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes, halveFramerate);
+					MainFrame.setBusy(false);
+					statusArea.appendStatus("Done!");
+					JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
+				} catch (IOException ioe) {
+					MainFrame.setBusy(false);
+					ioe.printStackTrace();
+					statusArea.appendStatus("Some error occured :(");
+					JOptionPane.showMessageDialog(MainPanel.this, "Some error occured :(", "Error",
+							JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		}).start();
+	}
+	
+	@Override
+	public Dimension getPreferredSize() {
+		return new Dimension(990, 640);
+	}
+	
 	public StatusProcessor getStatusProcessor() {
 		return statusArea;
+	}
+	
+	private void playClipFast() throws IOException {
+		
+		MainFrame.setBusy(true);
+		
+		final double clipStart = startSlider.getValue() * 0.25D;
+		final double clipEnd = endSlider.getValue() * 0.25D;
+		final int w = 480;
+		final int h = 270;
+		
+		final String ffplay = FFmpegManager.getFFmpegManager().getFFplayLocation();
+		playButton.setEnabled(false);
+		new Thread(new Runnable(){
+			
+			@Override
+			public void run() {
+				try {
+					if (w < scan.getWidth()) {
+						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", "scale="
+										+ w + ":-1");
+					} else if (h < scan.getHeight()) {
+						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
+								"scale=-1:" + h);
+					} else {
+						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
+					}
+					
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
+				EventQueue.invokeLater(new Runnable(){
+					
+					@Override
+					public void run() {
+						playButton.setEnabled(true);
+						MainFrame.setBusy(false);
+					}
+				});
+			}
+		}).start();
+	}
+	
+	private void playClipSlow() throws IOException {
+		MainFrame.setBusy(true);
+		
+		final double clipStart = startSlider.getValue() * 0.25D;
+		final double clipEnd = endSlider.getValue() * 0.25D;
+		
+		final String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
+		final String ffplay = FFmpegManager.getFFmpegManager().getFFplayLocation();
+		
+		new Thread(new Runnable(){
+			
+			@Override
+			public void run() {
+				try {
+					statusArea.appendStatus("Rendering Clip... ");
+					File tempFile = File.createTempFile("tumblrgififier", ".tmp");
+					tempFile.deleteOnExit();
+					MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i", scan.getLocation(),
+							"-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt", "yuv420p", "-vf",
+							"scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
+					MainFrame.exec(true, ffplay, tempFile.getAbsolutePath());
+					tempFile.delete();
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
+				EventQueue.invokeLater(new Runnable(){
+					
+					@Override
+					public void run() {
+						playButton.setEnabled(true);
+						MainFrame.setBusy(false);
+						MainFrame.getMainFrame().toFront();
+						MainFrame.getMainFrame().setAlwaysOnTop(true);
+						MainFrame.getMainFrame().setAlwaysOnTop(false);
+						MainFrame.getMainFrame().requestFocus();
+					}
+				});
+			}
+		}).start();
+		
 	}
 	
 	private void setupLayout() {
@@ -335,122 +460,30 @@ public class MainPanel extends JPanel {
 		}
 	}
 	
-	private void createGIF(final String path) {
-		MainFrame.setBusy(true);
-		final int maxSizeBytes;
-		final int minSizeBytes;
-		if (maxSizeCheckBox.isSelected()) {
-			maxSizeBytes = 1000 * maxSize;
-			minSizeBytes = 1000 * (maxSize - maxSize * sizeThresholdSlider.getValue() / 100);
-		} else {
-			maxSizeBytes = Integer.MAX_VALUE;
-			minSizeBytes = 1;
-		}
-		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
-		final double clipStart = startSlider.getValue() * 0.25D;
-		final double clipEnd = endSlider.getValue() * 0.25D;
+	private void updateEndScreenshot() {
 		new Thread(new Runnable(){
 			
 			@Override
 			public void run() {
 				try {
-					scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes, halveFramerate);
-					MainFrame.setBusy(false);
-					statusArea.appendStatus("Done!");
-					JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
-				} catch (IOException ioe) {
-					MainFrame.setBusy(false);
-					ioe.printStackTrace();
-					statusArea.appendStatus("Some error occured :(");
-					JOptionPane.showMessageDialog(MainPanel.this, "Some error occured :(", "Error",
-							JOptionPane.ERROR_MESSAGE);
+					previewImageEndPanel.setImage(scan.screenShot(endSlider.getValue() * 0.25D));
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 		}).start();
 	}
 	
-	private void playClipSlow() throws IOException {
-		MainFrame.setBusy(true);
-		
-		final double clipStart = startSlider.getValue() * 0.25D;
-		final double clipEnd = endSlider.getValue() * 0.25D;
-		
-		final String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
-		final String ffplay = FFmpegManager.getFFmpegManager().getFFplayLocation();
-		
+	private void updateStartScreenshot() {
 		new Thread(new Runnable(){
 			
 			@Override
 			public void run() {
 				try {
-					statusArea.appendStatus("Rendering Clip... ");
-					File tempFile = File.createTempFile("tumblrgififier", ".tmp");
-					tempFile.deleteOnExit();
-					MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i", scan.getLocation(),
-							"-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt", "yuv420p", "-vf",
-							"scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
-					MainFrame.exec(true, ffplay, tempFile.getAbsolutePath());
-					tempFile.delete();
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
+					previewImageStartPanel.setImage(scan.screenShot(startSlider.getValue() * 0.25D));
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-				EventQueue.invokeLater(new Runnable(){
-					
-					@Override
-					public void run() {
-						playButton.setEnabled(true);
-						MainFrame.setBusy(false);
-						MainFrame.getMainFrame().toFront();
-						MainFrame.getMainFrame().setAlwaysOnTop(true);
-						MainFrame.getMainFrame().setAlwaysOnTop(false);
-						MainFrame.getMainFrame().requestFocus();
-					}
-				});
-			}
-		}).start();
-		
-	}
-	
-	private void playClipFast() throws IOException {
-		
-		MainFrame.setBusy(true);
-		
-		final double clipStart = startSlider.getValue() * 0.25D;
-		final double clipEnd = endSlider.getValue() * 0.25D;
-		final int w = 480;
-		final int h = 270;
-		
-		final String ffplay = FFmpegManager.getFFmpegManager().getFFplayLocation();
-		playButton.setEnabled(false);
-		new Thread(new Runnable(){
-			
-			@Override
-			public void run() {
-				try {
-					if (w < scan.getWidth()) {
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", "scale="
-										+ w + ":-1");
-					} else if (h < scan.getHeight()) {
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
-								"scale=-1:" + h);
-					} else {
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
-					}
-					
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-				}
-				EventQueue.invokeLater(new Runnable(){
-					
-					@Override
-					public void run() {
-						playButton.setEnabled(true);
-						MainFrame.setBusy(false);
-					}
-				});
 			}
 		}).start();
 	}
@@ -468,38 +501,5 @@ public class MainPanel extends JPanel {
 		box.add(Box.createHorizontalGlue());
 		box.add(right);
 		return box;
-	}
-	
-	private void updateStartScreenshot() {
-		new Thread(new Runnable(){
-			
-			@Override
-			public void run() {
-				try {
-					previewImageStartPanel.setImage(scan.screenShot(startSlider.getValue() * 0.25D));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}).start();
-	}
-	
-	private void updateEndScreenshot() {
-		new Thread(new Runnable(){
-			
-			@Override
-			public void run() {
-				try {
-					previewImageEndPanel.setImage(scan.screenShot(endSlider.getValue() * 0.25D));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}).start();
-	}
-	
-	@Override
-	public Dimension getPreferredSize() {
-		return new Dimension(990, 640);
 	}
 }

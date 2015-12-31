@@ -93,24 +93,24 @@ public class VideoProcessor {
 		return new VideoProcessor(width, height, duration, filename, framerate);
 	}
 	
-	private final int width;
-	private final int height;
 	private final double duration;
-	private final String location;
-	private final double framerate;
-	private double scale = 1D;
-	private double lowscale = 1D;
-	private double highscale = 1D;
-	private boolean foundLowerBound = false;
-	private double startTime;
 	private double endTime;
-	private long minSize;
-	private long maxSize;
-	private boolean halveFramerate;
-	private StatusProcessor statusProcessor;
+	private boolean foundLowerBound = false;
+	private final double framerate;
 	private File gifFile;
-	private File paletteFile;
+	private boolean halveFramerate;
+	private final int height;
+	private double highscale = 1D;
+	private final String location;
+	private double lowscale = 1D;
+	private long maxSize;
+	private long minSize;
 	private File mkvFile;
+	private File paletteFile;
+	private double scale = 1D;
+	private double startTime;
+	private StatusProcessor statusProcessor;
+	private final int width;
 	
 	public VideoProcessor(int width, int height, double duration, String location, double framerate) {
 		this.width = width;
@@ -120,95 +120,30 @@ public class VideoProcessor {
 		this.framerate = framerate;
 	}
 	
-	public int getWidth() {
-		return width;
-	}
-	
-	public int getHeight() {
-		return height;
-	}
-	
-	public double getDuration() {
-		return duration;
-	}
-	
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		long temp;
-		temp = Double.doubleToLongBits(duration);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(framerate);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + height;
-		result = prime * result + ((location == null) ? 0 : location.hashCode());
-		result = prime * result + width;
-		return result;
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		VideoProcessor other = (VideoProcessor) obj;
-		if (Double.doubleToLongBits(duration) != Double.doubleToLongBits(other.duration))
-			return false;
-		if (Double.doubleToLongBits(framerate) != Double.doubleToLongBits(other.framerate))
-			return false;
-		if (height != other.height)
-			return false;
-		if (location == null) {
-			if (other.location != null)
-				return false;
-		} else if (!location.equals(other.location))
-			return false;
-		if (width != other.width)
-			return false;
-		return true;
-	}
-	
-	@Override
-	public String toString() {
-		return "VideoScan [width=" + width + ", height=" + height + ", duration=" + duration + ", location=" + location
-				+ ", framerate=" + framerate + "]";
-	}
-	
-	public String getLocation() {
-		return location;
-	}
-	
-	public double getFramerate() {
-		return framerate;
-	}
-	
-	public BufferedImage screenShot(double time) throws IOException {
-		return screenShot(time, width, height);
-	}
-	
-	public BufferedImage screenShot(double time, double scale) throws IOException {
-		return screenShot(time, (int) (width * scale), (int) (height * scale));
-	}
-	
-	public BufferedImage screenShot(double time, int shotWidth, int shotHeight) throws IOException {
-		if (time < 0 || time > duration) {
-			throw new IllegalArgumentException("Time out of bounds!");
+	private void adjustScale() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Checking Filesize... ");
+		long currFileSize = gifFile.length();
+		if (currFileSize > maxSize) {
+			sb.append("Too Big: ");
+			if (!foundLowerBound) {
+				this.highscale = scale;
+				this.lowscale = scale * 0.5D;
+				this.scale = lowscale;
+			} else {
+				this.highscale = scale;
+				this.scale = (this.lowscale + this.highscale) * 0.5D;
+			}
+		} else if (currFileSize < minSize && scale < 1D) {
+			sb.append("Too Small: ");
+			this.foundLowerBound = true;
+			this.lowscale = scale;
+			this.scale = (this.lowscale + this.highscale) * 0.5D;
+		} else {
+			sb.append("Just Right: ");
 		}
-		String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
-		File shotFile = File.createTempFile("tumblgififier", ".tmp");
-		shotFile.deleteOnExit();
-		MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-t",
-				Double.toString(0.5D / framerate), "-s", shotWidth + "x" + shotHeight, "-qscale", "5", "-pix_fmt",
-				"yuvj420p", "-c", "mjpeg", "-f", "image2", shotFile.getAbsolutePath());
-		try {
-			return ImageIO.read(shotFile);
-		} finally {
-			shotFile.delete();
-		}
+		sb.append(String.format("%d%n", currFileSize));
+		this.statusProcessor.appendStatus(sb.toString());
 	}
 	
 	public void convert(StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
@@ -244,39 +179,6 @@ public class VideoProcessor {
 		
 		Files.copy(gifFile.toPath(), newFile.toPath());
 		
-	}
-	
-	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in) {
-		Scanner scanner = new Scanner(in);
-		scanner.useDelimiter("(\r\n|\r|\n)");
-		while (scanner.hasNext()) {
-			String line = scanner.next();
-			if (line.startsWith("frame=")) {
-				String time = "0";
-				Scanner sc2 = new Scanner(line);
-				sc2.useDelimiter("\\s");
-				while (sc2.hasNext()) {
-					String part = sc2.next();
-					if (part.startsWith("time=")) {
-						time = part.replaceAll("time=", "");
-						break;
-					}
-				}
-				String[] times = time.split(":");
-				double realTime = 0D;
-				for (int i = 0; i < times.length; i++) {
-					try {
-						realTime += Math.pow(60, i) * Double.parseDouble(times[times.length - i - 1]);
-					} catch (NumberFormatException nfe) {
-						nfe.printStackTrace();
-					}
-				}
-				sc2.close();
-				double percent = realTime * 100D / length;
-				writer.format("%s%.2f%%\r", prefix, percent);
-			}
-		}
-		scanner.close();
 	}
 	
 	private void createGif() throws IOException {
@@ -318,30 +220,128 @@ public class VideoProcessor {
 		writer.flush();
 	}
 	
-	private void adjustScale() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Checking Filesize... ");
-		long currFileSize = gifFile.length();
-		if (currFileSize > maxSize) {
-			sb.append("Too Big: ");
-			if (!foundLowerBound) {
-				this.highscale = scale;
-				this.lowscale = scale * 0.5D;
-				this.scale = lowscale;
-			} else {
-				this.highscale = scale;
-				this.scale = (this.lowscale + this.highscale) * 0.5D;
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		VideoProcessor other = (VideoProcessor) obj;
+		if (Double.doubleToLongBits(duration) != Double.doubleToLongBits(other.duration))
+			return false;
+		if (Double.doubleToLongBits(framerate) != Double.doubleToLongBits(other.framerate))
+			return false;
+		if (height != other.height)
+			return false;
+		if (location == null) {
+			if (other.location != null)
+				return false;
+		} else if (!location.equals(other.location))
+			return false;
+		if (width != other.width)
+			return false;
+		return true;
+	}
+	
+	public double getDuration() {
+		return duration;
+	}
+	
+	public double getFramerate() {
+		return framerate;
+	}
+	
+	public int getHeight() {
+		return height;
+	}
+	
+	public String getLocation() {
+		return location;
+	}
+	
+	public int getWidth() {
+		return width;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(duration);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(framerate);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + height;
+		result = prime * result + ((location == null) ? 0 : location.hashCode());
+		result = prime * result + width;
+		return result;
+	}
+	
+	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in) {
+		Scanner scanner = new Scanner(in);
+		scanner.useDelimiter("(\r\n|\r|\n)");
+		while (scanner.hasNext()) {
+			String line = scanner.next();
+			if (line.startsWith("frame=")) {
+				String time = "0";
+				Scanner sc2 = new Scanner(line);
+				sc2.useDelimiter("\\s");
+				while (sc2.hasNext()) {
+					String part = sc2.next();
+					if (part.startsWith("time=")) {
+						time = part.replaceAll("time=", "");
+						break;
+					}
+				}
+				String[] times = time.split(":");
+				double realTime = 0D;
+				for (int i = 0; i < times.length; i++) {
+					try {
+						realTime += Math.pow(60, i) * Double.parseDouble(times[times.length - i - 1]);
+					} catch (NumberFormatException nfe) {
+						nfe.printStackTrace();
+					}
+				}
+				sc2.close();
+				double percent = realTime * 100D / length;
+				writer.format("%s%.2f%%\r", prefix, percent);
 			}
-		} else if (currFileSize < minSize && scale < 1D) {
-			sb.append("Too Small: ");
-			this.foundLowerBound = true;
-			this.lowscale = scale;
-			this.scale = (this.lowscale + this.highscale) * 0.5D;
-		} else {
-			sb.append("Just Right: ");
 		}
-		sb.append(String.format("%d%n", currFileSize));
-		this.statusProcessor.appendStatus(sb.toString());
+		scanner.close();
+	}
+	
+	public BufferedImage screenShot(double time) throws IOException {
+		return screenShot(time, width, height);
+	}
+	
+	public BufferedImage screenShot(double time, double scale) throws IOException {
+		return screenShot(time, (int) (width * scale), (int) (height * scale));
+	}
+	
+	public BufferedImage screenShot(double time, int shotWidth, int shotHeight) throws IOException {
+		if (time < 0 || time > duration) {
+			throw new IllegalArgumentException("Time out of bounds!");
+		}
+		String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
+		File shotFile = File.createTempFile("tumblgififier", ".tmp");
+		shotFile.deleteOnExit();
+		MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-t",
+				Double.toString(0.5D / framerate), "-s", shotWidth + "x" + shotHeight, "-qscale", "5", "-pix_fmt",
+				"yuvj420p", "-c", "mjpeg", "-f", "image2", shotFile.getAbsolutePath());
+		try {
+			return ImageIO.read(shotFile);
+		} finally {
+			shotFile.delete();
+		}
+	}
+	
+	@Override
+	public String toString() {
+		return "VideoScan [width=" + width + ", height=" + height + ", duration=" + duration + ", location=" + location
+				+ ", framerate=" + framerate + "]";
 	}
 	
 }

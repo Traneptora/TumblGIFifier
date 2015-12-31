@@ -17,26 +17,6 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 	}
 	
 	@Override
-	public void setEnabled(boolean enabled) {
-		if (!this.isEditable() && !enabled) {
-			return;
-		} else {
-			super.setEnabled(enabled);
-		}
-	}
-	
-	@Override
-	public void clearStatus() {
-		EventQueue.invokeLater(new Runnable(){
-			
-			@Override
-			public void run() {
-				setText("");
-			}
-		});
-	}
-	
-	@Override
 	public void appendStatus(final String status) {
 		EventQueue.invokeLater(new Runnable(){
 			
@@ -55,6 +35,17 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 	}
 	
 	@Override
+	public void clearStatus() {
+		EventQueue.invokeLater(new Runnable(){
+			
+			@Override
+			public void run() {
+				setText("");
+			}
+		});
+	}
+	
+	@Override
 	public void replaceStatus(final String status) {
 		EventQueue.invokeLater(new Runnable(){
 			
@@ -68,6 +59,15 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 			}
 		});
 		System.out.println('\r' + status);
+	}
+	
+	@Override
+	public void setEnabled(boolean enabled) {
+		if (!this.isEditable() && !enabled) {
+			return;
+		} else {
+			super.setEnabled(enabled);
+		}
 	}
 	
 }

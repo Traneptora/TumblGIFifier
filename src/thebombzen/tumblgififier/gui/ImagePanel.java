@@ -15,9 +15,8 @@ public class ImagePanel extends JPanel {
 		this.image = image;
 	}
 	
-	@Override
-	public void update(Graphics g) {
-		paint(g);
+	public BufferedImage getImage() {
+		return image;
 	}
 	
 	@Override
@@ -39,13 +38,14 @@ public class ImagePanel extends JPanel {
 		}
 	}
 	
-	public BufferedImage getImage() {
-		return image;
-	}
-	
 	public void setImage(BufferedImage image) {
 		this.image = image;
 		repaint();
+	}
+	
+	@Override
+	public void update(Graphics g) {
+		paint(g);
 	}
 	
 }
