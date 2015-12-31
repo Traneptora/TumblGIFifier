@@ -16,7 +16,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -28,9 +27,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
 import thebombzen.tumblgififier.processor.FFmpegManager;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
@@ -54,34 +53,33 @@ public class MainPanel extends JPanel {
 	private JCheckBox maxSizeCheckBox;
 	private JButton playButton;
 	private String mostRecentGIFDirectory = null;
-	public MainPanel(VideoProcessor scan){
+	
+	public MainPanel(VideoProcessor scan) {
 		this.scan = scan;
-		if (scan == null){
+		if (scan == null) {
 			throw new NullPointerException();
 		}
 		setupLayout();
 	}
 	
-	public StatusProcessor getStatusProcessor(){
+	public StatusProcessor getStatusProcessor() {
 		return statusArea;
 	}
-
-	private void setupLayout(){
+	
+	private void setupLayout() {
 		BufferedImage previewImageStart;
 		BufferedImage previewImageEnd;
 		try {
 			previewImageStart = scan.screenShot(1D / 3D * scan.getDuration());
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
-			previewImageStart = new BufferedImage(480, 270,
-					BufferedImage.TYPE_INT_RGB);
+			previewImageStart = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
 		}
 		try {
 			previewImageEnd = scan.screenShot(2D / 3D * scan.getDuration());
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
-			previewImageEnd = new BufferedImage(480, 270,
-					BufferedImage.TYPE_INT_RGB);
+			previewImageEnd = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
 		}
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		this.add(Box.createVerticalStrut(10));
@@ -100,17 +98,18 @@ public class MainPanel extends JPanel {
 		rightBox.add(Box.createVerticalStrut(10));
 		startSlider = new JSlider();
 		startSlider.setMinimum(0);
-		startSlider.setMaximum((int)(scan.getDuration() * 4D) - 1);
+		startSlider.setMaximum((int) (scan.getDuration() * 4D) - 1);
 		startSlider.setValue(startSlider.getMaximum() / 3);
 		rightBox.add(startSlider);
 		
 		playButton = new JButton("Play Clip (Fast, Inaccurate)");
 		playButton.addActionListener(new ActionListener(){
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
 					playClipFast();
-				} catch (IOException ioe){
+				} catch (IOException ioe) {
 					ioe.printStackTrace();
 					statusArea.appendStatus("Some error occurred :(");
 				}
@@ -119,11 +118,12 @@ public class MainPanel extends JPanel {
 		
 		JButton playButton2 = new JButton("Play Clip (Slow, Accurate)");
 		playButton2.addActionListener(new ActionListener(){
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
 					playClipSlow();
-				} catch (IOException ioe){
+				} catch (IOException ioe) {
 					ioe.printStackTrace();
 					statusArea.appendStatus("Some error occurred :(");
 				}
@@ -140,17 +140,18 @@ public class MainPanel extends JPanel {
 		
 		endSlider = new JSlider();
 		endSlider.setMinimum(0);
-		endSlider.setMaximum((int)(scan.getDuration() * 4D) - 1);
+		endSlider.setMaximum((int) (scan.getDuration() * 4D) - 1);
 		endSlider.setValue(endSlider.getMaximum() * 2 / 3);
 		rightBox.add(endSlider);
 		
 		startSlider.addChangeListener(new ChangeListener(){
+			
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				if (startSlider.getValue() > endSlider.getValue()){
+				if (startSlider.getValue() > endSlider.getValue()) {
 					startSlider.setValue(endSlider.getValue());
 				}
-				if (!startSlider.getValueIsAdjusting() && scan != null){
+				if (!startSlider.getValueIsAdjusting() && scan != null) {
 					updateStartScreenshot();
 				}
 				
@@ -158,12 +159,13 @@ public class MainPanel extends JPanel {
 		});
 		
 		endSlider.addChangeListener(new ChangeListener(){
+			
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				if (endSlider.getValue() < startSlider.getValue()){
+				if (endSlider.getValue() < startSlider.getValue()) {
 					endSlider.setValue(startSlider.getValue());
 				}
-				if (!endSlider.getValueIsAdjusting() && scan != null){
+				if (!endSlider.getValueIsAdjusting() && scan != null) {
 					updateEndScreenshot();
 				}
 			}
@@ -183,27 +185,30 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(wrapLeftRightAligned(new JLabel("Height:"), new JLabel(Integer.toString(scan.getHeight()))));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Duration:"), new JLabel(String.format("%.2f", scan.getDuration()))));
+		leftPanel.add(wrapLeftRightAligned(new JLabel("Duration:"),
+				new JLabel(String.format("%.2f", scan.getDuration()))));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Framerate:"), new JLabel(String.format("%.2f", scan.getFramerate()))));
+		leftPanel.add(wrapLeftRightAligned(new JLabel("Framerate:"),
+				new JLabel(String.format("%.2f", scan.getFramerate()))));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(new JSeparator(JSeparator.HORIZONTAL));
+		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(5));
 		maxSizeTextField = new JTextField("2000");
-		maxSizeTextField.setHorizontalAlignment(JTextField.RIGHT);
+		maxSizeTextField.setHorizontalAlignment(SwingConstants.RIGHT);
 		maxSizeTextField.setMaximumSize(new Dimension(200, 25));
 		maxSizeTextField.setPreferredSize(new Dimension(200, 25));
 		maxSizeTextField.addFocusListener(new FocusAdapter(){
+			
 			@Override
 			public void focusLost(FocusEvent e) {
 				try {
 					int size = Integer.parseInt(maxSizeTextField.getText());
-					if (size >= 0){
+					if (size >= 0) {
 						maxSize = size;
 					} else {
 						maxSizeTextField.setText(Integer.toString(maxSize));
 					}
-				} catch (NumberFormatException nfe){
+				} catch (NumberFormatException nfe) {
 					maxSizeTextField.setText(Integer.toString(maxSize));
 				}
 			}
@@ -222,6 +227,7 @@ public class MainPanel extends JPanel {
 		sizeThresholdSlider.setMinimum(3);
 		sizeThresholdSlider.setValue(10);
 		sizeThresholdSlider.addChangeListener(new ChangeListener(){
+			
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				sizeThresholdLabel.setText(sizeThresholdSlider.getValue() + " Percent");
@@ -230,7 +236,7 @@ public class MainPanel extends JPanel {
 		leftPanel.add(wrapLeftAligned(sizeThresholdSlider));
 		
 		maxSizeCheckBox.addChangeListener(new ChangeListener(){
-
+			
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				maxSizeTextField.setEnabled(maxSizeCheckBox.isSelected());
@@ -250,48 +256,51 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(wrapLeftAligned(new JLabel("The recommended acceptable size percent is 10 percent.")));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(new JSeparator(JSeparator.HORIZONTAL));
+		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(5));
-		cutFramerateInHalfCheckBox = new JCheckBox("Cut Output Framerate in Half, to " + String.format("%.2f", scan.getFramerate() * 0.5D));
+		cutFramerateInHalfCheckBox = new JCheckBox("Cut Output Framerate in Half, to "
+				+ String.format("%.2f", scan.getFramerate() * 0.5D));
 		leftPanel.add(wrapLeftAligned(cutFramerateInHalfCheckBox));
 		leftPanel.add(wrapLeftAligned(new JLabel("Cutting the framerate in half will allow the size to be bigger.")));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(new JSeparator(JSeparator.HORIZONTAL));
+		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(5));
 		JPanel createGIFPanel = new JPanel(new BorderLayout());
 		JButton fireButton = new JButton("Create GIF");
 		createGIFPanel.add(fireButton, BorderLayout.CENTER);
 		fireButton.addActionListener(new ActionListener(){
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-
+				
 				FileDialog fileDialog = new FileDialog(MainFrame.getMainFrame(), "Save GIF as...", FileDialog.SAVE);
 				fileDialog.setMultipleMode(false);
 				
-				if (mostRecentGIFDirectory != null){
+				if (mostRecentGIFDirectory != null) {
 					fileDialog.setDirectory(mostRecentGIFDirectory);
 				}
 				
 				fileDialog.setFilenameFilter(new FilenameFilter(){
-
+					
 					@Override
 					public boolean accept(File dir, String name) {
 						return name.toLowerCase().endsWith(".gif");
 					}
-
+					
 				});
 				
 				fileDialog.setVisible(true);
-				final String filename = fileDialog.getFile(); 
+				final String filename = fileDialog.getFile();
 				
-				if (filename != null){
-					File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_gif.txt");
+				if (filename != null) {
+					File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(),
+							"recent_gif.txt");
 					mostRecentGIFDirectory = fileDialog.getDirectory();
 					try {
 						FileWriter recentGIFWriter = new FileWriter(recentGIFFile);
 						recentGIFWriter.write(mostRecentGIFDirectory);
 						recentGIFWriter.close();
-					} catch (IOException ioe){
+					} catch (IOException ioe) {
 						ioe.printStackTrace();
 					}
 					createGIF(new File(mostRecentGIFDirectory, filename).getAbsolutePath());
@@ -304,14 +313,13 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(wrapLeftAligned(new JLabel("Status:")));
 		leftPanel.add(Box.createVerticalStrut(5));
-		JScrollPane scrollPane = new JScrollPane(); 
+		JScrollPane scrollPane = new JScrollPane();
 		statusArea = new StatusProcessorArea();
 		JPanel scrollPanePanel = new JPanel(new BorderLayout());
 		scrollPane.setViewportView(statusArea);
 		scrollPanePanel.add(scrollPane, BorderLayout.CENTER);
 		leftPanel.add(scrollPanePanel);
-		File recentGIFFile = new File(FFmpegManager.getFFmpegManager()
-				.getLocalAppDataLocation(), "recent_gif.txt");
+		File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_gif.txt");
 		BufferedReader br = null;
 		if (recentGIFFile.exists()) {
 			try {
@@ -327,11 +335,11 @@ public class MainPanel extends JPanel {
 		}
 	}
 	
-	private void createGIF(final String path){
+	private void createGIF(final String path) {
 		MainFrame.setBusy(true);
 		final int maxSizeBytes;
 		final int minSizeBytes;
-		if (maxSizeCheckBox.isSelected()){
+		if (maxSizeCheckBox.isSelected()) {
 			maxSizeBytes = 1000 * maxSize;
 			minSizeBytes = 1000 * (maxSize - maxSize * sizeThresholdSlider.getValue() / 100);
 		} else {
@@ -342,17 +350,20 @@ public class MainPanel extends JPanel {
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		new Thread(new Runnable(){
-			public void run(){
+			
+			@Override
+			public void run() {
 				try {
 					scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes, halveFramerate);
 					MainFrame.setBusy(false);
 					statusArea.appendStatus("Done!");
 					JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
-				} catch (IOException ioe){
+				} catch (IOException ioe) {
 					MainFrame.setBusy(false);
 					ioe.printStackTrace();
 					statusArea.appendStatus("Some error occured :(");
-					JOptionPane.showMessageDialog(MainPanel.this, "Some error occured :(", "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(MainPanel.this, "Some error occured :(", "Error",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		}).start();
@@ -368,19 +379,25 @@ public class MainPanel extends JPanel {
 		final String ffplay = FFmpegManager.getFFmpegManager().getFFplayLocation();
 		
 		new Thread(new Runnable(){
-			public void run(){
+			
+			@Override
+			public void run() {
 				try {
 					statusArea.appendStatus("Rendering Clip... ");
 					File tempFile = File.createTempFile("tumblrgififier", ".tmp");
 					tempFile.deleteOnExit();
-					MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart),  "-i", scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt", "yuv420p", "-vf", "scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
+					MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i", scan.getLocation(),
+							"-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt", "yuv420p", "-vf",
+							"scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
 					MainFrame.exec(true, ffplay, tempFile.getAbsolutePath());
 					tempFile.delete();
-				} catch (IOException ioe){
+				} catch (IOException ioe) {
 					ioe.printStackTrace();
 				}
 				EventQueue.invokeLater(new Runnable(){
-					public void run(){
+					
+					@Override
+					public void run() {
 						playButton.setEnabled(true);
 						MainFrame.setBusy(false);
 						MainFrame.getMainFrame().toFront();
@@ -402,26 +419,34 @@ public class MainPanel extends JPanel {
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		final int w = 480;
 		final int h = 270;
-				
 		
 		final String ffplay = FFmpegManager.getFFmpegManager().getFFplayLocation();
 		playButton.setEnabled(false);
 		new Thread(new Runnable(){
-			public void run(){
+			
+			@Override
+			public void run() {
 				try {
-					if (w < scan.getWidth()){
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss", Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", "scale=" + w + ":-1");
-					} else if (h < scan.getHeight()){
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss", Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", "scale=-1:" + h);
+					if (w < scan.getWidth()) {
+						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", "scale="
+										+ w + ":-1");
+					} else if (h < scan.getHeight()) {
+						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
+								"scale=-1:" + h);
 					} else {
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss", Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
+						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
 					}
 					
-				} catch (IOException ioe){
+				} catch (IOException ioe) {
 					ioe.printStackTrace();
 				}
 				EventQueue.invokeLater(new Runnable(){
-					public void run(){
+					
+					@Override
+					public void run() {
 						playButton.setEnabled(true);
 						MainFrame.setBusy(false);
 					}
@@ -430,14 +455,14 @@ public class MainPanel extends JPanel {
 		}).start();
 	}
 	
-	private Component wrapLeftAligned(Component comp){
+	private Component wrapLeftAligned(Component comp) {
 		Box box = Box.createHorizontalBox();
 		box.add(comp);
 		box.add(Box.createHorizontalGlue());
 		return box;
 	}
 	
-	private Component wrapLeftRightAligned(Component left, Component right){
+	private Component wrapLeftRightAligned(Component left, Component right) {
 		Box box = Box.createHorizontalBox();
 		box.add(left);
 		box.add(Box.createHorizontalGlue());
@@ -445,9 +470,11 @@ public class MainPanel extends JPanel {
 		return box;
 	}
 	
-	private void updateStartScreenshot(){
+	private void updateStartScreenshot() {
 		new Thread(new Runnable(){
-			public void run(){
+			
+			@Override
+			public void run() {
 				try {
 					previewImageStartPanel.setImage(scan.screenShot(startSlider.getValue() * 0.25D));
 				} catch (IOException e) {
@@ -457,9 +484,11 @@ public class MainPanel extends JPanel {
 		}).start();
 	}
 	
-	private void updateEndScreenshot(){
+	private void updateEndScreenshot() {
 		new Thread(new Runnable(){
-			public void run(){
+			
+			@Override
+			public void run() {
 				try {
 					previewImageEndPanel.setImage(scan.screenShot(endSlider.getValue() * 0.25D));
 				} catch (IOException e) {
@@ -469,7 +498,8 @@ public class MainPanel extends JPanel {
 		}).start();
 	}
 	
-	public Dimension getPreferredSize(){
+	@Override
+	public Dimension getPreferredSize() {
 		return new Dimension(990, 640);
 	}
 }

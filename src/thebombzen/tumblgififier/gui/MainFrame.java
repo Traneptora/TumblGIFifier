@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -27,14 +26,13 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-
 import thebombzen.tumblgififier.processor.FFmpegManager;
 import thebombzen.tumblgififier.processor.NullOutputStream;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 
 public class MainFrame extends JFrame {
-
+	
 	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
 	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
 	
@@ -51,12 +49,12 @@ public class MainFrame extends JFrame {
 	private static MainFrame mainFrame;
 	private String mostRecentOpenDirectory = null;
 	
-	public static MainFrame getMainFrame(){
+	public static MainFrame getMainFrame() {
 		return mainFrame;
 	}
 	
-	public StatusProcessor getStatusProcessor(){
-		if (mainPanel != null){
+	public StatusProcessor getStatusProcessor() {
+		if (mainPanel != null) {
 			return mainPanel.getStatusProcessor();
 		} else {
 			return statusArea;
@@ -64,44 +62,44 @@ public class MainFrame extends JFrame {
 	}
 	
 	public static void setEnabled(Component component, boolean enabled) {
-	    component.setEnabled(enabled);
-	    if (component instanceof Container) {
-	        for (Component child : ((Container) component).getComponents()) {
-	            setEnabled(child, enabled);
-	        }
-	    }
+		component.setEnabled(enabled);
+		if (component instanceof Container) {
+			for (Component child : ((Container) component).getComponents()) {
+				setEnabled(child, enabled);
+			}
+		}
 	}
 	
 	public static boolean isBusy() {
 		return busy;
 	}
-
+	
 	public static void setBusy(boolean busy) {
 		MainFrame.busy = busy;
 		setEnabled(mainFrame, !busy);
 	}
 	
 	public static synchronized InputStream exec(boolean join, String... args) throws IOException {
-		if (join){
+		if (join) {
 			return exec(new NullOutputStream(), args);
 		} else {
 			return exec(null, args);
 		}
 	}
-
+	
 	public static synchronized InputStream exec(OutputStream copyTo, String... args) throws IOException {
-		if (cleaningUp){
+		if (cleaningUp) {
 			return null;
 		}
 		ProcessBuilder pbuilder = new ProcessBuilder(args);
 		pbuilder.redirectErrorStream(true);
 		Process p = pbuilder.start();
 		processes.add(p);
-		if (copyTo != null){
+		if (copyTo != null) {
 			p.getOutputStream().close();
 			InputStream str = p.getInputStream();
 			int i;
-			while (-1 != (i = str.read())){
+			while (-1 != (i = str.read())) {
 				copyTo.write(i);
 			}
 		}
@@ -109,7 +107,7 @@ public class MainFrame extends JFrame {
 		
 	}
 	
-	public MainFrame(){
+	public MainFrame() {
 		mainFrame = this;
 		setTitle("TumblGIFifier");
 		this.setLayout(new BorderLayout());
@@ -124,44 +122,52 @@ public class MainFrame extends JFrame {
 		menuBar.add(fileMenu);
 		this.add(menuBar, BorderLayout.NORTH);
 		quit.addActionListener(new ActionListener(){
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				quit();
 			}
 		});
 		ActionListener l = new ActionListener(){
+			
 			@Override
-			public void actionPerformed(ActionEvent e){
-				if (isBusy()){
+			public void actionPerformed(ActionEvent e) {
+				if (isBusy()) {
 					JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
 				} else {
 					
 					FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File", FileDialog.LOAD);
 					fileDialog.setMultipleMode(false);
 					
-					if (mostRecentOpenDirectory != null){
+					if (mostRecentOpenDirectory != null) {
 						fileDialog.setDirectory(mostRecentOpenDirectory);
 					}
 					
 					fileDialog.setVisible(true);
-					final String filename = fileDialog.getFile(); 
+					final String filename = fileDialog.getFile();
 					
-					if (filename != null){
+					if (filename != null) {
 						mostRecentOpenDirectory = fileDialog.getDirectory();
 						final File file = new File(mostRecentOpenDirectory, filename);
 						setEnabled(MainFrame.this, false);
 						new Thread(new Runnable(){
-							public void run(){
+							
+							@Override
+							public void run() {
 								try {
-									File recentOpenFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_open.txt");
+									File recentOpenFile = new File(FFmpegManager.getFFmpegManager()
+											.getLocalAppDataLocation(), "recent_open.txt");
 									FileWriter recentOpenWriter = new FileWriter(recentOpenFile);
 									recentOpenWriter.write(mostRecentOpenDirectory);
 									recentOpenWriter.close();
-									final VideoProcessor scan = VideoProcessor.scanFile(statusArea, file.getAbsolutePath());
-									if (scan != null){
+									final VideoProcessor scan = VideoProcessor.scanFile(statusArea,
+											file.getAbsolutePath());
+									if (scan != null) {
 										EventQueue.invokeLater(new Runnable(){
-											public void run(){
-												if (mainPanel != null){
+											
+											@Override
+											public void run() {
+												if (mainPanel != null) {
 													MainFrame.this.remove(mainPanel);
 												} else {
 													MainFrame.this.remove(defaultPanel);
@@ -176,7 +182,7 @@ public class MainFrame extends JFrame {
 										statusArea.appendStatus("Error scanning video file.");
 									}
 									
-								} catch (IOException ioe){
+								} catch (IOException ioe) {
 									ioe.printStackTrace();
 								}
 								setEnabled(MainFrame.this, true);
@@ -195,16 +201,19 @@ public class MainFrame extends JFrame {
 		setLocationRelativeTo(null);
 		this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		this.addWindowListener(new WindowAdapter(){
-			public void windowClosing(WindowEvent e){
+			
+			@Override
+			public void windowClosing(WindowEvent e) {
 				quit();
 			}
 		});
 		setEnabled(this, false);
 		statusArea.appendStatus("Initializing Engine. This may take a while on the first execution.");
 		new Thread(new Runnable(){
+			
+			@Override
 			public void run() {
-				boolean success = FFmpegManager.getFFmpegManager()
-						.intitilizeFFmpeg(statusArea);
+				boolean success = FFmpegManager.getFFmpegManager().intitilizeFFmpeg(statusArea);
 				if (success) {
 					setEnabled(MainFrame.this, true);
 				} else {
@@ -213,37 +222,38 @@ public class MainFrame extends JFrame {
 			}
 		}).start();
 		File recentOpenFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_open.txt");
-			BufferedReader br = null;
-			if (recentOpenFile.exists()){
-				try {
-					br = new BufferedReader(new FileReader(recentOpenFile));
-					mostRecentOpenDirectory = br.readLine();
-				} catch (IOException ioe){
-					mostRecentOpenDirectory = null;
-				} finally {
-					if (br != null){
-						closeQuietly(br);
-					}
+		BufferedReader br = null;
+		if (recentOpenFile.exists()) {
+			try {
+				br = new BufferedReader(new FileReader(recentOpenFile));
+				mostRecentOpenDirectory = br.readLine();
+			} catch (IOException ioe) {
+				mostRecentOpenDirectory = null;
+			} finally {
+				if (br != null) {
+					closeQuietly(br);
 				}
 			}
+		}
 	}
 	
-	public static void closeQuietly(Closeable cl){
+	public static void closeQuietly(Closeable cl) {
 		try {
 			cl.close();
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			// do nothing
 		}
 	}
 	
-	public void quit(){
+	public void quit() {
 		finalize();
 		System.exit(0);
 	}
 	
-	protected void finalize(){
+	@Override
+	protected void finalize() {
 		cleaningUp = true;
-		for (Process p : processes){
+		for (Process p : processes) {
 			p.destroy();
 		}
 	}
@@ -252,7 +262,7 @@ public class MainFrame extends JFrame {
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
 		for (String item : list) {
-			if (first){
+			if (first) {
 				first = false;
 			} else {
 				sb.append(conjunction);
@@ -261,13 +271,15 @@ public class MainFrame extends JFrame {
 		}
 		return sb.toString();
 	}
-
+	
 	public static void main(String[] args) throws Exception {
 		EventQueue.invokeLater(new Runnable(){
-			public void run(){
+			
+			@Override
+			public void run() {
 				new MainFrame().setVisible(true);
 			}
 		});
 	}
-
+	
 }

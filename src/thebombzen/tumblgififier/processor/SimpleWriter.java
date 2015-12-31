@@ -7,7 +7,7 @@ public abstract class SimpleWriter extends Writer {
 	
 	@Override
 	public void write(int i) throws IOException {
-		write((char)(i & 0xFF_FF));
+		write((char) (i & 0xFF_FF));
 	}
 	
 	@Override
@@ -17,19 +17,18 @@ public abstract class SimpleWriter extends Writer {
 	
 	@Override
 	public void write(char[] cbuf, int off, int len) throws IOException {
-		for (int i = 0; i < len; i++){
+		for (int i = 0; i < len; i++) {
 			write(cbuf[i + off]);
 		}
 	}
 	
 	public abstract void write(char c) throws IOException;
 	
-
 	@Override
 	public void flush() throws IOException {
 		
 	}
-
+	
 	@Override
 	public void close() throws IOException {
 		
