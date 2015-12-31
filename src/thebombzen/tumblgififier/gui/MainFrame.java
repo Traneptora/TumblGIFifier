@@ -58,14 +58,14 @@ public class MainFrame extends JFrame {
 	 * True if the program is marked as "busy," i.e. the interface should be disabled.
 	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
 	 */
-	private static volatile boolean busy = false;
+	private volatile boolean busy = false;
 	
 	/**
 	 * A flag used to determine if we're cleaning up all the subprocesses we've started.
 	 * Normally, ending a process will just cause the next stage in the GIF creation to continue.
 	 * If this flag is set, we won't create any more processes.
 	 */
-	private static volatile boolean cleaningUp = false;
+	private volatile boolean cleaningUp = false;
 	
 	/**
 	 * The singleton instance of MainFrame.
@@ -75,7 +75,7 @@ public class MainFrame extends JFrame {
 	/**
 	 * This is a list of all processes started by our program. It's used so we can end them all upon exit.
 	 */
-	private static volatile List<Process> processes = new ArrayList<>();
+	private volatile List<Process> processes = new ArrayList<>();
 	
 	/**
 	 * Close a stream quietly because we honestly don't care if a stream.close() throws IOException
@@ -94,7 +94,7 @@ public class MainFrame extends JFrame {
 	 * @param args The program name and arguments to execute. This is NOT passed to a shell so you have to be careful with spacing or with empty strings.
 	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to block then this InputStream will have reached End-Of-File.
 	 */
-	public static synchronized InputStream exec(boolean join, String... args) {
+	public synchronized InputStream exec(boolean join, String... args) {
 		try {
 			if (join) {
 				return exec(new NullOutputStream(), args);
@@ -118,7 +118,7 @@ public class MainFrame extends JFrame {
 	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to copy then this InputStream will have reached End-Of-File.
 	 * @throws IOException If an I/O error occurs.
 	 */
-	public static synchronized InputStream exec(OutputStream copyTo, String... args) throws IOException {
+	public synchronized InputStream exec(OutputStream copyTo, String... args) throws IOException {
 		if (cleaningUp) {
 			return null;
 		}
@@ -149,7 +149,7 @@ public class MainFrame extends JFrame {
 	 * True if the program is marked as "busy," i.e. the interface should be disabled.
 	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
 	 */
-	public static boolean isBusy() {
+	public boolean isBusy() {
 		return busy;
 	}
 	
@@ -234,15 +234,15 @@ public class MainFrame extends JFrame {
 	 * Set to true if the program is marked as "busy," i.e. the interface should be disabled.
 	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
 	 */
-	public static void setBusy(boolean busy) {
-		MainFrame.busy = busy;
+	public void setBusy(boolean busy) {
+		this.busy = busy;
 		setEnabled(mainFrame, !busy);
 	}
 	
 	/**
 	 * Recursively enable or disable a component and all of its children.
 	 */
-	public static void setEnabled(Component component, boolean enabled) {
+	public void setEnabled(Component component, boolean enabled) {
 		component.setEnabled(enabled);
 		if (component instanceof Container) {
 			for (Component child : ((Container) component).getComponents()) {

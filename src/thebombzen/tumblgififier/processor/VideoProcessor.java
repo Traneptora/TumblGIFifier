@@ -26,7 +26,7 @@ public class VideoProcessor {
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(MainFrame.exec(false, ffprobe, "-select_streams",
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(MainFrame.getMainFrame().exec(false, ffprobe, "-select_streams",
 				"v", "-of", "flat", "-show_streams", "-show_format", filename)))){
 			while (null != (line = br.readLine())) {
 				// System.err.println(line);
@@ -204,7 +204,7 @@ public class VideoProcessor {
 		
 		String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
 		
-		scanPercentDone("Scaling Video... ", endTime - startTime, writer, MainFrame.exec(false, ffmpeg, "-y", "-ss",
+		scanPercentDone("Scaling Video... ", endTime - startTime, writer, MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-ss",
 				Double.toString(this.startTime), "-i", location, "-map", "0:v", "-t",
 				Double.toString(this.endTime - this.startTime), "-pix_fmt", "yuv420p", "-s",
 				newWidth + "x" + newHeight, halveFramerate ? "-r" : "-y",
@@ -216,14 +216,14 @@ public class VideoProcessor {
 		writer.print("Generating Palette... \r");
 		writer.flush();
 		
-		MainFrame.exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen", "-c", "png",
+		MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen", "-c", "png",
 				"-f", "image2", this.paletteFile.getAbsolutePath());
 		
 		writer.println("Generating Palette... Done.");
 		
 		writer.print("Generating GIF... \r");
 		
-		scanPercentDone("Generating GIF... ", endTime - startTime, writer, MainFrame.exec(false, ffmpeg, "-y", "-i",
+		scanPercentDone("Generating GIF... ", endTime - startTime, writer, MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-i",
 				this.mkvFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c",
 				"gif", "-f", "gif", this.gifFile.getAbsolutePath()));
 		
@@ -341,7 +341,7 @@ public class VideoProcessor {
 			String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
 			shotFile = File.createTempFile("tumblgififier", ".tmp");
 			shotFile.deleteOnExit();
-			MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-t",
+			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-t",
 					Double.toString(0.5D / framerate), "-s", shotWidth + "x" + shotHeight, "-qscale", "5", "-pix_fmt",
 					"yuvj420p", "-c", "mjpeg", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);

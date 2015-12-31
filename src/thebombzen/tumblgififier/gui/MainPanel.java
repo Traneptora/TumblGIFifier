@@ -63,7 +63,7 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void createGIF(final String path) {
-		MainFrame.setBusy(true);
+		MainFrame.getMainFrame().setBusy(true);
 		final int maxSizeBytes;
 		final int minSizeBytes;
 		if (maxSizeCheckBox.isSelected()) {
@@ -81,7 +81,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				boolean success = scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes, halveFramerate);
-				MainFrame.setBusy(false);
+				MainFrame.getMainFrame().setBusy(false);
 				if (success){
 					statusArea.appendStatus("Done!");
 					JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
@@ -105,7 +105,7 @@ public class MainPanel extends JPanel {
 	
 	private void playClipFast() {
 		
-		MainFrame.setBusy(true);
+		MainFrame.getMainFrame().setBusy(true);
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
@@ -119,15 +119,15 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				if (w < scan.getWidth()) {
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+					MainFrame.getMainFrame().exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
 								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", "scale="
 										+ w + ":-1");
 					} else if (h < scan.getHeight()) {
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+						MainFrame.getMainFrame().exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
 								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
 								"scale=-1:" + h);
 					} else {
-						MainFrame.exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+						MainFrame.getMainFrame().exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
 								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
 					}
 				EventQueue.invokeLater(new Runnable(){
@@ -135,7 +135,7 @@ public class MainPanel extends JPanel {
 					@Override
 					public void run() {
 						playButton.setEnabled(true);
-						MainFrame.setBusy(false);
+						MainFrame.getMainFrame().setBusy(false);
 					}
 				});
 			}
@@ -143,7 +143,7 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void playClipSlow() {
-		MainFrame.setBusy(true);
+		MainFrame.getMainFrame().setBusy(true);
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
@@ -165,16 +165,16 @@ public class MainPanel extends JPanel {
 						statusArea.appendStatus("Error rendering clip :(");
 						return;
 					}
-					MainFrame.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i", scan.getLocation(),
+					MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i", scan.getLocation(),
 							"-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt", "yuv420p", "-vf",
 							"scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
-					MainFrame.exec(true, ffplay, tempFile.getAbsolutePath());
+					MainFrame.getMainFrame().exec(true, ffplay, tempFile.getAbsolutePath());
 					tempFile.delete();
 				EventQueue.invokeLater(new Runnable(){
 					
 					@Override
 					public void run() {
-						MainFrame.setBusy(false);
+						MainFrame.getMainFrame().setBusy(false);
 						MainFrame.getMainFrame().toFront();
 						MainFrame.getMainFrame().setAlwaysOnTop(true);
 						MainFrame.getMainFrame().setAlwaysOnTop(false);
