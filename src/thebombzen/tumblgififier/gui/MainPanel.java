@@ -80,9 +80,10 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				boolean success = scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes, halveFramerate);
+				boolean success = scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes,
+						halveFramerate);
 				MainFrame.getMainFrame().setBusy(false);
-				if (success){
+				if (success) {
 					statusArea.appendStatus("Done!");
 					JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
 				} else {
@@ -120,16 +121,16 @@ public class MainPanel extends JPanel {
 			public void run() {
 				if (w < scan.getWidth()) {
 					MainFrame.getMainFrame().exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", "scale="
-										+ w + ":-1");
-					} else if (h < scan.getHeight()) {
-						MainFrame.getMainFrame().exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
-								"scale=-1:" + h);
-					} else {
-						MainFrame.getMainFrame().exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-								Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
-					}
+							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
+							"scale=" + w + ":-1");
+				} else if (h < scan.getHeight()) {
+					MainFrame.getMainFrame().exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
+							"scale=-1:" + h);
+				} else {
+					MainFrame.getMainFrame().exec(true, ffplay, "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
+				}
 				EventQueue.invokeLater(new Runnable(){
 					
 					@Override
@@ -157,19 +158,19 @@ public class MainPanel extends JPanel {
 			public void run() {
 				File tempFile = null;
 				statusArea.appendStatus("Rendering Clip... ");
-					try {
-						tempFile = File.createTempFile("tumblrgififier", ".tmp");
-						tempFile.deleteOnExit();
-					} catch (IOException ioe){
-						ioe.printStackTrace();
-						statusArea.appendStatus("Error rendering clip :(");
-						return;
-					}
-					MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i", scan.getLocation(),
-							"-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt", "yuv420p", "-vf",
-							"scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
-					MainFrame.getMainFrame().exec(true, ffplay, tempFile.getAbsolutePath());
-					tempFile.delete();
+				try {
+					tempFile = File.createTempFile("tumblrgififier", ".tmp");
+					tempFile.deleteOnExit();
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+					statusArea.appendStatus("Error rendering clip :(");
+					return;
+				}
+				MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
+						scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
+						"yuv420p", "-vf", "scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
+				MainFrame.getMainFrame().exec(true, ffplay, tempFile.getAbsolutePath());
+				tempFile.delete();
 				EventQueue.invokeLater(new Runnable(){
 					
 					@Override
@@ -400,7 +401,7 @@ public class MainPanel extends JPanel {
 					File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(),
 							"recent_gif.txt");
 					mostRecentGIFDirectory = fileDialog.getDirectory();
-					try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)){
+					try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)) {
 						recentGIFWriter.write(mostRecentGIFDirectory);
 					} catch (IOException ioe) {
 						// we don't care much if this fails

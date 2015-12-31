@@ -34,18 +34,19 @@ import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 
 /**
- * This represents the main JFrame of the program, and also serves as the central class with most of the utility methods.
+ * This represents the main JFrame of the program, and also serves as the
+ * central class with most of the utility methods.
  */
 public class MainFrame extends JFrame {
 	
 	/**
-	 * True if the system is detected as a windows system, false otherwise. 
+	 * True if the system is detected as a windows system, false otherwise.
 	 */
 	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
 	
 	/**
-	 * File extension for executable files, with the period included.
-	 * On windows, it's ".exe" and on other platforms it's the empty string.
+	 * File extension for executable files, with the period included. On
+	 * windows, it's ".exe" and on other platforms it's the empty string.
 	 */
 	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
 	
@@ -55,12 +56,13 @@ public class MainFrame extends JFrame {
 	private static MainFrame mainFrame;
 	
 	/**
-	 * I don't like to suppress warnings so this is here 
+	 * I don't like to suppress warnings so this is here
 	 */
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	 * Close a stream quietly because we honestly don't care if a stream.close() throws IOException
+	 * Close a stream quietly because we honestly don't care if a stream.close()
+	 * throws IOException
 	 */
 	public static void closeQuietly(Closeable cl) {
 		try {
@@ -79,9 +81,13 @@ public class MainFrame extends JFrame {
 	
 	/**
 	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard library? >_>
-	 * @param conjunction The delimiter with which to conjoin the strings.
-	 * @param list The collection of strings to conjoin.
+	 * Seriously, why did it take until Java 8 to add this thing to the standard
+	 * library? >_>
+	 * 
+	 * @param conjunction
+	 *            The delimiter with which to conjoin the strings.
+	 * @param list
+	 *            The collection of strings to conjoin.
 	 * @return The conjoined string.
 	 */
 	public static String join(String conjunction, Iterable<String> list) {
@@ -100,15 +106,19 @@ public class MainFrame extends JFrame {
 	
 	/**
 	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard library? >_>
-	 * @param conjunction The delimiter with which to conjoin the strings.
-	 * @param list An iterator of the strings to conjoin.
+	 * Seriously, why did it take until Java 8 to add this thing to the standard
+	 * library? >_>
+	 * 
+	 * @param conjunction
+	 *            The delimiter with which to conjoin the strings.
+	 * @param list
+	 *            An iterator of the strings to conjoin.
 	 * @return The conjoined string.
 	 */
 	public static String join(String conjunction, Iterator<String> list) {
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
-		while (list.hasNext()){
+		while (list.hasNext()) {
 			String item = list.next();
 			if (first) {
 				first = false;
@@ -122,9 +132,13 @@ public class MainFrame extends JFrame {
 	
 	/**
 	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard library? >_>
-	 * @param conjunction The delimiter with which to conjoin the strings.
-	 * @param list The array of strings to conjoin.
+	 * Seriously, why did it take until Java 8 to add this thing to the standard
+	 * library? >_>
+	 * 
+	 * @param conjunction
+	 *            The delimiter with which to conjoin the strings.
+	 * @param list
+	 *            The array of strings to conjoin.
 	 * @return The conjoined string.
 	 */
 	public static String join(String conjunction, String[] list) {
@@ -155,20 +169,23 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * True if the program is marked as "busy," i.e. the interface should be disabled.
-	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
+	 * True if the program is marked as "busy," i.e. the interface should be
+	 * disabled. For example, rendering a clip or creating a GIF or scanning a
+	 * file make us "busy."
 	 */
 	private volatile boolean busy = false;
 	
 	/**
-	 * A flag used to determine if we're cleaning up all the subprocesses we've started.
-	 * Normally, ending a process will just cause the next stage in the GIF creation to continue.
-	 * If this flag is set, we won't create any more processes.
+	 * A flag used to determine if we're cleaning up all the subprocesses we've
+	 * started. Normally, ending a process will just cause the next stage in the
+	 * GIF creation to continue. If this flag is set, we won't create any more
+	 * processes.
 	 */
 	private volatile boolean cleaningUp = false;
 	
 	/**
-	 * We use this panel on startup. It contains nothing but a StatusProcessorArea.
+	 * We use this panel on startup. It contains nothing but a
+	 * StatusProcessorArea.
 	 */
 	private JPanel defaultPanel = new JPanel();
 	
@@ -178,12 +195,14 @@ public class MainFrame extends JFrame {
 	private MainPanel mainPanel;
 	
 	/**
-	 * This is the last directory used by the "Open..." command. We make sure we return to the same location as last time.
+	 * This is the last directory used by the "Open..." command. We make sure we
+	 * return to the same location as last time.
 	 */
 	private String mostRecentOpenDirectory = null;
 	
 	/**
-	 * This is a list of all processes started by our program. It's used so we can end them all upon exit.
+	 * This is a list of all processes started by our program. It's used so we
+	 * can end them all upon exit.
 	 */
 	private volatile List<Process> processes = new ArrayList<>();
 	
@@ -210,7 +229,7 @@ public class MainFrame extends JFrame {
 		menuBar.add(fileMenu);
 		this.add(menuBar, BorderLayout.NORTH);
 		quit.addActionListener(new ActionListener(){
-
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				quit();
@@ -307,7 +326,7 @@ public class MainFrame extends JFrame {
 		}).start();
 		File recentOpenFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_open.txt");
 		if (recentOpenFile.exists()) {
-			try (BufferedReader br =  new BufferedReader(new FileReader(recentOpenFile))){
+			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {
 				mostRecentOpenDirectory = br.readLine();
 			} catch (IOException ioe) {
 				mostRecentOpenDirectory = null;
@@ -316,10 +335,20 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * Create a subprocess and execute the arguments. This automatically redirects standard error to standard out. 
-	 * @param join If this is set to true, this method will block until the process terminates. If it's set to false, it will return immediately.
-	 * @param args The program name and arguments to execute. This is NOT passed to a shell so you have to be careful with spacing or with empty strings.
-	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to block then this InputStream will have reached End-Of-File.
+	 * Create a subprocess and execute the arguments. This automatically
+	 * redirects standard error to standard out.
+	 * 
+	 * @param join
+	 *            If this is set to true, this method will block until the
+	 *            process terminates. If it's set to false, it will return
+	 *            immediately.
+	 * @param args
+	 *            The program name and arguments to execute. This is NOT passed
+	 *            to a shell so you have to be careful with spacing or with
+	 *            empty strings.
+	 * @return This returns an InputStream that reads from the Standard
+	 *         output/error stream of the process. If this method was set to
+	 *         block then this InputStream will have reached End-Of-File.
 	 */
 	public synchronized InputStream exec(boolean join, String... args) {
 		try {
@@ -328,8 +357,9 @@ public class MainFrame extends JFrame {
 			} else {
 				return exec(null, args);
 			}
-		} catch (IOException ioe){
-			// NullOutputStream doesn't throw IOException, so if we get one here it's really weird.
+		} catch (IOException ioe) {
+			// NullOutputStream doesn't throw IOException, so if we get one here
+			// it's really weird.
 			ioe.printStackTrace();
 			return new NullInputStream();
 		}
@@ -337,13 +367,26 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * Create a subprocess and execute the arguments. This automatically redirects standard error to standard out.
-	 * If the stream copyTo is not null, it will automatically copy the standard output of that process to the OutputStream copyTo.
-	 * Copying the stream will cause this method to block. Declining to copy will cause this method to return immediately.
-	 * @param copyTo If this is not null, this method will block until the process terminates, and all the output of that process will be copied to the stream. If it's set to mull, it will return immediately and no copying will occur.
-	 * @param args The program name and arguments to execute. This is NOT passed to a shell so you have to be careful with spacing or with empty strings.
-	 * @return This returns an InputStream that reads from the Standard output/error stream of the process. If this method was set to copy then this InputStream will have reached End-Of-File.
-	 * @throws IOException If an I/O error occurs.
+	 * Create a subprocess and execute the arguments. This automatically
+	 * redirects standard error to standard out. If the stream copyTo is not
+	 * null, it will automatically copy the standard output of that process to
+	 * the OutputStream copyTo. Copying the stream will cause this method to
+	 * block. Declining to copy will cause this method to return immediately.
+	 * 
+	 * @param copyTo
+	 *            If this is not null, this method will block until the process
+	 *            terminates, and all the output of that process will be copied
+	 *            to the stream. If it's set to mull, it will return immediately
+	 *            and no copying will occur.
+	 * @param args
+	 *            The program name and arguments to execute. This is NOT passed
+	 *            to a shell so you have to be careful with spacing or with
+	 *            empty strings.
+	 * @return This returns an InputStream that reads from the Standard
+	 *         output/error stream of the process. If this method was set to
+	 *         copy then this InputStream will have reached End-Of-File.
+	 * @throws IOException
+	 *             If an I/O error occurs.
 	 */
 	public synchronized InputStream exec(OutputStream copyTo, String... args) throws IOException {
 		if (cleaningUp) {
@@ -366,7 +409,8 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * We do our cleaning up code here, just in case someone ends the process without closing the window or hitting "quit."
+	 * We do our cleaning up code here, just in case someone ends the process
+	 * without closing the window or hitting "quit."
 	 */
 	@Override
 	protected void finalize() {
@@ -378,7 +422,8 @@ public class MainFrame extends JFrame {
 	
 	/**
 	 * This returns the StatusProcessor that currently prints status lines.
-	 * Sometimes it's the stats area of the default panel, sometimes it's the status area of the main panel.
+	 * Sometimes it's the stats area of the default panel, sometimes it's the
+	 * status area of the main panel.
 	 */
 	public StatusProcessor getStatusProcessor() {
 		if (mainPanel != null) {
@@ -389,16 +434,17 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * True if the program is marked as "busy," i.e. the interface should be disabled.
-	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
+	 * True if the program is marked as "busy," i.e. the interface should be
+	 * disabled. For example, rendering a clip or creating a GIF or scanning a
+	 * file make us "busy."
 	 */
 	public boolean isBusy() {
 		return busy;
 	}
 	
 	/**
-	 * Quit the program.
-	 * Destroys all currently executing sub-processes and then exits.
+	 * Quit the program. Destroys all currently executing sub-processes and then
+	 * exits.
 	 */
 	public void quit() {
 		finalize();
@@ -406,8 +452,9 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * Set to true if the program is marked as "busy," i.e. the interface should be disabled.
-	 * For example, rendering a clip or creating a GIF or scanning a file make us "busy."
+	 * Set to true if the program is marked as "busy," i.e. the interface should
+	 * be disabled. For example, rendering a clip or creating a GIF or scanning
+	 * a file make us "busy."
 	 */
 	public void setBusy(boolean busy) {
 		this.busy = busy;

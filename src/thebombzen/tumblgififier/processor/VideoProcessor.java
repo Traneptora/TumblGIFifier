@@ -26,8 +26,8 @@ public class VideoProcessor {
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(MainFrame.getMainFrame().exec(false, ffprobe, "-select_streams",
-				"v", "-of", "flat", "-show_streams", "-show_format", filename)))){
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(MainFrame.getMainFrame().exec(false, ffprobe,
+				"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)))) {
 			while (null != (line = br.readLine())) {
 				// System.err.println(line);
 				if (line.contains("streams.stream.0.width=")) {
@@ -79,7 +79,7 @@ public class VideoProcessor {
 					}
 				}
 			}
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
 		
@@ -161,7 +161,7 @@ public class VideoProcessor {
 			this.gifFile = File.createTempFile("tumblgififier", ".tmp");
 			this.mkvFile = File.createTempFile("tumblgififier", ".tmp");
 			this.paletteFile = File.createTempFile("tumblgififier", ".tmp");
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			return false;
 		}
@@ -183,7 +183,7 @@ public class VideoProcessor {
 		
 		try {
 			Files.copy(gifFile.toPath(), newFile.toPath());
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			return false;
 		}
@@ -204,28 +204,35 @@ public class VideoProcessor {
 		
 		String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
 		
-		scanPercentDone("Scaling Video... ", endTime - startTime, writer, MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-ss",
-				Double.toString(this.startTime), "-i", location, "-map", "0:v", "-t",
-				Double.toString(this.endTime - this.startTime), "-pix_fmt", "yuv420p", "-s",
-				newWidth + "x" + newHeight, halveFramerate ? "-r" : "-y",
-				halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffv1", "-f", "matroska",
-				this.mkvFile.getAbsolutePath()));
+		scanPercentDone(
+				"Scaling Video... ",
+				endTime - startTime,
+				writer,
+				MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
+						location, "-map", "0:v", "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
+						"yuv420p", "-s", newWidth + "x" + newHeight, halveFramerate ? "-r" : "-y",
+						halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffv1", "-f", "matroska",
+						this.mkvFile.getAbsolutePath()));
 		
 		writer.println("Scaling Video... Done.");
 		
 		writer.print("Generating Palette... \r");
 		writer.flush();
 		
-		MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen", "-c", "png",
-				"-f", "image2", this.paletteFile.getAbsolutePath());
+		MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen",
+				"-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
 		
 		writer.println("Generating Palette... Done.");
 		
 		writer.print("Generating GIF... \r");
 		
-		scanPercentDone("Generating GIF... ", endTime - startTime, writer, MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-i",
-				this.mkvFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c",
-				"gif", "-f", "gif", this.gifFile.getAbsolutePath()));
+		scanPercentDone(
+				"Generating GIF... ",
+				endTime - startTime,
+				writer,
+				MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
+						this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
+						this.gifFile.getAbsolutePath()));
 		
 		writer.println("Generating GIF... Done.");
 		writer.flush();
@@ -341,11 +348,11 @@ public class VideoProcessor {
 			String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
 			shotFile = File.createTempFile("tumblgififier", ".tmp");
 			shotFile.deleteOnExit();
-			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-t",
-					Double.toString(0.5D / framerate), "-s", shotWidth + "x" + shotHeight, "-qscale", "5", "-pix_fmt",
-					"yuvj420p", "-c", "mjpeg", "-f", "image2", shotFile.getAbsolutePath());
+			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map",
+					"0:v", "-t", Double.toString(0.5D / framerate), "-s", shotWidth + "x" + shotHeight, "-qscale", "5",
+					"-pix_fmt", "yuvj420p", "-c", "mjpeg", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			return null;
 		} finally {
 			shotFile.delete();
