@@ -168,7 +168,7 @@ public class MainPanel extends JPanel {
 				}
 				MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
 						scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-						"yuv420p", "-vf", "scale=480:-1", "-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
+						"yuv420p", "-vf", "scale=480:-1", "-c", "ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
 				MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
 				tempFile.delete();
 				EventQueue.invokeLater(new Runnable(){

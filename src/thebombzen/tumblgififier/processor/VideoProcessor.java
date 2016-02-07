@@ -211,7 +211,7 @@ public class VideoProcessor {
 				MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
 						location, "-map", "0:v", "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
 						"yuv420p", "-s", newWidth + "x" + newHeight, halveFramerate ? "-r" : "-y",
-						halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffv1", "-f", "matroska",
+						halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffvhuff", "-f", "matroska",
 						this.mkvFile.getAbsolutePath()));
 		
 		writer.println("Scaling Video... Done.");
