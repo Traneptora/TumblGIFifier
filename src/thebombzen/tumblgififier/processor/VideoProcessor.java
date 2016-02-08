@@ -97,9 +97,9 @@ public class VideoProcessor {
 	private File gifFile;
 	private boolean halveFramerate;
 	private final int height;
-	private double highscale = 1D;
+	private double highscale = 2D;
 	private final String location;
-	private double lowscale = 1D;
+	private double lowscale = 0D;
 	private long maxSize;
 	private long minSize;
 	private File mkvFile;
@@ -140,7 +140,7 @@ public class VideoProcessor {
 			long minSize, long maxSize, boolean halveFramerate) {
 		scale = 1D;
 		lowscale = 0D;
-		highscale = 1D;
+		highscale = 2D;
 		this.statusProcessor = outputProcessor;
 		this.startTime = startTime;
 		this.endTime = endTime;
@@ -340,8 +340,8 @@ public class VideoProcessor {
 			shotFile = File.createTempFile("tumblgififier", ".tmp");
 			shotFile.deleteOnExit();
 			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map",
-					"0:v", "-t", Double.toString(0.5D / framerate), "-s", shotWidth + "x" + shotHeight, "-qscale", "5",
-					"-pix_fmt", "yuvj420p", "-c", "mjpeg", "-f", "image2", shotFile.getAbsolutePath());
+					"0:v", "-t", "0.5", "-r", "1", "-s", shotWidth + "x" + shotHeight,
+					"-pix_fmt", "rgb24", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {
 			return null;
