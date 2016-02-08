@@ -93,7 +93,6 @@ public class VideoProcessor {
 	
 	private final double duration;
 	private double endTime;
-	private boolean foundLowerBound = false;
 	private final double framerate;
 	private File gifFile;
 	private boolean halveFramerate;
@@ -124,19 +123,12 @@ public class VideoProcessor {
 		long currFileSize = gifFile.length();
 		if (currFileSize > maxSize) {
 			sb.append("Too Big: ");
-			if (!foundLowerBound) {
-				this.highscale = scale;
-				this.lowscale = scale * 0.5D;
-				this.scale = lowscale;
-			} else {
-				this.highscale = scale;
-				this.scale = (this.lowscale + this.highscale) * 0.5D;
-			}
+			highscale = scale;
+			scale = (lowscale + highscale) * 0.5D;
 		} else if (currFileSize < minSize && scale < 1D) {
 			sb.append("Too Small: ");
-			this.foundLowerBound = true;
-			this.lowscale = scale;
-			this.scale = (this.lowscale + this.highscale) * 0.5D;
+			lowscale = scale;
+			scale = (lowscale + highscale) * 0.5D;
 		} else {
 			sb.append("Just Right: ");
 		}
@@ -147,9 +139,8 @@ public class VideoProcessor {
 	public boolean convert(StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
 			long minSize, long maxSize, boolean halveFramerate) {
 		scale = 1D;
-		lowscale = 1D;
+		lowscale = 0D;
 		highscale = 1D;
-		foundLowerBound = false;
 		this.statusProcessor = outputProcessor;
 		this.startTime = startTime;
 		this.endTime = endTime;

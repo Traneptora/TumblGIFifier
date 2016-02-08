@@ -119,18 +119,16 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
+				String scale;
 				if (w < scan.getWidth()) {
-					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
-							"scale=" + w + ":-1");
+					scale = "scale=" + w + ":-1";
 				} else if (h < scan.getHeight()) {
-					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf",
-							"scale=-1:" + h);
+					scale = "scale=-1:" + h;
 				} else {
-					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart));
+					scale = "scale";
 				}
+				MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", scale);
 				EventQueue.invokeLater(new Runnable(){
 					
 					@Override
@@ -166,9 +164,19 @@ public class MainPanel extends JPanel {
 					statusArea.appendStatus("Error rendering clip :(");
 					return;
 				}
+				String scale;
+				final int w = 480;
+				final int h = 270;
+				if (w < scan.getWidth()) {
+					scale = "scale=" + w + ":-1";
+				} else if (h < scan.getHeight()) {
+					scale = "scale=-1:" + h;
+				} else {
+					scale = "scale";
+				}
 				MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
 						scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-						"yuv420p", "-vf", "scale=480:-1", "-c", "ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
+						"yuv420p", "-vf", scale, "-c", "ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
 				MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
 				tempFile.delete();
 				EventQueue.invokeLater(new Runnable(){
