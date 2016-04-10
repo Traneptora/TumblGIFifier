@@ -264,7 +264,7 @@ public class MainFrame extends JFrame {
 						mostRecentOpenDirectory = fileDialog.getDirectory();
 						final File file = new File(mostRecentOpenDirectory, filename);
 						setBusy(true);
-						new Thread(new Runnable(){
+						getThreadPool().submit(new Runnable(){
 							
 							@Override
 							public void run() {
@@ -301,7 +301,7 @@ public class MainFrame extends JFrame {
 								}
 								setBusy(false);
 							}
-						}).start();
+						});
 					}
 				}
 			}
@@ -323,7 +323,7 @@ public class MainFrame extends JFrame {
 		});
 		setBusy(true);
 		statusArea.appendStatus("Initializing Engine. This may take a while on the first execution.");
-		new Thread(new Runnable(){
+		getThreadPool().submit(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -334,7 +334,7 @@ public class MainFrame extends JFrame {
 					statusArea.appendStatus("Error initializing.");
 				}
 			}
-		}).start();
+		});
 		File recentOpenFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_open.txt");
 		if (recentOpenFile.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {

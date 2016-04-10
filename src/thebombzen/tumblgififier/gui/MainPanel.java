@@ -110,7 +110,7 @@ public class MainPanel extends JPanel {
 		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		new Thread(new Runnable(){
+		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -126,7 +126,7 @@ public class MainPanel extends JPanel {
 							JOptionPane.ERROR_MESSAGE);
 				}
 			}
-		}).start();
+		});
 	}
 	
 	@Override
@@ -145,7 +145,7 @@ public class MainPanel extends JPanel {
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
-		new Thread(new Runnable(){
+		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				File tempOverlayFile = null;
@@ -192,7 +192,7 @@ public class MainPanel extends JPanel {
 					});
 				}
 			}
-		}).start();
+		});
 	}
 	
 	private void playClipSlow() {
@@ -492,13 +492,7 @@ public class MainPanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				
 				if (fireButton.getText().equals("STOP")){
-					new Thread(new Runnable(){
-						public void run(){
-							fireButton.setText("Create GIF");
-							MainFrame.getMainFrame().stopAll();
-						}
-					}).start();
-					
+					MainFrame.getMainFrame().stopAll();
 					MainFrame.getMainFrame().setBusy(false);
 					return;
 				}
