@@ -14,7 +14,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.zip.CheckedOutputStream;
-
 import org.tukaani.xz.XZIOException;
 import org.tukaani.xz.common.EncoderUtil;
 

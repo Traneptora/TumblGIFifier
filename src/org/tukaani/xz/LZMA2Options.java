@@ -11,7 +11,6 @@ package org.tukaani.xz;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.tukaani.xz.lz.LZEncoder;
 import org.tukaani.xz.lzma.LZMAEncoder;
 

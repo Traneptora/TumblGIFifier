@@ -13,7 +13,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.CRC32;
-
 import org.tukaani.xz.CorruptedInputException;
 import org.tukaani.xz.UnsupportedOptionsException;
 import org.tukaani.xz.XZ;

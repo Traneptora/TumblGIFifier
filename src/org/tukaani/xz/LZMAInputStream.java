@@ -14,7 +14,6 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.tukaani.xz.lz.LZDecoder;
 import org.tukaani.xz.lzma.LZMADecoder;
 import org.tukaani.xz.rangecoder.RangeDecoderFromStream;

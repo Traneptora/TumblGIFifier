@@ -14,7 +14,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-
 import org.tukaani.xz.check.Check;
 import org.tukaani.xz.common.DecoderUtil;
 

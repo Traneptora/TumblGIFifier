@@ -11,7 +11,6 @@
 package org.tukaani.xz.lzma;
 
 import java.io.IOException;
-
 import org.tukaani.xz.lz.LZDecoder;
 import org.tukaani.xz.rangecoder.RangeDecoder;
 
