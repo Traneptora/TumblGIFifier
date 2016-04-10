@@ -12,10 +12,17 @@ import java.awt.event.FocusEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -30,9 +37,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import thebombzen.tumblgififier.processor.FFmpegManager;
+import thebombzen.tumblgififier.processor.ExtrasManager;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
+import thebombzen.tumblgififier.util.ProcessTerminatedException;
 
 public class MainPanel extends JPanel {
 	
@@ -45,7 +53,10 @@ public class MainPanel extends JPanel {
 	private JCheckBox maxSizeCheckBox;
 	private JTextField maxSizeTextField;
 	private String mostRecentGIFDirectory = null;
-	private JButton playButton;
+	private JButton playButtonFast;
+
+	private JButton playButtonSlow;
+
 	private ImagePanel previewImageEndPanel;
 	private ImagePanel previewImageStartPanel;
 	private VideoProcessor scan;
@@ -53,17 +64,40 @@ public class MainPanel extends JPanel {
 	private JSlider sizeThresholdSlider;
 	private JSlider startSlider;
 	private StatusProcessorArea statusArea;
+	private JButton fireButton = new JButton("Create GIF");
 	
+	private List<Component> onDisable = new ArrayList<>();
+	private JTextField overlayTextField;
+	
+	private String currentText = "";
+	
+	public List<Component> getOnDisable() {
+		return onDisable;
+	}
+
 	public MainPanel(VideoProcessor scan) {
 		this.scan = scan;
 		if (scan == null) {
 			throw new NullPointerException();
 		}
 		setupLayout();
+		MainFrame.getMainFrame().getThreadPool().scheduleWithFixedDelay(new Runnable(){
+			public void run(){
+				EventQueue.invokeLater(new Runnable(){
+					public void run(){
+						boolean update = !currentText.equals(overlayTextField.getText());
+						currentText = overlayTextField.getText();
+						if (update){
+							updateStartScreenshot();
+							updateEndScreenshot();
+						}
+					}
+				});
+			}
+		}, 0, 1000, TimeUnit.MILLISECONDS); // 1,000,000 nanoseconds is 1 milliseconds
 	}
 	
 	private void createGIF(final String path) {
-		MainFrame.getMainFrame().setBusy(true);
 		final int maxSizeBytes;
 		final int minSizeBytes;
 		if (maxSizeCheckBox.isSelected()) {
@@ -80,7 +114,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				boolean success = scan.convert(statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes,
+				boolean success = scan.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes,
 						halveFramerate);
 				MainFrame.getMainFrame().setBusy(false);
 				if (success) {
@@ -105,99 +139,143 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void playClipFast() {
-		
 		MainFrame.getMainFrame().setBusy(true);
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		final int w = 480;
-		final int h = 270;
-		
-		final String ffplay = FFmpegManager.getFFmpegManager().getFFplayLocation();
-		playButton.setEnabled(false);
+		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
+		final String overlay = overlayTextField.getText();
 		new Thread(new Runnable(){
-			
 			@Override
 			public void run() {
-				String scale;
-				if (w < scan.getWidth()) {
-					scale = "scale=" + w + ":-1";
-				} else if (h < scan.getHeight()) {
-					scale = "scale=-1:" + h;
-				} else {
-					scale = "scale";
-				}
-				MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", scale);
-				EventQueue.invokeLater(new Runnable(){
-					
-					@Override
-					public void run() {
-						playButton.setEnabled(true);
-						MainFrame.getMainFrame().setBusy(false);
+				File tempOverlayFile = null;
+				try {
+					String scale;
+					if (scan.getHeight() > 270){
+						scale = "scale=-1:270";
+					} else {
+						scale = "scale";
 					}
-				});
+					
+					String profile;
+					int size;
+					int borderw;
+					String overlayFilename;
+					try {
+						profile = ExtrasManager.getExtrasManager().getProfileLocation();
+						tempOverlayFile = File.createTempFile("tumblgififier", ".tmp");
+						tempOverlayFile.deleteOnExit();
+						Writer overlayWriter = new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8"));
+						overlayWriter.write(overlay);
+						overlayWriter.close();
+						overlayFilename = tempOverlayFile.getAbsolutePath();
+						profile = profile.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
+						overlayFilename = overlayFilename.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
+						size = (int)Math.ceil(96D * 270D / 1080D);
+						borderw = (int)Math.ceil(size * 7D / 96D);
+					} catch (IOException ioe){
+						statusArea.appendStatus("Some Error Occurred :(");
+						ioe.printStackTrace();
+						return;
+					}
+					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", drawtext=x=(w-tw)*0.5:y=h*0.9:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + profile + ":fontsize=" + size + ":textfile=" + overlayFilename);
+				} catch (ProcessTerminatedException ex){
+					return;
+				} finally {
+					tempOverlayFile.delete();
+					EventQueue.invokeLater(new Runnable(){
+						@Override
+						public void run() {
+							MainFrame.getMainFrame().setBusy(false);
+						}
+					});
+				}
 			}
 		}).start();
 	}
 	
 	private void playClipSlow() {
+		
 		MainFrame.getMainFrame().setBusy(true);
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		
-		final String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
-		final String ffplay = FFmpegManager.getFFmpegManager().getFFplayLocation();
+		final String ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
+		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
+		final String overlay = overlayTextField.getText();
 		
-		new Thread(new Runnable(){
-			
+		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				File tempFile = null;
-				statusArea.appendStatus("Rendering Clip... ");
+				File tempOverlayFile = null;
 				try {
-					tempFile = File.createTempFile("tumblrgififier", ".tmp");
-					tempFile.deleteOnExit();
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-					statusArea.appendStatus("Error rendering clip :(");
-					return;
-				}
-				String scale;
-				final int w = 480;
-				final int h = 270;
-				if (w < scan.getWidth()) {
-					scale = "scale=" + w + ":-1";
-				} else if (h < scan.getHeight()) {
-					scale = "scale=-1:" + h;
-				} else {
-					scale = "scale";
-				}
-				MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
-						scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-						"yuv420p", "-vf", scale, "-c", "ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
-				MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
-				tempFile.delete();
-				EventQueue.invokeLater(new Runnable(){
-					
-					@Override
-					public void run() {
-						MainFrame.getMainFrame().setBusy(false);
-						MainFrame.getMainFrame().toFront();
-						MainFrame.getMainFrame().setAlwaysOnTop(true);
-						MainFrame.getMainFrame().setAlwaysOnTop(false);
-						MainFrame.getMainFrame().requestFocus();
+					statusArea.appendStatus("Rendering Clip... ");
+					try {
+						tempFile = File.createTempFile("tumblrgififier", ".tmp");
+						tempFile.deleteOnExit();
+					} catch (IOException ioe) {
+						ioe.printStackTrace();
+						statusArea.appendStatus("Error rendering clip :(");
+						return;
 					}
-				});
+					String scale;
+					if (scan.getHeight() > 270){
+						scale = "scale=-1:270";
+					} else {
+						scale = "scale";
+					}
+					String profile;
+					int size;
+					int borderw;
+					String overlayFilename;
+					try {
+						profile = ExtrasManager.getExtrasManager().getProfileLocation();
+						tempOverlayFile = File.createTempFile("tumblgififier", ".tmp");
+						tempOverlayFile.deleteOnExit();
+						Writer overlayWriter = new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8"));
+						overlayWriter.write(overlay);
+						overlayWriter.close();
+						overlayFilename = tempOverlayFile.getAbsolutePath();
+						profile = profile.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
+						overlayFilename = overlayFilename.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
+						size = (int)Math.ceil(96D * 270D / 1080D);
+						borderw = (int)Math.ceil(size * 7D / 96D);
+					} catch (IOException ioe){
+						statusArea.appendStatus("Some Error Occurred :(");
+						ioe.printStackTrace();
+						return;
+					}
+					MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
+							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
+							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", drawtext=x=(w-tw)*0.5:y=h*0.9:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + profile + ":fontsize=" + size + ":textfile=" + overlayFilename, "-c",
+							"ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
+					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
+				} catch (ProcessTerminatedException ex) {
+					statusArea.appendStatus("Error rendering clip :(");
+					MainFrame.getMainFrame().stopAll();
+					return;
+				} finally {
+					if (tempFile != null){
+						tempFile.delete();
+					}
+					EventQueue.invokeLater(new Runnable(){
+						@Override
+						public void run() {
+							MainFrame.getMainFrame().setBusy(false);
+						}
+					});
+				}
 			}
-		}).start();
+		});
 		
 	}
 	
 	private void setupLayout() {
-		BufferedImage previewImageStart = scan.screenShot(1D / 3D * scan.getDuration());
-		BufferedImage previewImageEnd = scan.screenShot(2D / 3D * scan.getDuration());
+		BufferedImage previewImageStart = scan.screenShot("", 1D / 3D * scan.getDuration());
+		BufferedImage previewImageEnd = scan.screenShot("", 2D / 3D * scan.getDuration());
 		if (previewImageStart == null) {
 			previewImageStart = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
 		}
@@ -225,8 +303,10 @@ public class MainPanel extends JPanel {
 		startSlider.setValue(startSlider.getMaximum() / 3);
 		rightBox.add(startSlider);
 		
-		playButton = new JButton("Play Clip (Fast, Inaccurate)");
-		playButton.addActionListener(new ActionListener(){
+		onDisable.add(startSlider);
+		
+		playButtonFast = new JButton("Play Clip (Fast, Inaccurate)");
+		playButtonFast.addActionListener(new ActionListener(){
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -234,8 +314,10 @@ public class MainPanel extends JPanel {
 			}
 		});
 		
-		JButton playButton2 = new JButton("Play Clip (Slow, Accurate)");
-		playButton2.addActionListener(new ActionListener(){
+		onDisable.add(playButtonFast);
+		
+		playButtonSlow = new JButton("Play Clip (Slow, Accurate)");
+		playButtonSlow.addActionListener(new ActionListener(){
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -243,9 +325,11 @@ public class MainPanel extends JPanel {
 			}
 		});
 		
+		onDisable.add(playButtonSlow);
+		
 		JPanel playButtonPanel = new JPanel(new BorderLayout());
-		playButtonPanel.add(playButton, BorderLayout.WEST);
-		playButtonPanel.add(playButton2, BorderLayout.EAST);
+		playButtonPanel.add(playButtonFast, BorderLayout.WEST);
+		playButtonPanel.add(playButtonSlow, BorderLayout.EAST);
 		
 		rightBox.add(Box.createVerticalStrut(10));
 		rightBox.add(playButtonPanel);
@@ -256,6 +340,8 @@ public class MainPanel extends JPanel {
 		endSlider.setMaximum((int) (scan.getDuration() * 4D) - 1);
 		endSlider.setValue(endSlider.getMaximum() * 2 / 3);
 		rightBox.add(endSlider);
+			
+		onDisable.add(endSlider);
 		
 		startSlider.addChangeListener(new ChangeListener(){
 			
@@ -326,8 +412,14 @@ public class MainPanel extends JPanel {
 				}
 			}
 		});
+		
+		onDisable.add(maxSizeTextField);
+		
 		maxSizeCheckBox = new JCheckBox("Maximum GIF Size in Kilobytes: ");
 		maxSizeCheckBox.setSelected(true);
+		
+		onDisable.add(maxSizeCheckBox);
+		
 		leftPanel.add(wrapLeftRightAligned(maxSizeCheckBox, maxSizeTextField));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(wrapLeftAligned(new JLabel("The maximum size on Tumblr is 2000 Kilobytes.")));
@@ -346,6 +438,9 @@ public class MainPanel extends JPanel {
 				sizeThresholdLabel.setText(sizeThresholdSlider.getValue() + " Percent");
 			}
 		});
+		
+		onDisable.add(sizeThresholdSlider);
+		
 		leftPanel.add(wrapLeftAligned(sizeThresholdSlider));
 		
 		maxSizeCheckBox.addChangeListener(new ChangeListener(){
@@ -378,13 +473,35 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(5));
+		overlayTextField = new JTextField();
+		overlayTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+		overlayTextField.setPreferredSize(new Dimension(200, 25));
+		overlayTextField.setMaximumSize(new Dimension(200, 25));
+		onDisable.add(overlayTextField);
+		leftPanel.add(wrapLeftRightAligned(new JLabel("Overlay text:"), overlayTextField));
+		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
+		leftPanel.add(Box.createVerticalStrut(5));
+		onDisable.add(cutFramerateInHalfCheckBox);
+		
 		JPanel createGIFPanel = new JPanel(new BorderLayout());
-		JButton fireButton = new JButton("Create GIF");
 		createGIFPanel.add(fireButton, BorderLayout.CENTER);
 		fireButton.addActionListener(new ActionListener(){
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
+				if (fireButton.getText().equals("STOP")){
+					new Thread(new Runnable(){
+						public void run(){
+							fireButton.setText("Create GIF");
+							MainFrame.getMainFrame().stopAll();
+						}
+					}).start();
+					
+					MainFrame.getMainFrame().setBusy(false);
+					return;
+				}
 				
 				FileDialog fileDialog = new FileDialog(MainFrame.getMainFrame(), "Save GIF as...", FileDialog.SAVE);
 				fileDialog.setMultipleMode(false);
@@ -406,7 +523,7 @@ public class MainPanel extends JPanel {
 				final String filename = fileDialog.getFile();
 				
 				if (filename != null) {
-					File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(),
+					File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(),
 							"recent_gif.txt");
 					mostRecentGIFDirectory = fileDialog.getDirectory();
 					try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)) {
@@ -432,7 +549,7 @@ public class MainPanel extends JPanel {
 		scrollPane.setViewportView(statusArea);
 		scrollPanePanel.add(scrollPane, BorderLayout.CENTER);
 		leftPanel.add(scrollPanePanel);
-		File recentGIFFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_gif.txt");
+		File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_gif.txt");
 		if (recentGIFFile.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(recentGIFFile))) {
 				mostRecentGIFDirectory = br.readLine();
@@ -443,23 +560,22 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void updateEndScreenshot() {
-		new Thread(new Runnable(){
-			
+		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
-				previewImageEndPanel.setImage(scan.screenShot(endSlider.getValue() * 0.25D));
+				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D));
 			}
-		}).start();
+		});
 	}
 	
 	private void updateStartScreenshot() {
-		new Thread(new Runnable(){
+		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
 			
 			@Override
 			public void run() {
-				previewImageStartPanel.setImage(scan.screenShot(startSlider.getValue() * 0.25D));
+				previewImageStartPanel.setImage(scan.screenShot(currentText, startSlider.getValue() * 0.25D));
 			}
-		}).start();
+		});
 	}
 	
 	private Component wrapLeftAligned(Component comp) {
@@ -475,5 +591,9 @@ public class MainPanel extends JPanel {
 		box.add(Box.createHorizontalGlue());
 		box.add(right);
 		return box;
+	}
+
+	public JButton getFireButton() {
+		return fireButton;
 	}
 }

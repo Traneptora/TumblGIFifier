@@ -14,9 +14,9 @@ import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.gui.MainFrame;
 
-public class FFmpegManager {
+public class ExtrasManager {
 	
-	private static FFmpegManager manager = new FFmpegManager();
+	private static ExtrasManager manager = new ExtrasManager();
 	
 	private static String getApplicationDataLocation() {
 		String name = System.getProperty("os.name");
@@ -30,12 +30,20 @@ public class FFmpegManager {
 		}
 	}
 	
-	public static FFmpegManager getFFmpegManager() {
+	public static ExtrasManager getExtrasManager() {
 		return manager;
 	}
 	
 	private static String getFFprogDownloadLocation() {
 		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/" + getFFprogName();
+	}
+	
+	private static String getProfileDownloadLocation() {
+		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/Profile-Medium.otf.xz";
+	}
+	
+	public String getProfileLocation(){
+		return new File(getLocalAppDataLocation(), "Profile-Medium.otf").getAbsolutePath();
 	}
 	
 	private static String getFFprogName() {
@@ -52,7 +60,7 @@ public class FFmpegManager {
 	
 	private String localAppDataLocation = null;
 	
-	private FFmpegManager() {
+	private ExtrasManager() {
 		
 	}
 	
@@ -97,7 +105,7 @@ public class FFmpegManager {
 		return new File(getLocalAppDataLocation(), name).getPath();
 	}
 	
-	public boolean intitilizeFFmpeg(StatusProcessor processor) {
+	public boolean intitilizeExtras(StatusProcessor processor) {
 		try {
 			boolean needDL = false;
 			String[] names = {"ffmpeg", "ffprobe", "ffplay"};
@@ -120,6 +128,24 @@ public class FFmpegManager {
 					processor.replaceStatus("Checking for " + name + "... found.");
 					f.setExecutable(true);
 				}
+			}
+			boolean needProfileDL = false;
+			File f = new File(getProfileLocation());
+			processor.appendStatus("Checking for Profile Medium ...");
+			if (f.exists() && !f.isFile()) {
+				boolean did = f.delete();
+				if (!did) {
+					processor.appendStatus("Error: Bad Profile Medium  in Path: " + f.getPath());
+					return false;
+				} else {
+					processor.appendStatus("Found Bad Profile Medium in Path. Deleted.");
+				}
+			}
+			if (!f.exists()) {
+				processor.replaceStatus("Checking for Profile Medium... not found.");
+				needProfileDL = true;
+			} else {
+				processor.replaceStatus("Checking for Profile Medium... found.");
 			}
 			if (needDL) {
 				processor.appendStatus("Downloading FFmpeg from the internet...");
@@ -149,6 +175,19 @@ public class FFmpegManager {
 				processor.appendStatus("Done downloading.");
 			} else {
 				processor.appendStatus("FFmpeg found.");
+			}
+			if (needProfileDL) {
+				processor.appendStatus("Downloading Profile Medium from the internet...");
+				File profileFile = new File(getProfileLocation());
+				FileOutputStream fos = new FileOutputStream(profileFile);
+				URL website = new URL(getProfileDownloadLocation());
+				ReadableByteChannel rbc = Channels.newChannel(new XZInputStream(website.openStream()));
+				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+				fos.close();
+				rbc.close();
+				processor.appendStatus("Done downloading.");
+			} else {
+				processor.appendStatus("Profile Medium found.");
 			}
 			return true;
 		} catch (IOException ioe) {

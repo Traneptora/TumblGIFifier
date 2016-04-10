@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.processor;
+package thebombzen.tumblgififier.util;
 
 import java.io.IOException;
 import java.io.Writer;

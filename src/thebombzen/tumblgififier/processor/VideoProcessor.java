@@ -3,15 +3,20 @@ package thebombzen.tumblgififier.processor;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.gui.StatusProcessorArea;
+import thebombzen.tumblgififier.util.ProcessTerminatedException;
 
 public class VideoProcessor {
 	
@@ -19,7 +24,7 @@ public class VideoProcessor {
 		
 		processor.appendStatus("Scanning File... ");
 		
-		String ffprobe = FFmpegManager.getFFmpegManager().getFFprobeLocation();
+		String ffprobe = ExtrasManager.getExtrasManager().getFFprobeLocation();
 		
 		String line = null;
 		int width = -1;
@@ -136,7 +141,15 @@ public class VideoProcessor {
 		this.statusProcessor.appendStatus(sb.toString());
 	}
 	
-	public boolean convert(StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
+	public boolean convert(String overlay, StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
+			long minSize, long maxSize, boolean halveFramerate) {
+		MainFrame.getMainFrame().setBusy(true);
+		boolean status = convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate);
+		MainFrame.getMainFrame().setBusy(false);
+		return status;
+	}
+	
+	private boolean convert0(String overlay, StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
 			long minSize, long maxSize, boolean halveFramerate) {
 		scale = 1D;
 		lowscale = 0D;
@@ -148,10 +161,27 @@ public class VideoProcessor {
 		this.maxSize = maxSize;
 		this.halveFramerate = halveFramerate;
 		
+		String overlayFilename;
+		String profile;
+		
 		try {
 			this.gifFile = File.createTempFile("tumblgififier", ".tmp");
 			this.mkvFile = File.createTempFile("tumblgififier", ".tmp");
 			this.paletteFile = File.createTempFile("tumblgififier", ".tmp");
+			if (overlay.length() == 0){
+				overlayFilename = "";
+				profile = "";
+			} else {
+				profile = ExtrasManager.getExtrasManager().getProfileLocation();
+				File tempOverlayFile = File.createTempFile("tumblgififier", ".tmp");
+				tempOverlayFile.deleteOnExit();
+				Writer overlayWriter = new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8"));
+				overlayWriter.write(overlay);
+				overlayWriter.close();
+				overlayFilename = tempOverlayFile.getAbsolutePath();
+				profile = profile.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
+				overlayFilename = overlayFilename.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
+			}
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			return false;
@@ -161,8 +191,15 @@ public class VideoProcessor {
 		mkvFile.deleteOnExit();
 		paletteFile.deleteOnExit();
 		
+		
+		
 		while (gifFile.length() == 0 || (gifFile.length() < minSize && scale < 1) || gifFile.length() > maxSize) {
-			createGif();
+			boolean finished = createGif(profile, overlayFilename);
+			if (!finished){
+				return true;
+				// not typo
+				// this will happen if the user stopped it 
+			}
 			adjustScale();
 		}
 		
@@ -178,14 +215,15 @@ public class VideoProcessor {
 			ioe.printStackTrace();
 			return false;
 		}
-		
 		return true;
-		
 	}
 	
-	private void createGif() {
+	private boolean createGif(String profile, String overlayFilename) {
 		int newWidth = (int) (width * scale);
 		int newHeight = (int) (height * scale);
+		
+		int size = (int)Math.ceil(96D * newHeight / 1080D);
+		int borderw = (int)Math.ceil(size * 7D / 96D);
 		
 		PrintWriter writer = new PrintWriter(new StatusProcessorWriter(statusProcessor));
 		
@@ -193,40 +231,64 @@ public class VideoProcessor {
 		
 		writer.print("Scaling Video... \r");
 		
-		String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
+		String ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
 		
-		scanPercentDone(
-				"Scaling Video... ",
-				endTime - startTime,
-				writer,
-				MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
-						location, "-map", "0:v", "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
-						"yuv420p", "-s", newWidth + "x" + newHeight, halveFramerate ? "-r" : "-y",
-						halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffvhuff", "-f", "matroska",
-						this.mkvFile.getAbsolutePath()));
+		String scaleText = "scale=" + newWidth + ":" + newHeight;
+		
+		try {
+			scanPercentDone(
+					"Scaling Video... ",
+					endTime - startTime,
+					writer,
+					MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
+							location, "-map", "0:v", "-filter:v", profile.length() == 0 ? scaleText : scaleText + ", drawtext=x=(w-tw)*0.5:y=h*0.9:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + profile + ":fontsize=" + size + ":textfile=" + overlayFilename, "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
+							"yuv420p", halveFramerate ? "-r" : "-y",
+							halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffvhuff", "-f",
+							"matroska", this.mkvFile.getAbsolutePath()));
+					
+		} catch (ProcessTerminatedException ex) {
+			ex.printStackTrace();
+			writer.println("Scaling Video... Error.");
+			MainFrame.getMainFrame().stopAll();
+			return false;
+		}
 		
 		writer.println("Scaling Video... Done.");
 		
 		writer.print("Generating Palette... \r");
 		writer.flush();
 		
-		MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen",
-				"-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
+		try {
+			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf",
+					"palettegen", "-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
+		} catch (ProcessTerminatedException ex) {
+			writer.println("Generating Palette... Error.");
+			MainFrame.getMainFrame().stopAll();
+			return false;
+		}
 		
 		writer.println("Generating Palette... Done.");
 		
 		writer.print("Generating GIF... \r");
 		
-		scanPercentDone(
-				"Generating GIF... ",
-				endTime - startTime,
-				writer,
-				MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
-						this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
-						this.gifFile.getAbsolutePath()));
+		try {
+			scanPercentDone(
+					"Generating GIF... ",
+					endTime - startTime,
+					writer,
+					MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
+							this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
+							this.gifFile.getAbsolutePath()));
+		} catch (ProcessTerminatedException ex) {
+			writer.println("Generating GIF... Error.");
+			MainFrame.getMainFrame().stopAll();
+			return false;
+		}
 		
 		writer.println("Generating GIF... Done.");
 		writer.flush();
+		
+		return true;
 	}
 	
 	@Override
@@ -322,31 +384,44 @@ public class VideoProcessor {
 		scanner.close();
 	}
 	
-	public BufferedImage screenShot(double time) {
-		return screenShot(time, width, height);
+	public BufferedImage screenShot(String overlay, double time) {
+		return screenShot(overlay, time, width, height);
 	}
 	
-	public BufferedImage screenShot(double time, double scale) {
-		return screenShot(time, (int) (width * scale), (int) (height * scale));
+	public BufferedImage screenShot(String overlay, double time, double scale) {
+		return screenShot(overlay, time, (int) (width * scale), (int) (height * scale));
 	}
 	
-	public BufferedImage screenShot(double time, int shotWidth, int shotHeight) {
+	public BufferedImage screenShot(String overlay, double time, int shotWidth, int shotHeight) {
 		if (time < 0 || time > duration) {
 			throw new IllegalArgumentException("Time out of bounds!");
 		}
 		File shotFile = null;
+		File tempOverlayFile = null;
 		try {
-			String ffmpeg = FFmpegManager.getFFmpegManager().getFFmpegLocation();
+			String ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
+			String profile = ExtrasManager.getExtrasManager().getProfileLocation();
+			tempOverlayFile = File.createTempFile("tumblgififier", ".tmp");
+			tempOverlayFile.deleteOnExit();
+			Writer overlayWriter = new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8"));
+			overlayWriter.write(overlay);
+			overlayWriter.close();
+			String overlayFilename = tempOverlayFile.getAbsolutePath();
+			profile = profile.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
+			overlayFilename = overlayFilename.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
 			shotFile = File.createTempFile("tumblgififier", ".tmp");
 			shotFile.deleteOnExit();
-			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map",
-					"0:v", "-t", "0.5", "-r", "1", "-s", shotWidth + "x" + shotHeight,
+			int size = (int)Math.ceil(96D * this.getHeight() / 1080D);
+			int borderw = (int)Math.ceil(size * 7D / 96D);
+			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", overlay.length() == 0 ? "-y" : "-filter:v", overlay.length() == 0 ? "-y" : "drawtext=x=(w-tw)*0.5:y=h*0.9:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + profile + ":fontsize=" + size + ":textfile=" + overlayFilename,
+					"-t", "0.5", "-r", "1", "-s", shotWidth + "x" + shotHeight,
 					"-pix_fmt", "rgb24", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {
 			return null;
 		} finally {
 			shotFile.delete();
+			tempOverlayFile.delete();
 		}
 	}
 	

@@ -20,6 +20,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -27,11 +29,12 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import thebombzen.tumblgififier.processor.FFmpegManager;
-import thebombzen.tumblgififier.processor.NullInputStream;
-import thebombzen.tumblgififier.processor.NullOutputStream;
+import thebombzen.tumblgififier.processor.ExtrasManager;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
+import thebombzen.tumblgififier.util.NullInputStream;
+import thebombzen.tumblgififier.util.NullOutputStream;
+import thebombzen.tumblgififier.util.ProcessTerminatedException;
 
 /**
  * This represents the main JFrame of the program, and also serves as the
@@ -168,6 +171,12 @@ public class MainFrame extends JFrame {
 		});
 	}
 	
+	private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
+	
+	public ScheduledExecutorService getThreadPool(){
+		return threadPool;
+	}
+	
 	/**
 	 * True if the program is marked as "busy," i.e. the interface should be
 	 * disabled. For example, rendering a clip or creating a GIF or scanning a
@@ -211,6 +220,8 @@ public class MainFrame extends JFrame {
 	 */
 	private StatusProcessorArea statusArea = new StatusProcessorArea();
 	
+	private JMenuBar menuBar;
+	
 	/**
 	 * Initialization and construction code.
 	 */
@@ -220,7 +231,7 @@ public class MainFrame extends JFrame {
 		this.setLayout(new BorderLayout());
 		this.getContentPane().add(defaultPanel);
 		setResizable(false);
-		JMenuBar menuBar = new JMenuBar();
+		menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
 		JMenuItem open = new JMenuItem("Open...");
 		JMenuItem quit = new JMenuItem("Quit...");
@@ -257,7 +268,7 @@ public class MainFrame extends JFrame {
 							
 							@Override
 							public void run() {
-								File recentOpenFile = new File(FFmpegManager.getFFmpegManager()
+								File recentOpenFile = new File(ExtrasManager.getExtrasManager()
 										.getLocalAppDataLocation(), "recent_open.txt");
 								try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
 									recentOpenWriter.write(mostRecentOpenDirectory);
@@ -316,7 +327,7 @@ public class MainFrame extends JFrame {
 			
 			@Override
 			public void run() {
-				boolean success = FFmpegManager.getFFmpegManager().intitilizeFFmpeg(statusArea);
+				boolean success = ExtrasManager.getExtrasManager().intitilizeExtras(statusArea);
 				if (success) {
 					setBusy(false);
 				} else {
@@ -324,7 +335,7 @@ public class MainFrame extends JFrame {
 				}
 			}
 		}).start();
-		File recentOpenFile = new File(FFmpegManager.getFFmpegManager().getLocalAppDataLocation(), "recent_open.txt");
+		File recentOpenFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_open.txt");
 		if (recentOpenFile.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {
 				mostRecentOpenDirectory = br.readLine();
@@ -350,7 +361,7 @@ public class MainFrame extends JFrame {
 	 *         output/error stream of the process. If this method was set to
 	 *         block then this InputStream will have reached End-Of-File.
 	 */
-	public synchronized InputStream exec(boolean join, String... args) {
+	public InputStream exec(boolean join, String... args) throws ProcessTerminatedException {
 		try {
 			if (join) {
 				return exec(new NullOutputStream(), args);
@@ -360,10 +371,13 @@ public class MainFrame extends JFrame {
 		} catch (IOException ioe) {
 			// NullOutputStream doesn't throw IOException, so if we get one here
 			// it's really weird.
-			ioe.printStackTrace();
-			return new NullInputStream();
+			if (ioe.getMessage().equals("Stream closed")){
+				throw new ProcessTerminatedException(ioe);
+			} else {
+				ioe.printStackTrace();
+				return new NullInputStream();
+			}	
 		}
-		
 	}
 	
 	/**
@@ -388,7 +402,7 @@ public class MainFrame extends JFrame {
 	 * @throws IOException
 	 *             If an I/O error occurs.
 	 */
-	public synchronized InputStream exec(OutputStream copyTo, String... args) throws IOException {
+	public InputStream exec(OutputStream copyTo, String... args) throws IOException {
 		if (cleaningUp) {
 			return null;
 		}
@@ -405,7 +419,6 @@ public class MainFrame extends JFrame {
 			}
 		}
 		return p.getInputStream();
-		
 	}
 	
 	/**
@@ -414,10 +427,12 @@ public class MainFrame extends JFrame {
 	 */
 	@Override
 	protected void finalize() {
-		cleaningUp = true;
-		for (Process p : processes) {
-			p.destroy();
-		}
+		cleanUp();
+	}
+	
+	private void cleanUp(){
+		stopAll();
+		threadPool.shutdown();
 	}
 	
 	/**
@@ -443,11 +458,23 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
+	 * Stop all subprocesses.
+	 */
+	public void stopAll(){
+		cleaningUp = true;
+		for (Process p : processes) {
+			p.destroy();
+		}
+		processes.clear();
+		cleaningUp = false;
+	}
+	
+	/**
 	 * Quit the program. Destroys all currently executing sub-processes and then
 	 * exits.
 	 */
 	public void quit() {
-		finalize();
+		cleanUp();
 		System.exit(0);
 	}
 	
@@ -458,7 +485,18 @@ public class MainFrame extends JFrame {
 	 */
 	public void setBusy(boolean busy) {
 		this.busy = busy;
-		setEnabled(mainFrame, !busy);
+		MainFrame.getMainFrame().toFront();
+		MainFrame.getMainFrame().setAlwaysOnTop(true);
+		MainFrame.getMainFrame().setAlwaysOnTop(false);
+		MainFrame.getMainFrame().requestFocus();
+		if (mainPanel != null){
+			mainPanel.getFireButton().setText(busy ? "STOP" : "Create GIF");
+			for (Component c : mainPanel.getOnDisable()){
+				c.setEnabled(!busy);
+			}
+			setEnabled(menuBar, !busy);
+			mainPanel.getFireButton().requestFocusInWindow();
+		}
 	}
 	
 	/**

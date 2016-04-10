@@ -1,5 +1,7 @@
 package thebombzen.tumblgififier.processor;
 
+import thebombzen.tumblgififier.util.SimpleWriter;
+
 public class StatusProcessorWriter extends SimpleWriter {
 	
 	private boolean haveReturn = false;
