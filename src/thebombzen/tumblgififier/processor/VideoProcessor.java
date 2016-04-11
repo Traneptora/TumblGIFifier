@@ -113,6 +113,8 @@ public class VideoProcessor {
 	private double startTime;
 	private StatusProcessor statusProcessor;
 	private final int width;
+	private double prevScale = 1D;
+	private double prevPrevScale = 1D;
 	
 	public VideoProcessor(int width, int height, double duration, String location, double framerate) {
 		this.width = width;
@@ -201,6 +203,12 @@ public class VideoProcessor {
 				// this will happen if the user stopped it 
 			}
 			adjustScale();
+			if (prevPrevScale == scale || prevScale == scale){
+				statusProcessor.appendStatus("Exiting Loop.");
+				break;
+			}
+			prevPrevScale = prevScale;
+			prevScale = scale;
 		}
 		
 		File newFile = new File(path);
