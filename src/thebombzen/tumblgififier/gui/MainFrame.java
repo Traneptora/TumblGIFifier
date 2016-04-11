@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
@@ -42,7 +43,7 @@ import thebombzen.tumblgififier.util.ProcessTerminatedException;
  */
 public class MainFrame extends JFrame {
 	
-	public static final String VERSION = "0.5.0b";
+	public static final String VERSION = "0.5.0c";
 	
 	/**
 	 * True if the system is detected as a windows system, false otherwise.
@@ -368,7 +369,7 @@ public class MainFrame extends JFrame {
 			if (join) {
 				return exec(new NullOutputStream(), args);
 			} else {
-				return exec(null, args);
+				return new BufferedInputStream(exec(null, args));
 			}
 		} catch (IOException ioe) {
 			// NullOutputStream doesn't throw IOException, so if we get one here

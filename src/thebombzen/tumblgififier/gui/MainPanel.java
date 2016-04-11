@@ -28,7 +28,6 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -119,11 +118,11 @@ public class MainPanel extends JPanel {
 				MainFrame.getMainFrame().setBusy(false);
 				if (success) {
 					statusArea.appendStatus("Done!");
-					JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
+					//JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
 				} else {
 					statusArea.appendStatus("Some error occured :(");
-					JOptionPane.showMessageDialog(MainPanel.this, "Some error occured :(", "Error",
-							JOptionPane.ERROR_MESSAGE);
+					//JOptionPane.showMessageDialog(MainPanel.this, "Some error occured :(", "Error",
+						//	JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});

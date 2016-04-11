@@ -113,8 +113,10 @@ public class VideoProcessor {
 	private double startTime;
 	private StatusProcessor statusProcessor;
 	private final int width;
-	private double prevScale = 1D;
-	private double prevPrevScale = 1D;
+	private int prevWidth = 0;
+	private int prevPrevWidth = 0;
+	private int prevHeight = 0;
+	private int prevPrevHeight = 0;
 	
 	public VideoProcessor(int width, int height, double duration, String location, double framerate) {
 		this.width = width;
@@ -198,17 +200,19 @@ public class VideoProcessor {
 		while (gifFile.length() == 0 || (gifFile.length() < minSize && scale < 1) || gifFile.length() > maxSize) {
 			boolean finished = createGif(profile, overlayFilename);
 			if (!finished){
-				return true;
-				// not typo
-				// this will happen if the user stopped it 
+				return false; 
 			}
 			adjustScale();
-			if (prevPrevScale == scale || prevScale == scale){
+			int newWidth = (int) (width * scale);
+			int newHeight = (int) (height * scale);
+			if (newWidth == prevWidth && newHeight == prevHeight || newWidth == prevPrevWidth && newHeight == prevPrevHeight){
 				statusProcessor.appendStatus("Exiting Loop.");
 				break;
 			}
-			prevPrevScale = prevScale;
-			prevScale = scale;
+			prevPrevWidth = prevWidth;
+			prevPrevHeight = prevHeight;
+			prevWidth = newWidth;
+			prevHeight = newHeight;
 		}
 		
 		File newFile = new File(path);
@@ -239,6 +243,8 @@ public class VideoProcessor {
 		
 		writer.print("Scaling Video... \r");
 		
+		writer.flush();
+		
 		String ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
 		
 		String scaleText = "scale=" + newWidth + ":" + newHeight;
@@ -248,7 +254,7 @@ public class VideoProcessor {
 					"Scaling Video... ",
 					endTime - startTime,
 					writer,
-					MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
+					MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
 							location, "-map", "0:v", "-filter:v", profile.length() == 0 ? scaleText : scaleText + ", drawtext=x=(w-tw)*0.5:y=h*0.9:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + profile + ":fontsize=" + size + ":textfile=" + overlayFilename, "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
 							"yuv420p", halveFramerate ? "-r" : "-y",
 							halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffvhuff", "-f",
@@ -270,6 +276,7 @@ public class VideoProcessor {
 			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf",
 					"palettegen", "-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
+			ex.printStackTrace();
 			writer.println("Generating Palette... Error.");
 			MainFrame.getMainFrame().stopAll();
 			return false;
@@ -288,6 +295,7 @@ public class VideoProcessor {
 							this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
 							this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
+			ex.printStackTrace();
 			writer.println("Generating GIF... Error.");
 			MainFrame.getMainFrame().stopAll();
 			return false;
@@ -359,37 +367,39 @@ public class VideoProcessor {
 		return result;
 	}
 	
-	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in) {
-		Scanner scanner = new Scanner(in);
-		scanner.useDelimiter("(\r\n|\r|\n)");
-		while (scanner.hasNext()) {
-			String line = scanner.next();
-			if (line.startsWith("frame=")) {
-				String time = "0";
-				Scanner sc2 = new Scanner(line);
-				sc2.useDelimiter("\\s");
-				while (sc2.hasNext()) {
-					String part = sc2.next();
-					if (part.startsWith("time=")) {
-						time = part.replaceAll("time=", "");
-						break;
+	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in) throws ProcessTerminatedException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		String line = null;
+		try {
+			while (null != (line = br.readLine())){
+				if (line.startsWith("frame=")) {
+					String time = "0";
+					Scanner sc2 = new Scanner(line);
+					sc2.useDelimiter("\\s");
+					while (sc2.hasNext()) {
+						String part = sc2.next();
+						if (part.startsWith("time=")) {
+							time = part.replaceAll("time=", "");
+							break;
+						}
 					}
-				}
-				String[] times = time.split(":");
-				double realTime = 0D;
-				for (int i = 0; i < times.length; i++) {
-					try {
-						realTime += Math.pow(60, i) * Double.parseDouble(times[times.length - i - 1]);
-					} catch (NumberFormatException nfe) {
-						nfe.printStackTrace();
+					String[] times = time.split(":");
+					double realTime = 0D;
+					for (int i = 0; i < times.length; i++) {
+						try {
+							realTime += Math.pow(60, i) * Double.parseDouble(times[times.length - i - 1]);
+						} catch (NumberFormatException nfe) {
+							nfe.printStackTrace();
+						}
 					}
+					sc2.close();
+					double percent = realTime * 100D / length;
+					writer.format("%s%.2f%%\r", prefix, percent);
 				}
-				sc2.close();
-				double percent = realTime * 100D / length;
-				writer.format("%s%.2f%%\r", prefix, percent);
 			}
+		} catch (IOException ioe){
+			throw new ProcessTerminatedException(ioe);
 		}
-		scanner.close();
 	}
 	
 	public BufferedImage screenShot(String overlay, double time) {
