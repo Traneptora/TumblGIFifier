@@ -43,7 +43,7 @@ import thebombzen.tumblgififier.util.ProcessTerminatedException;
  */
 public class MainFrame extends JFrame {
 	
-	public static final String VERSION = "0.5.0c";
+	public static final String VERSION = "0.5.0d";
 	
 	/**
 	 * True if the system is detected as a windows system, false otherwise.
