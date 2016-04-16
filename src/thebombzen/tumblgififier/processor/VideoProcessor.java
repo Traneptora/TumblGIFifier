@@ -113,10 +113,10 @@ public class VideoProcessor {
 	private double startTime;
 	private StatusProcessor statusProcessor;
 	private final int width;
-	private int prevWidth = 0;
-	private int prevPrevWidth = 0;
-	private int prevHeight = 0;
-	private int prevPrevHeight = 0;
+	private int prevWidth = -1;
+	private int prevPrevWidth = -2;
+	private int prevHeight = -1;
+	private int prevPrevHeight = -2;
 	
 	public VideoProcessor(int width, int height, double duration, String location, double framerate) {
 		this.width = width;
@@ -195,7 +195,10 @@ public class VideoProcessor {
 		mkvFile.deleteOnExit();
 		paletteFile.deleteOnExit();
 		
-		
+		prevWidth = -1;
+		prevHeight = -1;
+		prevPrevWidth = -2;
+		prevPrevHeight = -2;
 		
 		while (gifFile.length() == 0 || (gifFile.length() < minSize && scale < 1) || gifFile.length() > maxSize) {
 			boolean finished = createGif(profile, overlayFilename);
