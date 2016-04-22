@@ -27,7 +27,7 @@
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}"/>
 
-    <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+	<!-- Jar everything up -->
     <manifest file="MANIFEST.MF">
 		<attribute name="Main-Class" value="thebombzen.tumblgififier.gui.MainFrame"/>
 	</manifest>
