@@ -140,7 +140,7 @@ public class Helper {
 			ex.printStackTrace();
 			return "";
 		}
-		String drawText = "drawtext=x=(w-tw)*0.5:y=(h-" + size + ")*0.985:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + fontFile + ":fontsize=" + size + ":textfile=" + tempOverlayFilename;
+		String drawText = "drawtext=x=(w-tw)*0.5:y=0.935*(h-0.5*" + size + "):bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + fontFile + ":fontsize=" + size + ":textfile=" + tempOverlayFilename;
 		return drawText;
 	}
 	

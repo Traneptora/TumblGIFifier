@@ -144,15 +144,15 @@ public class VideoProcessor {
 	}
 	
 	public boolean convert(String overlay, StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
-			long minSize, long maxSize, boolean halveFramerate) {
+			long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		MainFrame.getMainFrame().setBusy(true);
-		boolean status = convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate);
+		boolean status = convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate, overlaySize);
 		MainFrame.getMainFrame().setBusy(false);
 		return status;
 	}
 	
 	private boolean convert0(String overlay, StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
-			long minSize, long maxSize, boolean halveFramerate) {
+			long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		scale = 1D;
 		lowscale = 0D;
 		highscale = 2D;
@@ -182,7 +182,7 @@ public class VideoProcessor {
 		prevPrevHeight = -2;
 		
 		while (gifFile.length() == 0 || (gifFile.length() < minSize && scale < 1) || gifFile.length() > maxSize) {
-			boolean finished = createGif(overlay);
+			boolean finished = createGif(overlay, overlaySize);
 			if (!finished){
 				return false; 
 			}
@@ -214,7 +214,7 @@ public class VideoProcessor {
 		return true;
 	}
 	
-	private boolean createGif(String overlay) {
+	private boolean createGif(String overlay, int overlaySize) {
 		int newWidth = (int) (width * scale);
 		int newHeight = (int) (height * scale);
 
@@ -236,7 +236,7 @@ public class VideoProcessor {
 					endTime - startTime,
 					writer,
 					MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
-							location, "-map", "0:v", "-filter:v", overlay.length() == 0 ? scaleText : scaleText + ", " + Helper.createDrawTextString(newWidth, newHeight, 96, overlay), "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
+							location, "-map", "0:v", "-filter:v", overlay.length() == 0 ? scaleText : scaleText + ", " + Helper.createDrawTextString(newWidth, newHeight, overlaySize, overlay), "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
 							"yuv420p", halveFramerate ? "-r" : "-y",
 							halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffvhuff", "-f",
 							"matroska", this.mkvFile.getAbsolutePath()));
@@ -383,15 +383,15 @@ public class VideoProcessor {
 		}
 	}
 	
-	public BufferedImage screenShot(String overlay, double time) {
-		return screenShot(overlay, time, width, height);
+	public BufferedImage screenShot(String overlay, double time, int overlaySize) {
+		return screenShot(overlay, time, width, height, overlaySize);
 	}
 	
-	public BufferedImage screenShot(String overlay, double time, double scale) {
-		return screenShot(overlay, time, (int) (width * scale), (int) (height * scale));
+	public BufferedImage screenShot(String overlay, double time, double scale, int overlaySize) {
+		return screenShot(overlay, time, (int) (width * scale), (int) (height * scale), overlaySize);
 	}
 	
-	public BufferedImage screenShot(String overlay, double time, int shotWidth, int shotHeight) {
+	public BufferedImage screenShot(String overlay, double time, int shotWidth, int shotHeight, int overlaySize) {
 		if (time < 0 || time > duration) {
 			throw new IllegalArgumentException("Time out of bounds!");
 		}
@@ -402,7 +402,7 @@ public class VideoProcessor {
 			shotFile.deleteOnExit();
 			String scale = "scale=" + shotWidth + ":" + shotHeight;
 			
-			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-vf", "format=rgb24, " + (overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(shotWidth, shotHeight, 96, overlay)),
+			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-vf", "format=rgb24, " + (overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
 					"-t", "0.5", "-r", "1", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {

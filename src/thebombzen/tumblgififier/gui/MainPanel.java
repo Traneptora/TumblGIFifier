@@ -64,6 +64,8 @@ public class MainPanel extends JPanel {
 	
 	private List<Component> onDisable = new ArrayList<>();
 	private JTextField overlayTextField;
+	private JTextField overlayTextSizeField;
+	private int textSize = 96;
 	
 	private String currentText = "";
 	
@@ -111,7 +113,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				boolean success = scan.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes,
-						halveFramerate);
+						halveFramerate, textSize);
 				MainFrame.getMainFrame().setBusy(false);
 				if (success) {
 					statusArea.appendStatus("Done!");
@@ -153,7 +155,7 @@ public class MainPanel extends JPanel {
 					}
 					
 					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), 96, overlay));
+							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
 				} catch (ProcessTerminatedException ex){
 					return;
 				} finally {
@@ -201,7 +203,7 @@ public class MainPanel extends JPanel {
 					}
 					MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), 96, overlay), "-c",
+							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay), "-c",
 							"ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
 					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
@@ -225,8 +227,8 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void setupLayout() {
-		BufferedImage previewImageStart = scan.screenShot("", 1D / 3D * scan.getDuration());
-		BufferedImage previewImageEnd = scan.screenShot("", 2D / 3D * scan.getDuration());
+		BufferedImage previewImageStart = scan.screenShot("", 1D / 3D * scan.getDuration(), textSize);
+		BufferedImage previewImageEnd = scan.screenShot("", 2D / 3D * scan.getDuration(), textSize);
 		if (previewImageStart == null) {
 			previewImageStart = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
 		}
@@ -353,7 +355,7 @@ public class MainPanel extends JPanel {
 			public void focusLost(FocusEvent e) {
 				try {
 					int size = Integer.parseInt(maxSizeTextField.getText());
-					if (size >= 0) {
+					if (size >= 1) {
 						maxSize = size;
 					} else {
 						maxSizeTextField.setText(Integer.toString(maxSize));
@@ -429,7 +431,35 @@ public class MainPanel extends JPanel {
 		overlayTextField.setPreferredSize(new Dimension(200, 25));
 		overlayTextField.setMaximumSize(new Dimension(200, 25));
 		onDisable.add(overlayTextField);
+		overlayTextSizeField = new JTextField();
+		overlayTextSizeField.setHorizontalAlignment(SwingConstants.RIGHT);
+		overlayTextSizeField.setPreferredSize(new Dimension(200, 25));
+		overlayTextSizeField.setMaximumSize(new Dimension(200, 25));
+		overlayTextSizeField.setText("96");
+		onDisable.add(overlayTextSizeField);
+		
+		overlayTextSizeField.addFocusListener(new FocusAdapter(){
+			
+			@Override
+			public void focusLost(FocusEvent e) {
+				try {
+					int size = Integer.parseInt(overlayTextSizeField.getText());
+					if (size >= 1) {
+						textSize = size;
+						updateStartScreenshot();
+						updateEndScreenshot();
+					} else {
+						overlayTextSizeField.setText(Integer.toString(textSize));
+					}
+				} catch (NumberFormatException nfe) {
+					overlayTextSizeField.setText(Integer.toString(textSize));
+				}
+			}
+		});
+		
 		leftPanel.add(wrapLeftRightAligned(new JLabel("Overlay text:"), overlayTextField));
+		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(wrapLeftRightAligned(new JLabel("Overlay text size:"), overlayTextSizeField));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(5));
@@ -508,7 +538,7 @@ public class MainPanel extends JPanel {
 		Helper.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
-				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D));
+				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D, textSize));
 			}
 		});
 	}
@@ -517,7 +547,7 @@ public class MainPanel extends JPanel {
 		Helper.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
-				previewImageStartPanel.setImage(scan.screenShot(currentText, startSlider.getValue() * 0.25D));
+				previewImageStartPanel.setImage(scan.screenShot(currentText, startSlider.getValue() * 0.25D, textSize));
 			}
 		});
 	}
