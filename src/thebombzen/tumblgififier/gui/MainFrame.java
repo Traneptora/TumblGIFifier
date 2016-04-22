@@ -11,7 +11,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -19,10 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -30,9 +26,10 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import thebombzen.tumblgififier.processor.ExtrasManager;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
+import thebombzen.tumblgififier.util.ExtrasManager;
+import thebombzen.tumblgififier.util.Helper;
 import thebombzen.tumblgififier.util.NullInputStream;
 import thebombzen.tumblgififier.util.NullOutputStream;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
@@ -46,17 +43,6 @@ public class MainFrame extends JFrame {
 	public static final String VERSION = "0.5.0d";
 	
 	/**
-	 * True if the system is detected as a windows system, false otherwise.
-	 */
-	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
-	
-	/**
-	 * File extension for executable files, with the period included. On
-	 * windows, it's ".exe" and on other platforms it's the empty string.
-	 */
-	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
-	
-	/**
 	 * The singleton instance of MainFrame.
 	 */
 	private static MainFrame mainFrame;
@@ -67,98 +53,10 @@ public class MainFrame extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	 * Close a stream quietly because we honestly don't care if a stream.close()
-	 * throws IOException
-	 */
-	public static void closeQuietly(Closeable cl) {
-		try {
-			cl.close();
-		} catch (IOException ioe) {
-			// do nothing
-		}
-	}
-	
-	/**
 	 * Return the singleton instance of MainFrame.
 	 */
 	public static MainFrame getMainFrame() {
 		return mainFrame;
-	}
-	
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard
-	 * library? >_>
-	 * 
-	 * @param conjunction
-	 *            The delimiter with which to conjoin the strings.
-	 * @param list
-	 *            The collection of strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public static String join(String conjunction, Iterable<String> list) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for (String item : list) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
-		}
-		return sb.toString();
-	}
-	
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard
-	 * library? >_>
-	 * 
-	 * @param conjunction
-	 *            The delimiter with which to conjoin the strings.
-	 * @param list
-	 *            An iterator of the strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public static String join(String conjunction, Iterator<String> list) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		while (list.hasNext()) {
-			String item = list.next();
-			if (first) {
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
-		}
-		return sb.toString();
-	}
-	
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard
-	 * library? >_>
-	 * 
-	 * @param conjunction
-	 *            The delimiter with which to conjoin the strings.
-	 * @param list
-	 *            The array of strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public static String join(String conjunction, String[] list) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for (String item : list) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
-		}
-		return sb.toString();
 	}
 	
 	/**
@@ -172,12 +70,6 @@ public class MainFrame extends JFrame {
 				new MainFrame().setVisible(true);
 			}
 		});
-	}
-	
-	private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
-	
-	public ScheduledExecutorService getThreadPool(){
-		return threadPool;
 	}
 	
 	/**
@@ -267,7 +159,7 @@ public class MainFrame extends JFrame {
 						mostRecentOpenDirectory = fileDialog.getDirectory();
 						final File file = new File(mostRecentOpenDirectory, filename);
 						setBusy(true);
-						getThreadPool().submit(new Runnable(){
+						Helper.getThreadPool().submit(new Runnable(){
 							
 							@Override
 							public void run() {
@@ -326,7 +218,7 @@ public class MainFrame extends JFrame {
 		});
 		setBusy(true);
 		statusArea.appendStatus("Initializing Engine. This may take a while on the first execution.");
-		getThreadPool().submit(new Runnable(){
+		Helper.getThreadPool().submit(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -435,7 +327,7 @@ public class MainFrame extends JFrame {
 	
 	private void cleanUp(){
 		stopAll();
-		threadPool.shutdown();
+		Helper.getThreadPool().shutdown();
 	}
 	
 	/**

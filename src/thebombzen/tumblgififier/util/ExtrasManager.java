@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.processor;
+package thebombzen.tumblgififier.util;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -12,7 +12,7 @@ import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
-import thebombzen.tumblgififier.gui.MainFrame;
+import thebombzen.tumblgififier.processor.StatusProcessor;
 
 public class ExtrasManager {
 	
@@ -38,12 +38,12 @@ public class ExtrasManager {
 		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/" + getFFprogName();
 	}
 	
-	private static String getProfileDownloadLocation() {
-		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/Profile-Medium.otf.xz";
+	private static String getOpenSansDownloadLocation() {
+		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/OpenSans-Semibold.ttf.xz";
 	}
 	
-	public String getProfileLocation(){
-		return new File(getLocalAppDataLocation(), "Profile-Medium.otf").getAbsolutePath();
+	public String getOpenSansFontFileLocation(){
+		return new File(getLocalAppDataLocation(), "OpenSans-Semibold.ttf").getAbsolutePath();
 	}
 	
 	private static String getFFprogName() {
@@ -96,7 +96,7 @@ public class ExtrasManager {
 	
 	private String getXLocation(String x) {
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
-		String name = x + MainFrame.EXE_EXTENSION;
+		String name = x + Helper.EXE_EXTENSION;
 		for (String el : pathElements) {
 			if (new File(el, name).exists()) {
 				return new File(el, name).getPath();
@@ -130,7 +130,7 @@ public class ExtrasManager {
 				}
 			}
 			boolean needProfileDL = false;
-			File f = new File(getProfileLocation());
+			File f = new File(getOpenSansFontFileLocation());
 			processor.appendStatus("Checking for Profile Medium ...");
 			if (f.exists() && !f.isFile()) {
 				boolean did = f.delete();
@@ -178,9 +178,9 @@ public class ExtrasManager {
 			}
 			if (needProfileDL) {
 				processor.appendStatus("Downloading Profile Medium from the internet...");
-				File profileFile = new File(getProfileLocation());
+				File profileFile = new File(getOpenSansFontFileLocation());
 				FileOutputStream fos = new FileOutputStream(profileFile);
-				URL website = new URL(getProfileDownloadLocation());
+				URL website = new URL(getOpenSansDownloadLocation());
 				ReadableByteChannel rbc = Channels.newChannel(new XZInputStream(website.openStream()));
 				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 				fos.close();

@@ -12,14 +12,10 @@ import java.awt.event.FocusEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -36,9 +32,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import thebombzen.tumblgififier.processor.ExtrasManager;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
+import thebombzen.tumblgififier.util.ExtrasManager;
+import thebombzen.tumblgififier.util.Helper;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
 
 public class MainPanel extends JPanel {
@@ -80,7 +77,7 @@ public class MainPanel extends JPanel {
 			throw new NullPointerException();
 		}
 		setupLayout();
-		MainFrame.getMainFrame().getThreadPool().scheduleWithFixedDelay(new Runnable(){
+		Helper.getThreadPool().scheduleWithFixedDelay(new Runnable(){
 			public void run(){
 				EventQueue.invokeLater(new Runnable(){
 					public void run(){
@@ -109,7 +106,7 @@ public class MainPanel extends JPanel {
 		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
+		Helper.getThreadPool().submit(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -144,10 +141,9 @@ public class MainPanel extends JPanel {
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
-		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
+		Helper.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
-				File tempOverlayFile = null;
 				try {
 					String scale;
 					if (scan.getHeight() > 270){
@@ -156,33 +152,11 @@ public class MainPanel extends JPanel {
 						scale = "scale";
 					}
 					
-					String profile;
-					int size;
-					int borderw;
-					String overlayFilename;
-					try {
-						profile = ExtrasManager.getExtrasManager().getProfileLocation();
-						tempOverlayFile = File.createTempFile("tumblgififier", ".tmp");
-						tempOverlayFile.deleteOnExit();
-						Writer overlayWriter = new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8"));
-						overlayWriter.write(overlay);
-						overlayWriter.close();
-						overlayFilename = tempOverlayFile.getAbsolutePath();
-						profile = profile.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
-						overlayFilename = overlayFilename.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
-						size = (int)Math.ceil(96D * 270D / 1080D);
-						borderw = (int)Math.ceil(size * 7D / 96D);
-					} catch (IOException ioe){
-						statusArea.appendStatus("Some Error Occurred :(");
-						ioe.printStackTrace();
-						return;
-					}
 					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", drawtext=x=(w-tw)*0.5:y=h*0.9:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + profile + ":fontsize=" + size + ":textfile=" + overlayFilename);
+							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), 96, overlay));
 				} catch (ProcessTerminatedException ex){
 					return;
 				} finally {
-					tempOverlayFile.delete();
 					EventQueue.invokeLater(new Runnable(){
 						@Override
 						public void run() {
@@ -205,11 +179,10 @@ public class MainPanel extends JPanel {
 		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		
-		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
+		Helper.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				File tempFile = null;
-				File tempOverlayFile = null;
 				try {
 					statusArea.appendStatus("Rendering Clip... ");
 					try {
@@ -226,30 +199,9 @@ public class MainPanel extends JPanel {
 					} else {
 						scale = "scale";
 					}
-					String profile;
-					int size;
-					int borderw;
-					String overlayFilename;
-					try {
-						profile = ExtrasManager.getExtrasManager().getProfileLocation();
-						tempOverlayFile = File.createTempFile("tumblgififier", ".tmp");
-						tempOverlayFile.deleteOnExit();
-						Writer overlayWriter = new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8"));
-						overlayWriter.write(overlay);
-						overlayWriter.close();
-						overlayFilename = tempOverlayFile.getAbsolutePath();
-						profile = profile.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
-						overlayFilename = overlayFilename.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
-						size = (int)Math.ceil(96D * 270D / 1080D);
-						borderw = (int)Math.ceil(size * 7D / 96D);
-					} catch (IOException ioe){
-						statusArea.appendStatus("Some Error Occurred :(");
-						ioe.printStackTrace();
-						return;
-					}
 					MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", drawtext=x=(w-tw)*0.5:y=h*0.9:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + profile + ":fontsize=" + size + ":textfile=" + overlayFilename, "-c",
+							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), 96, overlay), "-c",
 							"ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
 					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
@@ -553,7 +505,7 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void updateEndScreenshot() {
-		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
+		Helper.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D));
@@ -562,8 +514,7 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void updateStartScreenshot() {
-		MainFrame.getMainFrame().getThreadPool().submit(new Runnable(){
-			
+		Helper.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				previewImageStartPanel.setImage(scan.screenShot(currentText, startSlider.getValue() * 0.25D));
