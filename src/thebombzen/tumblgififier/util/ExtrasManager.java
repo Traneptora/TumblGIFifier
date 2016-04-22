@@ -129,23 +129,23 @@ public class ExtrasManager {
 					f.setExecutable(true);
 				}
 			}
-			boolean needProfileDL = false;
+			boolean needOpenSansDL = false;
 			File f = new File(getOpenSansFontFileLocation());
-			processor.appendStatus("Checking for Profile Medium ...");
+			processor.appendStatus("Checking for Open Sans Semibold ...");
 			if (f.exists() && !f.isFile()) {
 				boolean did = f.delete();
 				if (!did) {
-					processor.appendStatus("Error: Bad Profile Medium  in Path: " + f.getPath());
+					processor.appendStatus("Error: Bad Open Sans Semibold in Path: " + f.getPath());
 					return false;
 				} else {
-					processor.appendStatus("Found Bad Profile Medium in Path. Deleted.");
+					processor.appendStatus("Found Bad Open Sans Semibold in Path. Deleted.");
 				}
 			}
 			if (!f.exists()) {
-				processor.replaceStatus("Checking for Profile Medium... not found.");
-				needProfileDL = true;
+				processor.replaceStatus("Checking for Open Sans Semibold... not found.");
+				needOpenSansDL = true;
 			} else {
-				processor.replaceStatus("Checking for Profile Medium... found.");
+				processor.replaceStatus("Checking for Open Sans Semibold... found.");
 			}
 			if (needDL) {
 				processor.appendStatus("Downloading FFmpeg from the internet...");
@@ -176,10 +176,10 @@ public class ExtrasManager {
 			} else {
 				processor.appendStatus("FFmpeg found.");
 			}
-			if (needProfileDL) {
-				processor.appendStatus("Downloading Profile Medium from the internet...");
-				File profileFile = new File(getOpenSansFontFileLocation());
-				FileOutputStream fos = new FileOutputStream(profileFile);
+			if (needOpenSansDL) {
+				processor.appendStatus("Downloading Open Sans Semibold from the internet...");
+				File openSansFile = new File(getOpenSansFontFileLocation());
+				FileOutputStream fos = new FileOutputStream(openSansFile);
 				URL website = new URL(getOpenSansDownloadLocation());
 				ReadableByteChannel rbc = Channels.newChannel(new XZInputStream(website.openStream()));
 				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
@@ -187,7 +187,7 @@ public class ExtrasManager {
 				rbc.close();
 				processor.appendStatus("Done downloading.");
 			} else {
-				processor.appendStatus("Profile Medium found.");
+				processor.appendStatus("Open Sans Semibold found.");
 			}
 			return true;
 		} catch (IOException ioe) {

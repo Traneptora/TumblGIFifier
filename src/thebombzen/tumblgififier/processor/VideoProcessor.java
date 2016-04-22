@@ -400,9 +400,10 @@ public class VideoProcessor {
 			String ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
 			shotFile = File.createTempFile("tumblgififier", ".tmp");
 			shotFile.deleteOnExit();
-			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", overlay.length() == 0 ? "-y" : "-filter:v", overlay.length() == 0 ? "-y" : Helper.createDrawTextString(getWidth(), getHeight(), 96, overlay),
-					"-t", "0.5", "-r", "1", "-s", shotWidth + "x" + shotHeight,
-					"-pix_fmt", "rgb24", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
+			String scale = "scale=" + shotWidth + ":" + shotHeight;
+			
+			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-vf", "format=rgb24, " + (overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(shotWidth, shotHeight, 96, overlay)),
+					"-t", "0.5", "-r", "1", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {
 			return null;

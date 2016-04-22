@@ -1,8 +1,13 @@
 package thebombzen.tumblgififier.util;
 
+import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -127,9 +132,15 @@ public class Helper {
 	}
 	
 	public static String createDrawTextString(int width, int height, int fontSize, String message) {
-		int size = (int)Math.ceil(fontSize * 270D / 1080D);
+		int size = (int)Math.ceil(fontSize * height / 1080D);
 		int borderw = (int)Math.ceil(size * 7D / fontSize);
-		String drawText = "rawtext=x=(w-tw)*0.5:y=h*0.9:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + fontFile + ":fontsize=" + size + ":textfile=" + tempOverlayFilename;
+		try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8")))){
+			writer.write(message);
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			return "";
+		}
+		String drawText = "drawtext=x=(w-tw)*0.5:y=(h-" + size + ")*0.985:bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + fontFile + ":fontsize=" + size + ":textfile=" + tempOverlayFilename;
 		return drawText;
 	}
 	
