@@ -5,6 +5,10 @@ Tumblr has a maximum GIF size of 2.0 MB, and TumblGIFifier will automatically re
 Warning:
 TumblGIFifier is still in its early stages of development. The UI is a bit clunky and there WILL be undiscovered bugs.
 
+## For Ordinary Users
+
+If you don't want to compile it from source, click the "Releases" button to the upper-right, and download the most recent version.
+
 ## Compilation
 
 	$ ant
