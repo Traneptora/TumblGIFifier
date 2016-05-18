@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
+import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 
 public class ExtrasManager {
@@ -96,7 +97,7 @@ public class ExtrasManager {
 	
 	private String getXLocation(String x) {
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
-		String name = x + Helper.EXE_EXTENSION;
+		String name = x + TumblGIFifier.EXE_EXTENSION;
 		for (String el : pathElements) {
 			if (new File(el, name).exists()) {
 				return new File(el, name).getPath();

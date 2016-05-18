@@ -10,10 +10,10 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
+import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.gui.StatusProcessorArea;
 import thebombzen.tumblgififier.util.ExtrasManager;
-import thebombzen.tumblgififier.util.Helper;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
 
 public class VideoProcessor {
@@ -29,7 +29,7 @@ public class VideoProcessor {
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(MainFrame.getMainFrame().exec(false, ffprobe,
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(TumblGIFifier.exec(false, ffprobe,
 				"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)))) {
 			while (null != (line = br.readLine())) {
 				// System.err.println(line);
@@ -235,8 +235,8 @@ public class VideoProcessor {
 					"Scaling Video... ",
 					endTime - startTime,
 					writer,
-					MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
-							location, "-map", "0:v", "-filter:v", overlay.length() == 0 ? scaleText : scaleText + ", " + Helper.createDrawTextString(newWidth, newHeight, overlaySize, overlay), "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
+					TumblGIFifier.exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
+							location, "-map", "0:v", "-filter:v", overlay.length() == 0 ? scaleText : scaleText + ", " + TumblGIFifier.createDrawTextString(newWidth, newHeight, overlaySize, overlay), "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
 							"yuv420p", halveFramerate ? "-r" : "-y",
 							halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffvhuff", "-f",
 							"matroska", this.mkvFile.getAbsolutePath()));
@@ -244,7 +244,7 @@ public class VideoProcessor {
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Scaling Video... Error.");
-			MainFrame.getMainFrame().stopAll();
+			TumblGIFifier.stopAll();
 			return false;
 		}
 		
@@ -254,12 +254,12 @@ public class VideoProcessor {
 		writer.flush();
 		
 		try {
-			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf",
+			TumblGIFifier.exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf",
 					"palettegen", "-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating Palette... Error.");
-			MainFrame.getMainFrame().stopAll();
+			TumblGIFifier.stopAll();
 			return false;
 		}
 		
@@ -272,13 +272,13 @@ public class VideoProcessor {
 					"Generating GIF... ",
 					endTime - startTime,
 					writer,
-					MainFrame.getMainFrame().exec(false, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
+					TumblGIFifier.exec(false, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
 							this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
 							this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating GIF... Error.");
-			MainFrame.getMainFrame().stopAll();
+			TumblGIFifier.stopAll();
 			return false;
 		}
 		
@@ -402,7 +402,7 @@ public class VideoProcessor {
 			shotFile.deleteOnExit();
 			String scale = "scale=" + shotWidth + ":" + shotHeight;
 			
-			MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-vf", "format=rgb24, " + (overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
+			TumblGIFifier.exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-vf", "format=rgb24, " + (overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
 					"-t", "0.5", "-r", "1", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {

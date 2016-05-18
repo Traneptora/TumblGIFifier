@@ -32,10 +32,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 import thebombzen.tumblgififier.util.ExtrasManager;
-import thebombzen.tumblgififier.util.Helper;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
 
 public class MainPanel extends JPanel {
@@ -79,7 +79,7 @@ public class MainPanel extends JPanel {
 			throw new NullPointerException();
 		}
 		setupLayout();
-		Helper.getThreadPool().scheduleWithFixedDelay(new Runnable(){
+		TumblGIFifier.getThreadPool().scheduleWithFixedDelay(new Runnable(){
 			public void run(){
 				EventQueue.invokeLater(new Runnable(){
 					public void run(){
@@ -108,7 +108,7 @@ public class MainPanel extends JPanel {
 		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		Helper.getThreadPool().submit(new Runnable(){
+		TumblGIFifier.getThreadPool().submit(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -143,7 +143,7 @@ public class MainPanel extends JPanel {
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
-		Helper.getThreadPool().submit(new Runnable(){
+		TumblGIFifier.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				try {
@@ -154,8 +154,8 @@ public class MainPanel extends JPanel {
 						scale = "scale";
 					}
 					
-					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
+					TumblGIFifier.exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
 				} catch (ProcessTerminatedException ex){
 					return;
 				} finally {
@@ -181,7 +181,7 @@ public class MainPanel extends JPanel {
 		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		
-		Helper.getThreadPool().submit(new Runnable(){
+		TumblGIFifier.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				File tempFile = null;
@@ -201,14 +201,14 @@ public class MainPanel extends JPanel {
 					} else {
 						scale = "scale";
 					}
-					MainFrame.getMainFrame().exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
+					TumblGIFifier.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", " + Helper.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay), "-c",
+							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay), "-c",
 							"ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
-					MainFrame.getMainFrame().exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
+					TumblGIFifier.exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
-					MainFrame.getMainFrame().stopAll();
+					TumblGIFifier.stopAll();
 					return;
 				} finally {
 					if (tempFile != null){
@@ -473,7 +473,7 @@ public class MainPanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				
 				if (fireButton.getText().equals("STOP")){
-					MainFrame.getMainFrame().stopAll();
+					TumblGIFifier.stopAll();
 					MainFrame.getMainFrame().setBusy(false);
 					return;
 				}
@@ -535,7 +535,7 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void updateEndScreenshot() {
-		Helper.getThreadPool().submit(new Runnable(){
+		TumblGIFifier.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D, textSize));
@@ -544,7 +544,7 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void updateStartScreenshot() {
-		Helper.getThreadPool().submit(new Runnable(){
+		TumblGIFifier.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
 				previewImageStartPanel.setImage(scan.screenShot(currentText, startSlider.getValue() * 0.25D, textSize));

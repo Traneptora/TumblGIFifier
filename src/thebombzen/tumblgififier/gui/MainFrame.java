@@ -2,23 +2,17 @@ package thebombzen.tumblgififier.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -26,21 +20,16 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 import thebombzen.tumblgififier.util.ExtrasManager;
-import thebombzen.tumblgififier.util.Helper;
-import thebombzen.tumblgififier.util.NullInputStream;
-import thebombzen.tumblgififier.util.NullOutputStream;
-import thebombzen.tumblgififier.util.ProcessTerminatedException;
 
 /**
  * This represents the main JFrame of the program, and also serves as the
  * central class with most of the utility methods.
  */
 public class MainFrame extends JFrame {
-	
-	public static final String VERSION = "0.5.1";
 	
 	/**
 	 * The singleton instance of MainFrame.
@@ -60,34 +49,6 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * Run our program.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable(){
-			
-			@Override
-			public void run() {
-				new MainFrame().setVisible(true);
-			}
-		});
-	}
-	
-	/**
-	 * True if the program is marked as "busy," i.e. the interface should be
-	 * disabled. For example, rendering a clip or creating a GIF or scanning a
-	 * file make us "busy."
-	 */
-	private volatile boolean busy = false;
-	
-	/**
-	 * A flag used to determine if we're cleaning up all the subprocesses we've
-	 * started. Normally, ending a process will just cause the next stage in the
-	 * GIF creation to continue. If this flag is set, we won't create any more
-	 * processes.
-	 */
-	private volatile boolean cleaningUp = false;
-	
-	/**
 	 * We use this panel on startup. It contains nothing but a
 	 * StatusProcessorArea.
 	 */
@@ -105,24 +66,25 @@ public class MainFrame extends JFrame {
 	private String mostRecentOpenDirectory = null;
 	
 	/**
-	 * This is a list of all processes started by our program. It's used so we
-	 * can end them all upon exit.
-	 */
-	private volatile List<Process> processes = new ArrayList<>();
-	
-	/**
 	 * This is the StatusProcessorArea inside the default panel.
 	 */
 	private StatusProcessorArea statusArea = new StatusProcessorArea();
 	
 	private JMenuBar menuBar;
+
+	/**
+	 * True if the program is marked as "busy," i.e. the interface should be
+	 * disabled. For example, rendering a clip or creating a GIF or scanning a
+	 * file make us "busy."
+	 */
+	public static volatile boolean busy = false;
 	
 	/**
 	 * Initialization and construction code.
 	 */
 	public MainFrame() {
 		mainFrame = this;
-		setTitle("TumblGIFifier - Version " + VERSION);
+		setTitle("TumblGIFifier - Version " + TumblGIFifier.VERSION);
 		this.setLayout(new BorderLayout());
 		this.getContentPane().add(defaultPanel);
 		setResizable(false);
@@ -138,7 +100,7 @@ public class MainFrame extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				quit();
+				TumblGIFifier.quit();
 			}
 		});
 		ActionListener l = new ActionListener(){
@@ -159,7 +121,7 @@ public class MainFrame extends JFrame {
 						mostRecentOpenDirectory = fileDialog.getDirectory();
 						final File file = new File(mostRecentOpenDirectory, filename);
 						setBusy(true);
-						Helper.getThreadPool().submit(new Runnable(){
+						TumblGIFifier.getThreadPool().submit(new Runnable(){
 							
 							@Override
 							public void run() {
@@ -213,12 +175,12 @@ public class MainFrame extends JFrame {
 			
 			@Override
 			public void windowClosing(WindowEvent e) {
-				quit();
+				TumblGIFifier.quit();
 			}
 		});
 		setBusy(true);
 		statusArea.appendStatus("Initializing Engine. This may take a while on the first execution.");
-		Helper.getThreadPool().submit(new Runnable(){
+		TumblGIFifier.getThreadPool().submit(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -241,93 +203,12 @@ public class MainFrame extends JFrame {
 	}
 	
 	/**
-	 * Create a subprocess and execute the arguments. This automatically
-	 * redirects standard error to standard out.
-	 * 
-	 * @param join
-	 *            If this is set to true, this method will block until the
-	 *            process terminates. If it's set to false, it will return
-	 *            immediately.
-	 * @param args
-	 *            The program name and arguments to execute. This is NOT passed
-	 *            to a shell so you have to be careful with spacing or with
-	 *            empty strings.
-	 * @return This returns an InputStream that reads from the Standard
-	 *         output/error stream of the process. If this method was set to
-	 *         block then this InputStream will have reached End-Of-File.
-	 */
-	public InputStream exec(boolean join, String... args) throws ProcessTerminatedException {
-		try {
-			if (join) {
-				return exec(new NullOutputStream(), args);
-			} else {
-				return new BufferedInputStream(exec(null, args));
-			}
-		} catch (IOException ioe) {
-			// NullOutputStream doesn't throw IOException, so if we get one here
-			// it's really weird.
-			if (ioe.getMessage().equals("Stream closed")){
-				throw new ProcessTerminatedException(ioe);
-			} else {
-				ioe.printStackTrace();
-				return new NullInputStream();
-			}	
-		}
-	}
-	
-	/**
-	 * Create a subprocess and execute the arguments. This automatically
-	 * redirects standard error to standard out. If the stream copyTo is not
-	 * null, it will automatically copy the standard output of that process to
-	 * the OutputStream copyTo. Copying the stream will cause this method to
-	 * block. Declining to copy will cause this method to return immediately.
-	 * 
-	 * @param copyTo
-	 *            If this is not null, this method will block until the process
-	 *            terminates, and all the output of that process will be copied
-	 *            to the stream. If it's set to mull, it will return immediately
-	 *            and no copying will occur.
-	 * @param args
-	 *            The program name and arguments to execute. This is NOT passed
-	 *            to a shell so you have to be careful with spacing or with
-	 *            empty strings.
-	 * @return This returns an InputStream that reads from the Standard
-	 *         output/error stream of the process. If this method was set to
-	 *         copy then this InputStream will have reached End-Of-File.
-	 * @throws IOException
-	 *             If an I/O error occurs.
-	 */
-	public InputStream exec(OutputStream copyTo, String... args) throws IOException {
-		if (cleaningUp) {
-			return null;
-		}
-		ProcessBuilder pbuilder = new ProcessBuilder(args);
-		pbuilder.redirectErrorStream(true);
-		Process p = pbuilder.start();
-		processes.add(p);
-		if (copyTo != null) {
-			p.getOutputStream().close();
-			InputStream str = p.getInputStream();
-			int i;
-			while (-1 != (i = str.read())) {
-				copyTo.write(i);
-			}
-		}
-		return p.getInputStream();
-	}
-	
-	/**
 	 * We do our cleaning up code here, just in case someone ends the process
 	 * without closing the window or hitting "quit."
 	 */
 	@Override
 	protected void finalize() {
-		cleanUp();
-	}
-	
-	private void cleanUp(){
-		stopAll();
-		Helper.getThreadPool().shutdown();
+		TumblGIFifier.cleanUp();
 	}
 	
 	/**
@@ -348,29 +229,8 @@ public class MainFrame extends JFrame {
 	 * disabled. For example, rendering a clip or creating a GIF or scanning a
 	 * file make us "busy."
 	 */
-	public boolean isBusy() {
-		return busy;
-	}
-	
-	/**
-	 * Stop all subprocesses.
-	 */
-	public void stopAll(){
-		cleaningUp = true;
-		for (Process p : processes) {
-			p.destroy();
-		}
-		processes.clear();
-		cleaningUp = false;
-	}
-	
-	/**
-	 * Quit the program. Destroys all currently executing sub-processes and then
-	 * exits.
-	 */
-	public void quit() {
-		cleanUp();
-		System.exit(0);
+	public static boolean isBusy() {
+		return MainFrame.busy;
 	}
 	
 	/**
@@ -379,7 +239,7 @@ public class MainFrame extends JFrame {
 	 * a file make us "busy."
 	 */
 	public void setBusy(boolean busy) {
-		this.busy = busy;
+		MainFrame.busy = busy;
 		MainFrame.getMainFrame().toFront();
 		MainFrame.getMainFrame().setAlwaysOnTop(true);
 		MainFrame.getMainFrame().setAlwaysOnTop(false);
@@ -389,20 +249,8 @@ public class MainFrame extends JFrame {
 			for (Component c : mainPanel.getOnDisable()){
 				c.setEnabled(!busy);
 			}
-			setEnabled(menuBar, !busy);
+			TumblGIFifier.setEnabled(menuBar, !busy);
 			mainPanel.getFireButton().requestFocusInWindow();
-		}
-	}
-	
-	/**
-	 * Recursively enable or disable a component and all of its children.
-	 */
-	public void setEnabled(Component component, boolean enabled) {
-		component.setEnabled(enabled);
-		if (component instanceof Container) {
-			for (Component child : ((Container) component).getComponents()) {
-				setEnabled(child, enabled);
-			}
 		}
 	}
 	
