@@ -11,9 +11,15 @@ If you don't want to compile it from source, click the "Releases" button to the 
 
 ## Compilation
 
+The first time you clone this repository, you need to grab `xz-java`. To do this, run:
+
+	$ git submodule init && git submodule update
+
+This will pull in the XZ Java submodule. Then, to compile, run:
+
 	$ ant
 
-That's it. To clean, run
+To clean the build, run:
 
 	$ ant clean
 
