@@ -15,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -135,7 +136,7 @@ public final class TumblGIFifier {
 	}
 
 	/**
-	 * Stop all subprocesses.
+	 * Stop all subprocesses, but do not exit the program.
 	 */
 	public static void stopAll(){
 		cleaningUp = true;
@@ -146,14 +147,16 @@ public final class TumblGIFifier {
 		cleaningUp = false;
 	}
 
+	/**
+	 * This stops all subprocesses and shuts down the thread pool.
+	 */
 	public static void cleanUp(){
 		stopAll();
 		TumblGIFifier.getThreadPool().shutdown();
 	}
 
 	/**
-	 * Quit the program. Destroys all currently executing sub-processes and then
-	 * exits.
+	 * Quit the program. Cleans up the subprocesses, shuts down the thread pool, then exists.
 	 */
 	public static void quit() {
 		cleanUp();
@@ -182,6 +185,7 @@ public final class TumblGIFifier {
 	 * windows, it's ".exe" and on other platforms it's the empty string.
 	 */
 	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
+	
 	/**
 	 * Close a stream quietly because we honestly don't care if a stream.close()
 	 * throws IOException
@@ -193,55 +197,7 @@ public final class TumblGIFifier {
 			// do nothing
 		}
 	}
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard
-	 * library? >_>
-	 * 
-	 * @param conjunction
-	 *            The delimiter with which to conjoin the strings.
-	 * @param list
-	 *            The collection of strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public static String join(String conjunction, Iterable<String> list) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for (String item : list) {
-			if (first) {
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
-		}
-		return sb.toString();
-	}
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard
-	 * library? >_>
-	 * 
-	 * @param conjunction
-	 *            The delimiter with which to conjoin the strings.
-	 * @param list
-	 *            An iterator of the strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public static String join(String conjunction, Iterator<String> list) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		while (list.hasNext()) {
-			String item = list.next();
-			if (first) {
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
-		}
-		return sb.toString();
-	}
+	
 	/**
 	 * Utility method to join an array of Strings based on a delimiter.
 	 * Seriously, why did it take until Java 8 to add this thing to the standard
@@ -254,9 +210,40 @@ public final class TumblGIFifier {
 	 * @return The conjoined string.
 	 */
 	public static String join(String conjunction, String[] list) {
+		return join(conjunction, Arrays.asList(list));
+	}
+	
+	/**
+	 * Utility method to join an array of Strings based on a delimiter.
+	 * Seriously, why did it take until Java 8 to add this thing to the standard
+	 * library? >_>
+	 * 
+	 * @param conjunction
+	 *            The delimiter with which to conjoin the strings.
+	 * @param list
+	 *            The collection of strings to conjoin.
+	 * @return The conjoined string.
+	 */
+	public static String join(String conjunction, Iterable<String> list) {
+		return join(conjunction, list.iterator());
+	}
+	
+	/**
+	 * Utility method to join an array of Strings based on a delimiter.
+	 * Seriously, why did it take until Java 8 to add this thing to the standard
+	 * library? >_>
+	 * 
+	 * @param conjunction
+	 *            The delimiter with which to conjoin the strings.
+	 * @param iterator
+	 *            An iterator of the strings to conjoin.
+	 * @return The conjoined string.
+	 */
+	public static String join(String conjunction, Iterator<String> iterator) {
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
-		for (String item : list) {
+		while (iterator.hasNext()) {
+			String item = iterator.next();
 			if (first) {
 				first = false;
 			} else {
