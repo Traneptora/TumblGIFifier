@@ -1,0 +1,9 @@
+# Manifest file
+MANIFEST.MF
+
+# Any built things
+build
+
+# Also TumblGIFifier.jar
+TumblGIFifier.jar
+
