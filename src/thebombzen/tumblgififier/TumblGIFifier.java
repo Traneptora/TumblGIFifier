@@ -43,6 +43,11 @@ public final class TumblGIFifier {
 				new MainFrame().setVisible(true);
 			}
 		});
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+			public void run(){
+				TumblGIFifier.cleanUp();
+			}
+		}));
 	}
 
 	/**
@@ -141,7 +146,9 @@ public final class TumblGIFifier {
 	public static void stopAll(){
 		cleaningUp = true;
 		for (Process p : processes) {
-			p.destroy();
+			if (p.isAlive()){
+				p.destroy();
+			}
 		}
 		processes.clear();
 		cleaningUp = false;
@@ -153,6 +160,7 @@ public final class TumblGIFifier {
 	public static void cleanUp(){
 		stopAll();
 		TumblGIFifier.getThreadPool().shutdown();
+		System.out.println();
 	}
 
 	/**

@@ -31,7 +31,7 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 				setText(text);
 			}
 		});
-		System.out.println(status);
+		System.out.format("%n%s", status);
 	}
 	
 	@Override
