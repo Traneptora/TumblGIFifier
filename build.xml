@@ -5,6 +5,7 @@
   </description>
   <!-- set global properties for this build -->
   <property name="src" location="src"/>
+  <property name="xzsrc" location="xz-java/src"/>
   <property name="build" location="build"/>
   <property name="dist" location="."/>
   <property name="jar" location="TumblGIFifier.jar"/>
@@ -19,6 +20,7 @@
   <target name="compile" depends="init"
         description="compile the source">
     <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${xzsrc}" destdir="${build}" source="1.7" target="1.7"/>
     <javac srcdir="${src}" destdir="${build}" source="1.7" target="1.7" />
   </target>
 
@@ -29,7 +31,7 @@
 
 	<!-- Jar everything up -->
     <manifest file="MANIFEST.MF">
-		<attribute name="Main-Class" value="thebombzen.tumblgififier.gui.MainFrame"/>
+		<attribute name="Main-Class" value="thebombzen.tumblgififier.TumblGIFifier"/>
 	</manifest>
     <jar jarfile="${jar}" basedir="${build}" manifest="MANIFEST.MF" />
   </target>
