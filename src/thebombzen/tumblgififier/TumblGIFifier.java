@@ -254,13 +254,33 @@ public final class TumblGIFifier {
 		return sb.toString();
 	}
 	
-	public static ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
+	/**
+	 * This is the thread pool on which we should run thread-pool tasks.
+	 */
+	private static ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
+	
+	/**
+	 * Escapes a string to be used in an FFmpeg video filter. Replaces backslash, comma, semicolon, colon, single quote, brackets, and equal signs with escaped versions.
+	 * @param input This is the input string to escape
+	 * @return An escaped string.
+	 */
 	public static String escapeForVideoFilter(String input){
-		return input.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'");
+		return input.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'").replace("[", "\\[").replace("]", "\\]").replace("=", "\\=");
 	}
 	
-	private static File tempOverlayFile; 
+	/**
+	 * We dump the overlay text to a file so we don't have to escape it.
+	 */
+	private static File tempOverlayFile;
+	
+	/**
+	 * This is the escaped filename of the tempOverlayFile.
+	 */
 	private static String tempOverlayFilename;
+	
+	/**
+	 * This is the escaped filename of the Open Sans font file location.
+	 */
 	private static String fontFile = escapeForVideoFilter(ExtrasManager.getExtrasManager().getOpenSansFontFileLocation());
 	
 	static {
@@ -272,6 +292,17 @@ public final class TumblGIFifier {
 		}
 	}
 	
+	/**
+	 * This creates the drawtext filter to be used with the text overlay feature.
+	 * Just drop right after -vf.
+	 * Note that you shouldn't use this more than once at a time,
+	 * because it dumps the message to a file and points the filter to that file.
+	 * @param width The video width
+	 * @param height The video height
+	 * @param fontSize The font point size of the message we want to render
+	 * @param message The text of the message we want to render
+	 * @return A drop-in drawtext filter, to be placed right after the -vf argument.
+	 */
 	public static String createDrawTextString(int width, int height, int fontSize, String message) {
 		int size = (int)Math.ceil(fontSize * height / 1080D);
 		int borderw = (int)Math.ceil(size * 7D / fontSize);
@@ -285,6 +316,9 @@ public final class TumblGIFifier {
 		return drawText;
 	}
 
+	/**
+	 * This returns the thread pool for thread-pool-like tasks. 
+	 */
 	public static ScheduledExecutorService getThreadPool(){
 		return threadPool;
 	}
