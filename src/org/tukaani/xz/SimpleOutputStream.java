@@ -10,6 +10,7 @@
 package org.tukaani.xz;
 
 import java.io.IOException;
+
 import org.tukaani.xz.simple.SimpleFilter;
 
 class SimpleOutputStream extends FinishableOutputStream {

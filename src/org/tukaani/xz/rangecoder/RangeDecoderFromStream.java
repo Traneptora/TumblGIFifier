@@ -13,6 +13,7 @@ package org.tukaani.xz.rangecoder;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
 import org.tukaani.xz.CorruptedInputException;
 
 public final class RangeDecoderFromStream extends RangeDecoder {

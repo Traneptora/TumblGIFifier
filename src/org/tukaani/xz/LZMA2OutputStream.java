@@ -12,6 +12,7 @@ package org.tukaani.xz;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+
 import org.tukaani.xz.lz.LZEncoder;
 import org.tukaani.xz.lzma.LZMAEncoder;
 import org.tukaani.xz.rangecoder.RangeEncoder;

@@ -12,6 +12,7 @@ package org.tukaani.xz.index;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.zip.CheckedInputStream;
+
 import org.tukaani.xz.CorruptedInputException;
 import org.tukaani.xz.MemoryLimitException;
 import org.tukaani.xz.SeekableInputStream;

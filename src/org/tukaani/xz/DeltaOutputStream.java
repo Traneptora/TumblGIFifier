@@ -10,6 +10,7 @@
 package org.tukaani.xz;
 
 import java.io.IOException;
+
 import org.tukaani.xz.delta.DeltaEncoder;
 
 class DeltaOutputStream extends FinishableOutputStream {

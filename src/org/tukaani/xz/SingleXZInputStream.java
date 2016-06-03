@@ -13,6 +13,7 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+
 import org.tukaani.xz.check.Check;
 import org.tukaani.xz.common.DecoderUtil;
 import org.tukaani.xz.common.StreamFlags;

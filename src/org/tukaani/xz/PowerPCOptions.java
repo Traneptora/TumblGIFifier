@@ -10,6 +10,7 @@
 package org.tukaani.xz;
 
 import java.io.InputStream;
+
 import org.tukaani.xz.simple.PowerPC;
 
 /**
