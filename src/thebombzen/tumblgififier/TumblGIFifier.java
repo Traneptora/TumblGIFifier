@@ -176,6 +176,7 @@ public final class TumblGIFifier {
 	 * True if the system is detected as a windows system, false otherwise.
 	 */
 	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+	
 	/**
 	 * File extension for executable files, with the period included. On
 	 * windows, it's ".exe" and on other platforms it's the empty string.
