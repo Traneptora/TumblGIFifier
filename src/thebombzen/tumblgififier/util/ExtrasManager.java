@@ -190,7 +190,7 @@ public class ExtrasManager {
 			} else {
 				processor.appendStatus("Open Sans Semibold found.");
 			}
-			processor.appendStatus("Initialization successful. Now, open a file with File -> Open.");
+			processor.appendStatus("Initialization successful. Now, open a video file with File -> Open.");
 			return true;
 		} catch (IOException ioe) {
 			// this should not occur
