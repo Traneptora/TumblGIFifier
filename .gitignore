@@ -4,6 +4,6 @@ MANIFEST.MF
 # Any built things
 build
 
-# Also TumblGIFifier.jar
-TumblGIFifier.jar
+# Also Jarfiles
+*.jar
 
