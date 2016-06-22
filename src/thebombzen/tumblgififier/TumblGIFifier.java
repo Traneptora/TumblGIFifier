@@ -34,7 +34,7 @@ import thebombzen.tumblgififier.util.ProcessTerminatedException;
 public final class TumblGIFifier {
 
 	/** The version of TumblGIFifier */
-	public static final String VERSION = "0.5.2";
+	public static final String VERSION = "0.5.1b";
 
 	/**
 	 * Run our program.
