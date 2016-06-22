@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.util;
+package thebombzen.tumblgififier.io;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;

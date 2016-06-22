@@ -13,7 +13,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.processor.StatusProcessor;
 
 public class ExtrasManager {
 	

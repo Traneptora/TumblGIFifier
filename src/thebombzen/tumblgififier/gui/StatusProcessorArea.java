@@ -4,7 +4,7 @@ import java.awt.EventQueue;
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.processor.StatusProcessor;
+import thebombzen.tumblgififier.util.StatusProcessor;
 
 public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 	

@@ -23,12 +23,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.swing.Box;
 import thebombzen.tumblgififier.gui.MainFrame;
+import thebombzen.tumblgififier.io.NullInputStream;
+import thebombzen.tumblgififier.io.NullOutputStream;
+import thebombzen.tumblgififier.io.SynchronizedOutputStream;
+import thebombzen.tumblgififier.io.TeeOutputStream;
 import thebombzen.tumblgififier.util.ExtrasManager;
-import thebombzen.tumblgififier.util.NullInputStream;
-import thebombzen.tumblgififier.util.NullOutputStream;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
-import thebombzen.tumblgififier.util.SynchronizedOutputStream;
-import thebombzen.tumblgififier.util.TeeOutputStream;
 
 
 public final class TumblGIFifier {

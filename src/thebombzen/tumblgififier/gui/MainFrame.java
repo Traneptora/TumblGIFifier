@@ -21,9 +21,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 import thebombzen.tumblgififier.util.ExtrasManager;
+import thebombzen.tumblgififier.util.StatusProcessor;
 
 /**
  * This represents the main JFrame of the program, and also serves as the

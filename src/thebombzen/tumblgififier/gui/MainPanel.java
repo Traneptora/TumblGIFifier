@@ -35,10 +35,10 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.processor.StatusProcessor;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 import thebombzen.tumblgififier.util.ExtrasManager;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
+import thebombzen.tumblgififier.util.StatusProcessor;
 
 public class MainPanel extends JPanel {
 	

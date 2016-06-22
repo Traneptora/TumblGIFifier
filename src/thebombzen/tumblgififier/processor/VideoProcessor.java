@@ -15,6 +15,7 @@ import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.gui.StatusProcessorArea;
 import thebombzen.tumblgififier.util.ExtrasManager;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
+import thebombzen.tumblgififier.util.StatusProcessor;
 
 public class VideoProcessor {
 	
