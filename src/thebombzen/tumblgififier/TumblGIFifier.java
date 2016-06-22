@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import javax.swing.Box;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.util.ExtrasManager;
 import thebombzen.tumblgififier.util.NullInputStream;
@@ -30,7 +31,7 @@ import thebombzen.tumblgififier.util.ProcessTerminatedException;
 public final class TumblGIFifier {
 
 	/** The version of TumblGIFifier */
-	public static final String VERSION = "0.5.1";
+	public static final String VERSION = "0.5.2";
 
 	/**
 	 * Run our program.
@@ -323,6 +324,31 @@ public final class TumblGIFifier {
 		String drawText = "drawtext=x=(w-tw)*0.5:y=0.935*(h-0.5*" + size + "):bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + fontFile + ":fontsize=" + size + ":textfile=" + tempOverlayFilename;
 		return drawText;
 	}
+	
+	
+	public static Component wrapLeftAligned(Component comp) {
+		Box box = Box.createHorizontalBox();
+		box.add(comp);
+		box.add(Box.createHorizontalGlue());
+		return box;
+	}
+	
+	public static Component wrapCenterAligned(Component comp) {
+		Box box = Box.createHorizontalBox();
+		box.add(Box.createHorizontalGlue());
+		box.add(comp);
+		box.add(Box.createHorizontalGlue());
+		return box;
+	}
+	
+	public static Component wrapLeftRightAligned(Component left, Component right) {
+		Box box = Box.createHorizontalBox();
+		box.add(left);
+		box.add(Box.createHorizontalGlue());
+		box.add(right);
+		return box;
+	}
+
 
 	/**
 	 * This returns the thread pool for thread-pool-like tasks. 

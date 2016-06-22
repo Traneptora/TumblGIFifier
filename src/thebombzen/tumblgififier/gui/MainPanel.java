@@ -1,5 +1,7 @@
 package thebombzen.tumblgififier.gui;
 
+import static thebombzen.tumblgififier.TumblGIFifier.wrapLeftAligned;
+import static thebombzen.tumblgififier.TumblGIFifier.wrapLeftRightAligned;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -550,21 +552,6 @@ public class MainPanel extends JPanel {
 				previewImageStartPanel.setImage(scan.screenShot(currentText, startSlider.getValue() * 0.25D, textSize));
 			}
 		});
-	}
-	
-	private Component wrapLeftAligned(Component comp) {
-		Box box = Box.createHorizontalBox();
-		box.add(comp);
-		box.add(Box.createHorizontalGlue());
-		return box;
-	}
-	
-	private Component wrapLeftRightAligned(Component left, Component right) {
-		Box box = Box.createHorizontalBox();
-		box.add(left);
-		box.add(Box.createHorizontalGlue());
-		box.add(right);
-		return box;
 	}
 
 	public JButton getFireButton() {

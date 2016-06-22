@@ -90,17 +90,27 @@ public class MainFrame extends JFrame {
 		setResizable(false);
 		menuBar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
+		JMenu helpMenu = new JMenu("Help");
+		JMenuItem about = new JMenuItem("About...");
 		JMenuItem open = new JMenuItem("Open...");
 		JMenuItem quit = new JMenuItem("Quit...");
 		fileMenu.add(open);
 		fileMenu.add(quit);
+		helpMenu.add(about);
 		menuBar.add(fileMenu);
+		menuBar.add(helpMenu);
 		this.add(menuBar, BorderLayout.NORTH);
 		quit.addActionListener(new ActionListener(){
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				TumblGIFifier.quit();
+			}
+		});
+		about.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new AboutDialog(MainFrame.this).setVisible(true);
 			}
 		});
 		ActionListener l = new ActionListener(){
