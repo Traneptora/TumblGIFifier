@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -26,6 +27,8 @@ import thebombzen.tumblgififier.util.ExtrasManager;
 import thebombzen.tumblgififier.util.NullInputStream;
 import thebombzen.tumblgififier.util.NullOutputStream;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
+import thebombzen.tumblgififier.util.SynchronizedOutputStream;
+import thebombzen.tumblgififier.util.TeeOutputStream;
 
 
 public final class TumblGIFifier {
@@ -36,9 +39,20 @@ public final class TumblGIFifier {
 	/**
 	 * Run our program.
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
+		
+		File outputLogFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "output.log");
+		File errorLogFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "error.log");
+		File bothLogFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "full_log.log");
+		
+		outputLogFileOutputStream = new SynchronizedOutputStream(new FileOutputStream(outputLogFile));
+		errorLogFileOutputStream = new SynchronizedOutputStream(new FileOutputStream(errorLogFile));
+		bothLogFileOutputStream = new SynchronizedOutputStream(new FileOutputStream(bothLogFile));
+		
+		System.setErr(new PrintStream(new TeeOutputStream(System.err, errorLogFileOutputStream, bothLogFileOutputStream)));
+		System.setOut(new PrintStream(new TeeOutputStream(System.out, outputLogFileOutputStream, bothLogFileOutputStream)));
+		
 		EventQueue.invokeLater(new Runnable(){
-			
 			@Override
 			public void run() {
 				new MainFrame().setVisible(true);
@@ -50,6 +64,10 @@ public final class TumblGIFifier {
 			}
 		}));
 	}
+	
+	private static OutputStream outputLogFileOutputStream;
+	private static OutputStream errorLogFileOutputStream;
+	private static OutputStream bothLogFileOutputStream;
 
 	/**
 	 * A flag used to determine if we're cleaning up all the subprocesses we've
@@ -162,6 +180,9 @@ public final class TumblGIFifier {
 		stopAll();
 		TumblGIFifier.getThreadPool().shutdown();
 		System.out.println();
+		closeQuietly(outputLogFileOutputStream);
+		closeQuietly(errorLogFileOutputStream);
+		closeQuietly(bothLogFileOutputStream);
 	}
 
 	/**
