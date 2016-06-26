@@ -26,6 +26,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -230,6 +231,22 @@ public class MainPanel extends JPanel {
 	 * Execute this on the Event Dispatch thread
 	 */
 	private void fire(){
+		
+		if (maxSizeCheckBox.isSelected()) {
+			final int maxSizeBytes = 1000 * maxSize;
+			final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
+			final double clipStart = startSlider.getValue() * 0.25D;
+			final double clipEnd = endSlider.getValue() * 0.25D;
+			double newWidth = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate() * (halveFramerate ? 0.5D : 1D) * (clipEnd - clipStart) / (2D * maxSizeBytes));
+			if (newWidth < 300D){
+				int dialogResult = JOptionPane.showConfirmDialog(this, "This GIF will probably be less than 300 pixels wide, which means Tumblr won't expand it to fit the window. Is this okay?", "Warning", JOptionPane.OK_CANCEL_OPTION);
+				if (dialogResult == JOptionPane.CANCEL_OPTION){
+					return;
+				}
+			}
+		}
+		
+		
 		
 		FileDialog fileDialog = new FileDialog(MainFrame.getMainFrame(), "Save GIF as...", FileDialog.SAVE);
 		fileDialog.setMultipleMode(false);
