@@ -239,7 +239,7 @@ public class MainPanel extends JPanel {
 			final double clipEnd = endSlider.getValue() * 0.25D;
 			double newWidth = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate() * (halveFramerate ? 0.5D : 1D) * (clipEnd - clipStart) / (2D * maxSizeBytes));
 			if (newWidth < 300D){
-				int dialogResult = JOptionPane.showConfirmDialog(this, "This GIF will probably be less than 300 pixels wide, which means Tumblr won't expand it to fit the window. Is this okay?", "Warning", JOptionPane.OK_CANCEL_OPTION);
+				int dialogResult = JOptionPane.showConfirmDialog(this, String.format("This GIF will probably be less than 300 pixels wide, which means Tumblr won't expand it to fit the window. Is this okay?%n(If not then you should drag the sliders on the right to decrease the duration.)"), "Warning", JOptionPane.OK_CANCEL_OPTION);
 				if (dialogResult == JOptionPane.CANCEL_OPTION){
 					return;
 				}
