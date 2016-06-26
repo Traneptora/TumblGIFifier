@@ -58,8 +58,6 @@ public class MainPanel extends JPanel {
 	private ImagePanel previewImageEndPanel;
 	private ImagePanel previewImageStartPanel;
 	private VideoProcessor scan;
-	private JLabel sizeThresholdLabel;
-	private JSlider sizeThresholdSlider;
 	private JSlider startSlider;
 	private StatusProcessorArea statusArea;
 	private JButton fireButton = new JButton("Create GIF");
@@ -102,10 +100,10 @@ public class MainPanel extends JPanel {
 		final int minSizeBytes;
 		if (maxSizeCheckBox.isSelected()) {
 			maxSizeBytes = 1000 * maxSize;
-			minSizeBytes = 1000 * (maxSize - maxSize * sizeThresholdSlider.getValue() / 100);
+			minSizeBytes = 1000 * (maxSize * 19 / 20);
 		} else {
 			maxSizeBytes = Integer.MAX_VALUE;
-			minSizeBytes = 1;
+			minSizeBytes = 0;
 		}
 		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
 		final double clipStart = startSlider.getValue() * 0.25D;
@@ -206,7 +204,7 @@ public class MainPanel extends JPanel {
 					TumblGIFifier.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
 							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay), "-c",
-							"ffvhuff", "-f", "matroska", tempFile.getAbsolutePath());
+							"ffv1", "-f", "matroska", tempFile.getAbsolutePath());
 					TumblGIFifier.exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
@@ -226,6 +224,45 @@ public class MainPanel extends JPanel {
 			}
 		});
 		
+	}
+	
+	/**
+	 * Execute this on the Event Dispatch thread
+	 */
+	private void fire(){
+		
+		FileDialog fileDialog = new FileDialog(MainFrame.getMainFrame(), "Save GIF as...", FileDialog.SAVE);
+		fileDialog.setMultipleMode(false);
+		
+		if (mostRecentGIFDirectory != null) {
+			fileDialog.setDirectory(mostRecentGIFDirectory);
+		}
+		
+		fileDialog.setFilenameFilter(new FilenameFilter(){
+			
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".gif");
+			}
+			
+		});
+		
+		fileDialog.setVisible(true);
+		final String filename = fileDialog.getFile();
+		
+		if (filename != null) {
+			File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(),
+					"recent_gif.txt");
+			mostRecentGIFDirectory = fileDialog.getDirectory();
+			try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)) {
+				recentGIFWriter.write(mostRecentGIFDirectory);
+			} catch (IOException ioe) {
+				// we don't care much if this fails
+				// but knowing on standard error is nice
+				ioe.printStackTrace();
+			}
+			createGIF(new File(mostRecentGIFDirectory, filename).getAbsolutePath());
+		}
 	}
 	
 	private void setupLayout() {
@@ -344,9 +381,9 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(wrapLeftRightAligned(new JLabel("Framerate:"),
 				new JLabel(String.format("%.2f", scan.getFramerate()))));
-		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
-		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(Box.createVerticalStrut(20));
 		maxSizeTextField = new JTextField("2000");
 		maxSizeTextField.setHorizontalAlignment(SwingConstants.RIGHT);
 		maxSizeTextField.setMaximumSize(new Dimension(200, 25));
@@ -376,58 +413,18 @@ public class MainPanel extends JPanel {
 		onDisable.add(maxSizeCheckBox);
 		
 		leftPanel.add(wrapLeftRightAligned(maxSizeCheckBox, maxSizeTextField));
+		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(wrapLeftAligned(new JLabel("The maximum size on Tumblr is 2000 Kilobytes.")));		
 		leftPanel.add(Box.createVerticalStrut(20));
-		leftPanel.add(wrapLeftAligned(new JLabel("The maximum size on Tumblr is 2000 Kilobytes.")));
-		leftPanel.add(Box.createVerticalStrut(20));
-		sizeThresholdLabel = new JLabel("10 Percent");
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Acceptable Size Percent:"), sizeThresholdLabel));
-		leftPanel.add(Box.createVerticalStrut(5));
-		sizeThresholdSlider = new JSlider();
-		sizeThresholdSlider.setMaximum(100);
-		sizeThresholdSlider.setMinimum(3);
-		sizeThresholdSlider.setValue(10);
-		sizeThresholdSlider.addChangeListener(new ChangeListener(){
-			
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				sizeThresholdLabel.setText(sizeThresholdSlider.getValue() + " Percent");
-			}
-		});
-		
-		onDisable.add(sizeThresholdSlider);
-		
-		leftPanel.add(wrapLeftAligned(sizeThresholdSlider));
-		
-		maxSizeCheckBox.addChangeListener(new ChangeListener(){
-			
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				maxSizeTextField.setEnabled(maxSizeCheckBox.isSelected());
-				sizeThresholdSlider.setEnabled(maxSizeCheckBox.isSelected());
-			}
-			
-		});
-		
-		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftAligned(new JLabel("How close do you want the GIF file size to the maximum size?")));
-		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftAligned(new JLabel("The lower this is, the closer your GIF")));
-		leftPanel.add(wrapLeftAligned(new JLabel("will be to the maximum size.")));
-		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftAligned(new JLabel("However, the lower this is, the more likely")));
-		leftPanel.add(wrapLeftAligned(new JLabel("the size will be something weird like 450x253.")));
-		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftAligned(new JLabel("The recommended acceptable size percent is 10 percent.")));
-		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
-		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(Box.createVerticalStrut(20));
 		cutFramerateInHalfCheckBox = new JCheckBox("Cut Output Framerate in Half, to "
 				+ String.format("%.2f", scan.getFramerate() * 0.5D));
 		leftPanel.add(wrapLeftAligned(cutFramerateInHalfCheckBox));
-		leftPanel.add(wrapLeftAligned(new JLabel("Cutting the framerate in half will allow the size to be bigger.")));
-		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(wrapLeftAligned(new JLabel("Halving the framerate will increase the physical size of the GIF.")));
+		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
-		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(Box.createVerticalStrut(20));
 		overlayTextField = new JTextField();
 		overlayTextField.setHorizontalAlignment(SwingConstants.RIGHT);
 		overlayTextField.setPreferredSize(new Dimension(200, 25));
@@ -462,9 +459,9 @@ public class MainPanel extends JPanel {
 		leftPanel.add(wrapLeftRightAligned(new JLabel("Overlay text:"), overlayTextField));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(wrapLeftRightAligned(new JLabel("Overlay text size:"), overlayTextSizeField));
-		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
-		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(Box.createVerticalStrut(20));
 		onDisable.add(cutFramerateInHalfCheckBox);
 		
 		JPanel createGIFPanel = new JPanel(new BorderLayout());
@@ -480,39 +477,7 @@ public class MainPanel extends JPanel {
 					return;
 				}
 				
-				FileDialog fileDialog = new FileDialog(MainFrame.getMainFrame(), "Save GIF as...", FileDialog.SAVE);
-				fileDialog.setMultipleMode(false);
-				
-				if (mostRecentGIFDirectory != null) {
-					fileDialog.setDirectory(mostRecentGIFDirectory);
-				}
-				
-				fileDialog.setFilenameFilter(new FilenameFilter(){
-					
-					@Override
-					public boolean accept(File dir, String name) {
-						return name.toLowerCase().endsWith(".gif");
-					}
-					
-				});
-				
-				fileDialog.setVisible(true);
-				final String filename = fileDialog.getFile();
-				
-				if (filename != null) {
-					File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(),
-							"recent_gif.txt");
-					mostRecentGIFDirectory = fileDialog.getDirectory();
-					try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)) {
-						recentGIFWriter.write(mostRecentGIFDirectory);
-					} catch (IOException ioe) {
-						// we don't care much if this fails
-						// but knowing on standard error is nice
-						ioe.printStackTrace();
-					}
-					createGIF(new File(mostRecentGIFDirectory, filename).getAbsolutePath());
-				}
-				
+				fire();
 			}
 		});
 		createGIFPanel.setMaximumSize(new Dimension(480, 30));

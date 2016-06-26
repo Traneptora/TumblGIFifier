@@ -154,15 +154,19 @@ public class VideoProcessor {
 	
 	private boolean convert0(String overlay, StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
 			long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
-		scale = 1D;
-		lowscale = 0D;
-		highscale = 2D;
 		this.statusProcessor = outputProcessor;
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.minSize = minSize;
 		this.maxSize = maxSize;
 		this.halveFramerate = halveFramerate;
+		
+		lowscale = 0D;
+		scale = minSize <= 0 ? 1D : 1D / Math.sqrt(width * height * framerate * (halveFramerate ? 0.5D : 1D) * (endTime - startTime) / (3D * maxSize));
+		if (scale > 1D){
+			scale = 1D;
+		}
+		highscale = 1D;
 		
 		try {
 			this.gifFile = File.createTempFile("tumblgififier", ".tmp");
@@ -239,7 +243,7 @@ public class VideoProcessor {
 					TumblGIFifier.exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
 							location, "-map", "0:v", "-filter:v", overlay.length() == 0 ? scaleText : scaleText + ", " + TumblGIFifier.createDrawTextString(newWidth, newHeight, overlaySize, overlay), "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
 							"yuv420p", halveFramerate ? "-r" : "-y",
-							halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffvhuff", "-f",
+							halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffv1", "-f",
 							"matroska", this.mkvFile.getAbsolutePath()));
 					
 		} catch (ProcessTerminatedException ex) {
