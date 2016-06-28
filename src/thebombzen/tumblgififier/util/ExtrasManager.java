@@ -166,7 +166,7 @@ public class ExtrasManager {
 					noInternet = true;
 				}
 			}
-			if (!noInternet && localVersion.equals("") || !version.equals(localVersion)) {
+			if (!noInternet && (localVersion.equals("") || !version.equals(localVersion))) {
 				processor.appendStatus("New version of FFmpeg found. Will re-download from the internet.");
 				needDL = true;
 				break;
