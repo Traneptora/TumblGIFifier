@@ -1,13 +1,17 @@
 package thebombzen.tumblgififier.util;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -34,12 +38,16 @@ public class ExtrasManager {
 		return manager;
 	}
 	
+	private static String getLatestDownloadLocation() {
+		return "https://thebombzen.github.io/TumblGIFifier/resources/latest.txt";
+	}
+	
 	private static String getFFprogDownloadLocation() {
-		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/" + getFFprogName();
+		return "https://thebombzen.github.io/TumblGIFifier/resources/ffprog/" + getFFprogName();
 	}
 	
 	private static String getOpenSansDownloadLocation() {
-		return "https://dl.dropboxusercontent.com/u/51080973/ffprog/OpenSans-Semibold.ttf.xz";
+		return "https://thebombzen.github.io/TumblGIFifier/resources/ffprog/OpenSans-Semibold.ttf.xz";
 	}
 	
 	public String getOpenSansFontFileLocation(){
@@ -74,6 +82,18 @@ public class ExtrasManager {
 	
 	public String getFFprobeLocation() {
 		return getXLocation("ffprobe");
+	}
+	
+	public String getLatestVersion() throws IOException {
+		URL latestURL;
+		try {
+			latestURL = new URL(getLatestDownloadLocation());
+		} catch (MalformedURLException ex) {
+			throw new Error();
+		}
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(latestURL.openStream(), Charset.forName("UTF-8")))){
+			return reader.readLine();
+		}
 	}
 	
 	public String getLocalAppDataLocation() {
