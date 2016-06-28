@@ -177,7 +177,8 @@ public class ExtrasManager {
 					processor.appendStatus("Error: Bad " + name + ": " + f.getPath());
 					return false;
 				} else {
-					processor.appendStatus("Found Bad " + name + ": " + f.getPath() + ". Deleted.");
+					processor.appendStatus("Found Bad " + name + ". Deleted.");
+					processor.appendStatus(" ");
 				}
 			}
 			if (!f.exists()) {
