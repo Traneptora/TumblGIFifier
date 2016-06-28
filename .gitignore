@@ -1,9 +1,0 @@
-# Manifest file
-MANIFEST.MF
-
-# Any built things
-build
-
-# Also Jarfiles
-*.jar
-
