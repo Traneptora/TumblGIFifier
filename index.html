@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>TumblGIFifier</title>
+	<link rel="stylesheet" type="text/css" href="../styles.css">
+	<script type="text/javascript" src="../contentloaded.js"></script> 
+	<meta charset="UTF-8">
+	<meta name="description" content="TumblGIFifier home page">
+	<meta name="keywords" content="tumblgififier,automatic,gif,creator,tumblr,thebombzen,github,bombzen">
+	<meta name="author" content="Unknown" >
+</head>
+<body>
+	<div id="wrapper">
+		<div id="maintitle">
+			TumblGIFifier
+		</div>
+		<hr>
+		<p>
+			<div class="section-header">About</div>
+			<p>
+				<p>TumblGIFifier is a Java program that automatically creates GIFs from videos sized to <a href="http://tumblr.com/">Tumblr</a>'s liking. <a href="http://tumblr.com/">Tumblr</a> has a maximum GIF size of 2.0 MB, and TumblGIFifier will automatically resize it as close as it can to that threshold.</p>
+				<p>The current release of TumblGIFifier is <b>0.6.0</b>. All releases will be marked as "pre-releases" until version 1.0.0, when TumblGIFifier is production-ready. At this moment it is not. TumblGIFifier is still in its early stages of development, the UI is a bit clunky, and there <i>WILL</i> be undiscovered bugs.</p>
+			</p>
+		</p>
+		<p>
+			<div class="section-header">Downloading and Running</div>
+			<p>
+				<p>TumblGIFifier is hosted at Github, at <a href="https://github.com/thebombzen/TumblGIFifier">https://github.com/thebombzen/TumblGIFifier</a>.</p>
+				<p>To download the most recent version of the program, go to the <a href="https://github.com/thebombzen/TumblGIFifier/releases">releases page</a>. Download the most recent release, which should be at the top. There will be several downloads - download the JAR file, not the zips containing the source code.</p>
+				<p>TumblGIFifier comes as an executable JAR file. You need to have at least Java 1.7 to run it. If you don't have java installed, download it <a href="http://java.com/">here</a> and install it.</p>
+				<p><ul>
+					<li>To execute the JAR file on Windows, doubleclicking it should work as long as you have Java installed. However, some archive programs might try to open it as an archive. If so, open it with the Java Platform (and you should probably set the Java Platform as the default for opening JAR files anyway).</li>
+					<li>To execute the JAR file on a Mac, you need to open it with JAR Launcher. If you try to open it using the default way you might accidentally unzip it and barf a bunch of files all over your desktop. Try not to do that.</li>
+					<li>To execute the JAR file on Linux, you really don't need me to finish this sentence.</li>
+				</ul></p>
+			</p>
+		</p>
+		<p>
+			<div class="section-header">Compilation From Source</div>
+			<p>
+				First, you need to clone the repository with
+				<pre><code>
+				$ git clone https://github.com/thebombzen/TumblGIFifier
+				</code></pre>
+				The first time you clone this repository, you also need to grab <code>xz-java</code>. To do this, navigate to the directory to which you cloed TumblGIFifier and run:
+				<pre><code>
+				$ git submodule init && git submodule update
+				</code></pre>
+				This will pull in the XZ Java submodule. Then, to compile, run:
+				<pre><code>
+				$ ant
+				</code></pre>
+				To clean the build, run:
+				<pre><code>
+				$ ant clean
+				</code></pre>
+				Note that you have to clean the build if you make a change and then want to recompile.
+			</p>
+		</p>
+		<p>
+			<div class="section-header">Contributing</div>
+			<p>
+				Feel free to contribute! Just fork the repository, make your changes, and send me a pull request. I'll review any pull requests I receive.
+			</p>
+		</p>
+		<p>
+			<div class="section-header">Dependencies and Legal</div>
+			<p>
+				<p>TumblGIFifier is copyright Leo Izen, (thebombzen) 2015-2016, and is licensed under the <a href="https://github.com/thebombzen/TumblGIFifier/blob/master/LICENSE">MIT License</a>. This means in basic terms that you can do practically anything with it except change the license. Included within the program is the Java Port of the <a href="http://tukaani.org/xz/">XZ Utils</a>, which are licensed under the public domain.</p>
+				<p>TumblGIFifier is based of <a href="http://ffmpeg.org/">FFmpeg</a>. If the program finds <code>ffmpeg</code>, <code>ffprobe</code>, and <code>ffplay</code> in your path, it will use those. If not, it will download a pre-built binary from an internet repository and use that as long there isn't any FFmpeg in the path. TumblGIFifier will also download the <a href="https://www.google.com/fonts/specimen/Open+Sans">Open Sans Semibold</a> font and use it for the purpose of overlaying text. Open Sans is copyright Google and Steve Matteson, and licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.html">Apache License 2.0</a>.</p>
+			</p>
+		</p>
+		<hr>
+		<div id="footer"></div>
+	</div>
+</body>
+</html>
+
