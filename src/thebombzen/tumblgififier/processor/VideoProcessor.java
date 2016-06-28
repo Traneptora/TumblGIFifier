@@ -149,6 +149,9 @@ public class VideoProcessor {
 			long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		MainFrame.getMainFrame().setBusy(true);
 		boolean status = convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate, overlaySize);
+		TumblGIFifier.deleteTempFile(gifFile);
+		TumblGIFifier.deleteTempFile(mkvFile);
+		TumblGIFifier.deleteTempFile(paletteFile);
 		MainFrame.getMainFrame().setBusy(false);
 		return status;
 	}
@@ -177,10 +180,6 @@ public class VideoProcessor {
 			ioe.printStackTrace();
 			return false;
 		}
-		
-		gifFile.deleteOnExit();
-		mkvFile.deleteOnExit();
-		paletteFile.deleteOnExit();
 		
 		prevWidth = -1;
 		prevHeight = -1;

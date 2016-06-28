@@ -383,6 +383,9 @@ public final class TumblGIFifier {
 	}
 
 	public static boolean deleteTempFile(File f){
+		if (f == null){
+			return false;
+		}
 		f.deleteOnExit();
 		return f.delete();
 	}
