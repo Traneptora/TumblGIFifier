@@ -51,7 +51,7 @@ public class AboutDialog extends JDialog {
 				close.setEnabled(false);
 				checkForUpdates.setEnabled(false);
 				checkForUpdates.setText("Checking...");
-				new Thread(new Runnable(){
+				TumblGIFifier.getThreadPool().submit(new Runnable(){
 					public void run(){
 						try {
 							final String latest = ExtrasManager.getExtrasManager().getLatestVersion();
@@ -76,7 +76,7 @@ public class AboutDialog extends JDialog {
 							close.setEnabled(true);
 						}
 					}
-				}).start();
+				});
 			}
 		});
 		this.add(outerBox);
