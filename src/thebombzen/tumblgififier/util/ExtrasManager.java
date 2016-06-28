@@ -72,15 +72,15 @@ public class ExtrasManager {
 		
 	}
 	
-	public String getFFmpegLocation() {
+	public ResourceLocation getFFmpegLocation() {
 		return getXLocation("ffmpeg");
 	}
 	
-	public String getFFplayLocation() {
+	public ResourceLocation getFFplayLocation() {
 		return getXLocation("ffplay");
 	}
 	
-	public String getFFprobeLocation() {
+	public ResourceLocation getFFprobeLocation() {
 		return getXLocation("ffprobe");
 	}
 	
@@ -114,15 +114,15 @@ public class ExtrasManager {
 		}
 	}
 	
-	private String getXLocation(String x) {
+	private ResourceLocation getXLocation(String x) {
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
 		String name = x + TumblGIFifier.EXE_EXTENSION;
 		for (String el : pathElements) {
 			if (new File(el, name).exists()) {
-				return new File(el, name).getPath();
+				return new ResourceLocation(new File(el, name).getPath(), true);
 			}
 		}
-		return new File(getLocalAppDataLocation(), name).getPath();
+		return new ResourceLocation(new File(getLocalAppDataLocation(), name).getPath(), false);
 	}
 	
 	public boolean intitilizeExtras(StatusProcessor processor) {
@@ -130,7 +130,7 @@ public class ExtrasManager {
 			boolean needDL = false;
 			String[] names = {"ffmpeg", "ffprobe", "ffplay"};
 			for (String name : names) {
-				File f = new File(getXLocation(name)).getCanonicalFile();
+				File f = new File(getXLocation(name).toString()).getCanonicalFile();
 				processor.appendStatus("Checking for " + name + "...");
 				if (f.exists() && !f.isFile()) {
 					boolean did = f.delete();

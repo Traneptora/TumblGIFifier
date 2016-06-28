@@ -15,6 +15,7 @@ import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.gui.StatusProcessorArea;
 import thebombzen.tumblgififier.util.ExtrasManager;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
+import thebombzen.tumblgififier.util.ResourceLocation;
 import thebombzen.tumblgififier.util.StatusProcessor;
 
 public class VideoProcessor {
@@ -23,14 +24,14 @@ public class VideoProcessor {
 		
 		processor.appendStatus("Scanning File... ");
 		
-		String ffprobe = ExtrasManager.getExtrasManager().getFFprobeLocation();
+		ResourceLocation ffprobe = ExtrasManager.getExtrasManager().getFFprobeLocation();
 		
 		String line = null;
 		int width = -1;
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(TumblGIFifier.exec(false, ffprobe,
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(TumblGIFifier.exec(false, ffprobe.toString(),
 				"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)))) {
 			while (null != (line = br.readLine())) {
 				// System.err.println(line);
@@ -231,7 +232,7 @@ public class VideoProcessor {
 		
 		writer.flush();
 		
-		String ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
+		ResourceLocation ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
 		
 		String scaleText = "scale=" + newWidth + ":" + newHeight;
 		
@@ -240,7 +241,7 @@ public class VideoProcessor {
 					"Scaling Video... ",
 					endTime - startTime,
 					writer,
-					TumblGIFifier.exec(false, ffmpeg, "-y", "-ss", Double.toString(this.startTime), "-i",
+					TumblGIFifier.exec(false, ffmpeg.toString(), "-y", "-ss", Double.toString(this.startTime), "-i",
 							location, "-map", "0:v", "-filter:v", overlay.length() == 0 ? scaleText : scaleText + ", " + TumblGIFifier.createDrawTextString(newWidth, newHeight, overlaySize, overlay), "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
 							"yuv420p", halveFramerate ? "-r" : "-y",
 							halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffv1", "-f",
@@ -259,7 +260,7 @@ public class VideoProcessor {
 		writer.flush();
 		
 		try {
-			TumblGIFifier.exec(true, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf",
+			TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf",
 					"palettegen", "-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
@@ -277,7 +278,7 @@ public class VideoProcessor {
 					"Generating GIF... ",
 					endTime - startTime,
 					writer,
-					TumblGIFifier.exec(false, ffmpeg, "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
+					TumblGIFifier.exec(false, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
 							this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
 							this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
@@ -402,12 +403,12 @@ public class VideoProcessor {
 		}
 		File shotFile = null;
 		try {
-			String ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
+			ResourceLocation ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
 			shotFile = File.createTempFile("tumblgififier", ".tmp");
 			shotFile.deleteOnExit();
 			String scale = "scale=" + shotWidth + ":" + shotHeight;
 			
-			TumblGIFifier.exec(true, ffmpeg, "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-vf", "format=rgb24, " + (overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
+			TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-vf", "format=rgb24, " + (overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
 					"-t", "0.5", "-r", "1", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {

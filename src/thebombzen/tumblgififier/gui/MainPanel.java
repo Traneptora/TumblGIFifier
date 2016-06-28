@@ -39,6 +39,7 @@ import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 import thebombzen.tumblgififier.util.ExtrasManager;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
+import thebombzen.tumblgififier.util.ResourceLocation;
 import thebombzen.tumblgififier.util.StatusProcessor;
 
 public class MainPanel extends JPanel {
@@ -142,7 +143,7 @@ public class MainPanel extends JPanel {
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
+		final ResourceLocation ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		TumblGIFifier.getThreadPool().submit(new Runnable(){
 			@Override
@@ -155,7 +156,7 @@ public class MainPanel extends JPanel {
 						scale = "scale";
 					}
 					
-					TumblGIFifier.exec(true, ffplay, "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
+					TumblGIFifier.exec(true, ffplay.toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
 							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
 				} catch (ProcessTerminatedException ex){
 					return;
@@ -178,8 +179,8 @@ public class MainPanel extends JPanel {
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		
-		final String ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
-		final String ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
+		final ResourceLocation ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
+		final ResourceLocation ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		
 		TumblGIFifier.getThreadPool().submit(new Runnable(){
@@ -202,11 +203,11 @@ public class MainPanel extends JPanel {
 					} else {
 						scale = "scale";
 					}
-					TumblGIFifier.exec(true, ffmpeg, "-y", "-ss", Double.toString(clipStart), "-i",
+					TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
 							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay), "-c",
 							"ffv1", "-f", "matroska", tempFile.getAbsolutePath());
-					TumblGIFifier.exec(true, ffplay, "-loop", "0", tempFile.getAbsolutePath());
+					TumblGIFifier.exec(true, ffplay.toString(), "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
 					TumblGIFifier.stopAll();
