@@ -4,16 +4,24 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.swing.Box;
+import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.io.NullInputStream;
 import thebombzen.tumblgififier.io.NullOutputStream;
@@ -221,6 +230,9 @@ public final class TumblGIFifier {
 	 * throws IOException
 	 */
 	public static void closeQuietly(Closeable cl) {
+		if (cl == null){
+			return;
+		}
 		try {
 			cl.close();
 		} catch (IOException ioe) {
@@ -370,6 +382,95 @@ public final class TumblGIFifier {
 		return box;
 	}
 
+	public static boolean deleteTempFile(File f){
+		f.deleteOnExit();
+		return f.delete();
+	}
+	
+	public static void downloadFromInternet(URL url, File downloadTo) throws IOException {
+		ReadableByteChannel rbc = null;
+		FileOutputStream fos = null;
+		try {
+			rbc = Channels.newChannel(url.openStream());
+			fos = new FileOutputStream(downloadTo);
+			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+		} finally {
+			closeQuietly(rbc);
+			closeQuietly(fos);
+		}
+	}
+	
+	public static boolean downloadFromInternetQuietly(URL url, File downloadTo){
+		try {
+			downloadFromInternet(url, downloadTo);
+			return true;
+		} catch (IOException ioe){
+			ioe.printStackTrace();
+			return false;
+		}
+	}
+	
+	public static String downloadFirstLineFromInternet(URL url) throws IOException {
+		return getFirstLineOfInputStream(url.openStream());
+	}
+	
+	public static String getFirstLineOfInputStream(InputStream in) throws IOException {
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new InputStreamReader(in, Charset.forName("UTF-8")));
+			return reader.readLine();
+		} finally {
+			closeQuietly(reader);
+		}
+	}
+	
+	public static String getFirstLineOfFile(File file) throws IOException {
+		return getFirstLineOfInputStream(new FileInputStream(file));
+	}
+	
+	public static String getFirstLineOfFileQuietly(File file) throws FileNotFoundException {
+		try {
+			return getFirstLineOfInputStream(new FileInputStream(file));
+		} catch (FileNotFoundException fnfe){
+			throw fnfe;
+		} catch (IOException ioe){
+			ioe.printStackTrace();
+			return "";
+		}
+	}
+	
+	public static String downloadFirstLineFromInternetQuietly(URL url) {
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new InputStreamReader(url.openStream(), Charset.forName("UTF-8")));
+			return reader.readLine();
+		} catch (IOException ioe){
+			return "";
+		} finally {
+			closeQuietly(reader);
+		}
+	}
+	
+	public static URL wrapSafeURL(String urlLocation){
+		try {
+			return new URL(urlLocation);
+		} catch (MalformedURLException ex){
+			throw new Error("You said it was safe!", ex);
+		}
+	}
+	
+	public static void downloadFromInternetXZ(URL url, File downloadTo) throws IOException {
+		ReadableByteChannel rbc = null;
+		FileOutputStream fos = null;
+		try {
+			rbc = Channels.newChannel(new XZInputStream(url.openStream()));
+			fos = new FileOutputStream(downloadTo);
+			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+		} finally {
+			closeQuietly(rbc);
+			closeQuietly(fos);
+		}
+	}
 
 	/**
 	 * This returns the thread pool for thread-pool-like tasks. 

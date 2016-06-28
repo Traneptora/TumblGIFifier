@@ -4,19 +4,19 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.TumblGIFifier;
+import thebombzen.tumblgififier.processor.StatusProcessorWriter;
 
 public class ExtrasManager {
 	
@@ -40,6 +40,10 @@ public class ExtrasManager {
 	
 	private static String getLatestDownloadLocation() {
 		return "https://thebombzen.github.io/TumblGIFifier/resources/latest.txt";
+	}
+	
+	private static String getFFprogVersionsLocation() {
+		return "https://thebombzen.github.io/TumblGIFifier/resources/ffprog-versions.txt";
 	}
 	
 	private static String getFFprogDownloadLocation() {
@@ -89,7 +93,7 @@ public class ExtrasManager {
 		try {
 			latestURL = new URL(getLatestDownloadLocation());
 		} catch (MalformedURLException ex) {
-			throw new Error();
+			throw new Error(ex);
 		}
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(latestURL.openStream(), Charset.forName("UTF-8")))){
 			return reader.readLine();
@@ -126,58 +130,104 @@ public class ExtrasManager {
 	}
 	
 	public boolean intitilizeExtras(StatusProcessor processor) {
+		boolean needDL = false;
+		boolean noInternet = false;
+		String[] names = {"ffmpeg", "ffprobe", "ffplay"};
+		
+		URL versions = TumblGIFifier.wrapSafeURL(getFFprogVersionsLocation());
+		
+		File localVersionsFile = new File(getLocalAppDataLocation(), "ffprog-versions.txt");
+		String localVersion = "";
 		try {
-			boolean needDL = false;
-			String[] names = {"ffmpeg", "ffprobe", "ffplay"};
-			for (String name : names) {
-				File f = new File(getXLocation(name).toString()).getCanonicalFile();
-				processor.appendStatus("Checking for " + name + "...");
-				if (f.exists() && !f.isFile()) {
-					boolean did = f.delete();
-					if (!did) {
-						processor.appendStatus("Error: Bad " + name + " in Path: " + f.getPath());
-						return false;
-					} else {
-						processor.appendStatus("Found Bad " + name + " in Path. Deleted.");
-					}
-				}
-				if (!f.exists()) {
-					processor.replaceStatus("Checking for " + name + "... not found.");
-					needDL = true;
-				} else {
-					processor.replaceStatus("Checking for " + name + "... found.");
-					f.setExecutable(true);
+			localVersion = TumblGIFifier.getFirstLineOfFileQuietly(localVersionsFile);
+		} catch (FileNotFoundException fnfe) {
+			try {
+				TumblGIFifier.downloadFromInternet(versions, localVersionsFile);
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+				noInternet = true;
+			}
+		}
+		
+		String version = "";
+		
+		for (String name : names) {
+			ResourceLocation loc = getXLocation(name);
+			File f = new File(loc.toString()).getAbsoluteFile();
+			processor.appendStatus("Checking for " + name + "...");
+			if (loc.isFromPath() && f.exists() && f.canExecute()) {
+				processor.replaceStatus("Checking for " + name + "... found in PATH.");
+				continue;
+			} else if (!noInternet && version.equals("")) {
+				try {
+					version = TumblGIFifier.downloadFirstLineFromInternet(versions);
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+					noInternet = true;
 				}
 			}
-			boolean needOpenSansDL = false;
-			File f = new File(getOpenSansFontFileLocation());
-			processor.appendStatus("Checking for Open Sans Semibold ...");
+			if (!noInternet && localVersion.equals("") || !version.equals(localVersion)) {
+				processor.appendStatus("New version of FFmpeg found. Will re-download from the internet.");
+				needDL = true;
+				break;
+			}
 			if (f.exists() && !f.isFile()) {
 				boolean did = f.delete();
 				if (!did) {
-					processor.appendStatus("Error: Bad Open Sans Semibold in Path: " + f.getPath());
+					processor.appendStatus("Error: Bad " + name + " in Path: " + f.getPath());
 					return false;
 				} else {
-					processor.appendStatus("Found Bad Open Sans Semibold in Path. Deleted.");
+					processor.appendStatus("Found Bad " + name + " in Path. Deleted.");
 				}
 			}
 			if (!f.exists()) {
-				processor.replaceStatus("Checking for Open Sans Semibold... not found.");
-				needOpenSansDL = true;
+				processor.replaceStatus("Checking for " + name + "... not found.");
+				needDL = true;
+				break;
 			} else {
-				processor.replaceStatus("Checking for Open Sans Semibold... found.");
+				processor.replaceStatus("Checking for " + name + "... found.");
+				f.setExecutable(true);
 			}
-			if (needDL) {
-				processor.appendStatus("Downloading FFmpeg from the internet...");
-				File tempFile = new File(getLocalAppDataLocation(), getFFprogName());
-				FileOutputStream fos = new FileOutputStream(tempFile);
-				URL website = new URL(getFFprogDownloadLocation());
-				ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-				fos.close();
-				rbc.close();
-				ZipInputStream zin = new ZipInputStream(new XZInputStream(new BufferedInputStream(new FileInputStream(
-						tempFile))));
+		}
+		boolean needOpenSansDL = false;
+		File f = new File(getOpenSansFontFileLocation());
+		processor.appendStatus("Checking for Open Sans Semibold ...");
+		if (f.exists() && !f.isFile()) {
+			boolean did = f.delete();
+			if (!did) {
+				processor.appendStatus("Error: Bad Open Sans Semibold in Path: " + f.getPath());
+				return false;
+			} else {
+				processor.appendStatus("Found Bad Open Sans Semibold in Path. Deleted.");
+			}
+		}
+		if (!f.exists()) {
+			processor.replaceStatus("Checking for Open Sans Semibold... not found.");
+			needOpenSansDL = true;
+		} else {
+			processor.replaceStatus("Checking for Open Sans Semibold... found.");
+		}
+		if ((needDL || needOpenSansDL) && noInternet) {
+			processor.appendStatus(
+					"Need to download dependencies from the internet, but it appears you have no internet access.");
+			return false;
+		}
+		if (needDL) {
+			processor.appendStatus("Downloading FFmpeg from the internet...");
+			File tempFile = new File(getLocalAppDataLocation(), getFFprogName());
+			URL website = TumblGIFifier.wrapSafeURL(getFFprogDownloadLocation());
+			try {
+				TumblGIFifier.downloadFromInternet(website, tempFile);
+			} catch (IOException ioe) {
+				processor.appendStatus("Error downloading: ");
+				PrintWriter writer = new PrintWriter(new StatusProcessorWriter(processor));
+				ioe.printStackTrace(writer);
+				return false;
+			}
+			TumblGIFifier.downloadFromInternetQuietly(versions, localVersionsFile);
+			ZipInputStream zin = null;
+			try {
+				zin = new ZipInputStream(new XZInputStream(new BufferedInputStream(new FileInputStream(tempFile))));
 				ZipEntry entry;
 				while (null != (entry = zin.getNextEntry())) {
 					String name = entry.getName();
@@ -190,32 +240,36 @@ public class ExtrasManager {
 					path.setExecutable(true);
 					processor.replaceStatus("Extracting " + name + "... extracted.");
 				}
-				zin.close();
-				tempFile.delete();
-				processor.appendStatus("Done downloading.");
-			} else {
-				processor.appendStatus("FFmpeg found.");
+			} catch (IOException ioe) {
+				processor.appendStatus("Error downloading: ");
+				PrintWriter writer = new PrintWriter(new StatusProcessorWriter(processor));
+				ioe.printStackTrace(writer);
+				return false;
+			} finally {
+				TumblGIFifier.closeQuietly(zin);
+				TumblGIFifier.deleteTempFile(tempFile);
 			}
-			if (needOpenSansDL) {
-				processor.appendStatus("Downloading Open Sans Semibold from the internet...");
-				File openSansFile = new File(getOpenSansFontFileLocation());
-				FileOutputStream fos = new FileOutputStream(openSansFile);
-				URL website = new URL(getOpenSansDownloadLocation());
-				ReadableByteChannel rbc = Channels.newChannel(new XZInputStream(website.openStream()));
-				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-				fos.close();
-				rbc.close();
-				processor.appendStatus("Done downloading.");
-			} else {
-				processor.appendStatus("Open Sans Semibold found.");
-			}
-			processor.appendStatus("Initialization successful. Now, open a video file with File -> Open.");
-			return true;
-		} catch (IOException ioe) {
-			// this should not occur
-			ioe.printStackTrace();
-			return false;
+			processor.appendStatus("Done downloading.");
+		} else {
+			processor.appendStatus("FFmpeg found.");
 		}
+		if (needOpenSansDL) {
+			processor.appendStatus("Downloading Open Sans Semibold from the internet...");
+			File openSansFile = new File(getOpenSansFontFileLocation());
+			URL website = TumblGIFifier.wrapSafeURL(getOpenSansDownloadLocation());
+			try {
+				TumblGIFifier.downloadFromInternet(website, openSansFile);
+			} catch (IOException ioe) {
+				processor.appendStatus("Error downloading: ");
+				PrintWriter writer = new PrintWriter(new StatusProcessorWriter(processor));
+				ioe.printStackTrace(writer);
+				return false;
+			}
+			processor.appendStatus("Done downloading.");
+		} else {
+			processor.appendStatus("Open Sans Semibold found.");
+		}
+		processor.appendStatus("Initialization successful. Now, open a video file with File -> Open.");
+		return true;
 	}
-	
 }
