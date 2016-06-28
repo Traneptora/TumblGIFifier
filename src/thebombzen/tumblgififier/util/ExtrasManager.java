@@ -171,13 +171,13 @@ public class ExtrasManager {
 				needDL = true;
 				break;
 			}
-			if (f.exists() && !f.isFile()) {
+			if (f.exists() && (!f.isFile() || !f.canExecute())) {
 				boolean did = f.delete();
 				if (!did) {
-					processor.appendStatus("Error: Bad " + name + " in Path: " + f.getPath());
+					processor.appendStatus("Error: Bad " + name + ": " + f.getPath());
 					return false;
 				} else {
-					processor.appendStatus("Found Bad " + name + " in Path. Deleted.");
+					processor.appendStatus("Found Bad " + name + ": " + f.getPath() + ". Deleted.");
 				}
 			}
 			if (!f.exists()) {
