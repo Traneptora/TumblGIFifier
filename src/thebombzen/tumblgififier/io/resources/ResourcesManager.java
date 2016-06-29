@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -18,7 +17,6 @@ import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.text.StatusProcessor;
-import thebombzen.tumblgififier.text.StatusProcessorWriter;
 
 public class ResourcesManager {
 	
