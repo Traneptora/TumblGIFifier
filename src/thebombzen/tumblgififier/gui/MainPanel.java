@@ -332,7 +332,7 @@ public class MainPanel extends JPanel {
 		rightBox.add(Box.createVerticalStrut(10));
 		startSlider = new JSlider();
 		startSlider.setMinimum(0);
-		startSlider.setMaximum((int) (scan.getDuration() * 4D) - 1);
+		startSlider.setMaximum((int) (scan.getDuration() * 4D));
 		startSlider.setValue(startSlider.getMaximum() / 3);
 		rightBox.add(startSlider);
 		
@@ -370,7 +370,7 @@ public class MainPanel extends JPanel {
 		
 		endSlider = new JSlider();
 		endSlider.setMinimum(0);
-		endSlider.setMaximum((int) (scan.getDuration() * 4D) - 1);
+		endSlider.setMaximum((int) (scan.getDuration() * 4D));
 		endSlider.setValue(endSlider.getMaximum() * 2 / 3);
 		rightBox.add(endSlider);
 		
@@ -544,10 +544,9 @@ public class MainPanel extends JPanel {
 	
 	private void updateEndScreenshot() {
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			
 			@Override
 			public void run() {
-				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D, textSize));
+				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D - scan.getDurationTime(), textSize));
 			}
 		});
 	}

@@ -8,7 +8,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.io.IOHelper;
@@ -33,32 +36,32 @@ public class VideoProcessor {
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
+		double durationTime = -1;
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(),
 				"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)))) {
 			while (null != (line = br.readLine())) {
-				// System.err.println(line);
-				if (line.contains("streams.stream.0.width=")) {
+				if (Pattern.compile("streams\\.stream\\.\\d+\\.width=").matcher(line).find()) {
 					try {
-						width = Integer.parseInt(line.replace("streams.stream.0.width=", ""));
+						width = Integer.parseInt(line.replaceAll("streams\\.stream\\.\\d+\\.width=", ""));
 					} catch (NumberFormatException nfe) {
 						processor.appendStatus("Error reading width: " + line);
 						continue;
 					}
-				} else if (line.contains("streams.stream.0.height=")) {
+				} else if (Pattern.compile("streams\\.stream\\.\\d+\\.height=").matcher(line).find()) {
 					try {
-						height = Integer.parseInt(line.replace("streams.stream.0.height=", ""));
+						height = Integer.parseInt(line.replaceAll("streams\\.stream\\.\\d+\\.height=", ""));
 					} catch (NumberFormatException nfe) {
 						processor.appendStatus("Error reading height: " + line);
 						continue;
 					}
-				} else if (line.contains("streams.stream.0.duration=")) {
+				} else if (Pattern.compile("streams\\.stream\\.\\d+\\.duration=").matcher(line).find()) {
 					try {
-						duration = Double.parseDouble(line.replace("streams.stream.0.duration=", "").replace("\"", ""));
+						duration = Double.parseDouble(line.replaceAll("streams\\.stream\\.\\d+\\.duration=", "").replace("\"", ""));
 					} catch (NumberFormatException nfe) {
 						continue;
 					}
-				} else if (line.contains("streams.stream.0.r_frame_rate=")) {
-					String rate = line.replace("streams.stream.0.r_frame_rate=", "").replace("\"", "");
+				} else if (Pattern.compile("streams\\.stream\\.\\d+\\.r_frame_rate=").matcher(line).find()) {
+					String rate = line.replaceAll("streams\\.stream\\.\\d+\\.r_frame_rate=", "").replace("\"", "");
 					try {
 						framerate = Double.parseDouble(rate);
 					} catch (NumberFormatException nfe) {
@@ -77,11 +80,10 @@ public class VideoProcessor {
 							}
 						}
 					}
-				} else if (line.contains("format.duration=") && duration == -1) {
+				} else if (line.contains("format.duration=") && duration < 0) {
 					try {
 						duration = Double.parseDouble(line.replace("format.duration=", "").replace("\"", ""));
 					} catch (NumberFormatException nfe) {
-						processor.appendStatus("Error reading duration: " + line);
 						continue;
 					}
 				}
@@ -90,17 +92,56 @@ public class VideoProcessor {
 			ioe.printStackTrace();
 		}
 		
-		if (duration < 0 || height < 0 || width < 0 || framerate < 0) {
+		if (duration < 0){
+			Queue<String> lineQueue = new ArrayDeque<>(2);
+			
+			try (BufferedReader br = new BufferedReader(new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(),
+					"-select_streams", "v", "-of", "flat", "-show_entries", "packet=pts_time,duration_time", filename)))){
+					while (null != (line = br.readLine())) {
+						if (lineQueue.size() >= 2){
+							lineQueue.poll();
+						}
+						lineQueue.offer(line);
+					}
+				} catch (IOException ioe){
+					ioe.printStackTrace();
+					processor.appendStatus("Error finding duration.");
+				}
+				String line1 = lineQueue.poll();
+				String line2 = lineQueue.poll();
+				if (line1 != null && line2 != null){
+					if (line1.startsWith("packets.packet.0.") || line2.startsWith("packets.packet.0.")){
+						processor.appendStatus("You just opened a still image. Don't do that.");
+					} else {
+						String pts_time = line1.replaceAll(".*?pts_time=", "").replace("\"", "");
+						String duration_time = line2.replaceAll(".*?duration_time=", "").replace("\"", "");
+						try {
+							double ptsTime = Double.parseDouble(pts_time);
+							durationTime = Double.parseDouble(duration_time);
+							duration = durationTime + ptsTime;
+						} catch (NumberFormatException nfe){
+							nfe.printStackTrace();
+							processor.appendStatus("Error finding duration.");
+						}
+					}
+					
+				}
+		} else {
+			durationTime = 1D / framerate;
+		}
+		
+		if (duration < 0 || height < 0 || width < 0 || framerate < 0 || durationTime < 0) {
 			processor.appendStatus("File Format Error.");
 			return null;
 		}
 		
-		return new VideoProcessor(width, height, duration, filename, framerate);
+		return new VideoProcessor(width, height, duration, filename, framerate, durationTime);
 	}
 	
 	private final double duration;
 	private double endTime;
 	private final double framerate;
+	private final double durationTime;
 	private File gifFile;
 	private boolean halveFramerate;
 	private final int height;
@@ -120,12 +161,13 @@ public class VideoProcessor {
 	private int prevHeight = -1;
 	private int prevPrevHeight = -2;
 	
-	public VideoProcessor(int width, int height, double duration, String location, double framerate) {
+	public VideoProcessor(int width, int height, double duration, String location, double framerate, double durationTime) {
 		this.width = width;
 		this.height = height;
 		this.duration = duration;
 		this.location = location;
 		this.framerate = framerate;
+		this.durationTime = durationTime;
 	}
 	
 	private void adjustScale() {
@@ -319,6 +361,11 @@ public class VideoProcessor {
 		if (width != other.width)
 			return false;
 		return true;
+	}
+	
+	
+	public double getDurationTime() {
+		return durationTime;
 	}
 	
 	public double getDuration() {
