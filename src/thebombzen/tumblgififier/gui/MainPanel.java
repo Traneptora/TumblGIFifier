@@ -247,8 +247,6 @@ public class MainPanel extends JPanel {
 			}
 		}
 		
-		
-		
 		FileDialog fileDialog = new FileDialog(MainFrame.getMainFrame(), "Save GIF as...", FileDialog.SAVE);
 		fileDialog.setMultipleMode(false);
 		
@@ -266,9 +264,12 @@ public class MainPanel extends JPanel {
 		});
 		
 		fileDialog.setVisible(true);
-		final String filename = fileDialog.getFile();
+		String filename = fileDialog.getFile();
 		
 		if (filename != null) {
+			if (!filename.toLowerCase().endsWith(".gif")){
+				filename += ".gif";
+			}
 			File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(),
 					"recent_gif.txt");
 			mostRecentGIFDirectory = fileDialog.getDirectory();
