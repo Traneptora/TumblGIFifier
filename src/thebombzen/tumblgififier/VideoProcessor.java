@@ -37,8 +37,9 @@ public class VideoProcessor {
 		double duration = -1;
 		double framerate = -1;
 		double durationTime = -1;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(),
-				"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)))) {
+		try (BufferedReader br = new BufferedReader(
+				new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(),
+						"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)))) {
 			while (null != (line = br.readLine())) {
 				if (Pattern.compile("streams\\.stream\\.\\d+\\.width=").matcher(line).find()) {
 					try {
@@ -56,7 +57,8 @@ public class VideoProcessor {
 					}
 				} else if (Pattern.compile("streams\\.stream\\.\\d+\\.duration=").matcher(line).find()) {
 					try {
-						duration = Double.parseDouble(line.replaceAll("streams\\.stream\\.\\d+\\.duration=", "").replace("\"", ""));
+						duration = Double.parseDouble(
+								line.replaceAll("streams\\.stream\\.\\d+\\.duration=", "").replace("\"", ""));
 					} catch (NumberFormatException nfe) {
 						continue;
 					}
@@ -92,39 +94,39 @@ public class VideoProcessor {
 			ioe.printStackTrace();
 		}
 		
-		if (duration < 0){
+		if (duration < 0) {
 			Queue<String> lineQueue = new ArrayDeque<>(2);
-			
-			try (BufferedReader br = new BufferedReader(new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(),
-					"-select_streams", "v", "-of", "flat", "-show_entries", "packet=pts_time,duration_time", filename)))){
-					while (null != (line = br.readLine())) {
-						if (lineQueue.size() >= 2){
-							lineQueue.poll();
-						}
-						lineQueue.offer(line);
+			try (BufferedReader br = new BufferedReader(new InputStreamReader(
+					ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(), "-select_streams", "v",
+							"-of", "flat", "-show_entries", "packet=pts_time,duration_time", filename)))) {
+				while (null != (line = br.readLine())) {
+					if (lineQueue.size() >= 2) {
+						lineQueue.poll();
 					}
-				} catch (IOException ioe){
-					ioe.printStackTrace();
-					processor.appendStatus("Error finding duration.");
+					lineQueue.offer(line);
 				}
-				String line1 = lineQueue.poll();
-				String line2 = lineQueue.poll();
-				if (line1 != null && line2 != null){
-					if (line1.startsWith("packets.packet.0.") || line2.startsWith("packets.packet.0.")){
-						processor.appendStatus("You just opened a still image. Don't do that.");
-					} else {
-						String pts_time = line1.replaceAll(".*?pts_time=", "").replace("\"", "");
-						String duration_time = line2.replaceAll(".*?duration_time=", "").replace("\"", "");
-						try {
-							double ptsTime = Double.parseDouble(pts_time);
-							durationTime = Double.parseDouble(duration_time);
-							duration = durationTime + ptsTime;
-						} catch (NumberFormatException nfe){
-							nfe.printStackTrace();
-							processor.appendStatus("Error finding duration.");
-						}
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+				processor.appendStatus("Error finding duration.");
+			}
+			String line1 = lineQueue.poll();
+			String line2 = lineQueue.poll();
+			if (line1 != null && line2 != null) {
+				if (line1.startsWith("packets.packet.0.") || line2.startsWith("packets.packet.0.")) {
+					processor.appendStatus("You just opened a still image. Don't do that.");
+				} else {
+					String pts_time = line1.replaceAll(".*?pts_time=", "").replace("\"", "");
+					String duration_time = line2.replaceAll(".*?duration_time=", "").replace("\"", "");
+					try {
+						double ptsTime = Double.parseDouble(pts_time);
+						durationTime = Double.parseDouble(duration_time);
+						duration = durationTime + ptsTime;
+					} catch (NumberFormatException nfe) {
+						nfe.printStackTrace();
+						processor.appendStatus("Error finding duration.");
 					}
 				}
+			}
 		} else {
 			durationTime = 1D / framerate;
 		}
@@ -160,7 +162,8 @@ public class VideoProcessor {
 	private int prevHeight = -1;
 	private int prevPrevHeight = -2;
 	
-	public VideoProcessor(int width, int height, double duration, String location, double framerate, double durationTime) {
+	public VideoProcessor(int width, int height, double duration, String location, double framerate,
+			double durationTime) {
 		this.width = width;
 		this.height = height;
 		this.duration = duration;
@@ -283,15 +286,16 @@ public class VideoProcessor {
 		String scaleText = "scale=" + newWidth + ":" + newHeight;
 		
 		try {
-			scanPercentDone("Scaling Video... ", endTime - startTime, writer, ConcurrenceManager.getConcurrenceManager().exec(false,
-					ffmpeg.toString(), "-y", "-ss", Double.toString(this.startTime), "-i", location, "-map", "0:v",
-					"-filter:v",
-					overlay.length() == 0 ? scaleText
-							: scaleText + ", "
-									+ TextHelper.getTextHelper().createDrawTextString(newWidth, newHeight, overlaySize, overlay),
-					"-t", Double.toString(this.endTime - this.startTime), "-pix_fmt", "yuv420p",
-					halveFramerate ? "-r" : "-y", halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c",
-					"ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
+			scanPercentDone("Scaling Video... ", endTime - startTime, writer,
+					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-ss",
+							Double.toString(this.startTime), "-i", location, "-map", "0:v", "-filter:v",
+							overlay.length() == 0 ? scaleText
+									: scaleText + ", "
+											+ TextHelper.getTextHelper().createDrawTextString(newWidth, newHeight,
+													overlaySize, overlay),
+							"-t", Double.toString(this.endTime - this.startTime), "-pix_fmt", "yuv420p",
+							halveFramerate ? "-r" : "-y", halveFramerate ? String.format("%f", framerate * 0.5D) : "-y",
+							"-c", "ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
 			
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
@@ -306,8 +310,9 @@ public class VideoProcessor {
 		writer.flush();
 		
 		try {
-			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen",
-					"-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
+			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-i",
+					this.mkvFile.getAbsolutePath(), "-vf", "palettegen", "-c", "png", "-f", "image2",
+					this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating Palette... Error.");
@@ -321,9 +326,9 @@ public class VideoProcessor {
 		
 		try {
 			scanPercentDone("Generating GIF... ", endTime - startTime, writer,
-					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
-							this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
-							this.gifFile.getAbsolutePath()));
+					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-i",
+							this.mkvFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi",
+							"paletteuse", "-c", "gif", "-f", "gif", this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating GIF... Error.");
@@ -361,7 +366,6 @@ public class VideoProcessor {
 			return false;
 		return true;
 	}
-	
 	
 	public double getDurationTime() {
 		return durationTime;
@@ -456,11 +460,12 @@ public class VideoProcessor {
 			shotFile = IOHelper.createTempFile();
 			String scale = "scale=" + shotWidth + ":" + shotHeight;
 			
-			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(time), "-i", location, "-map",
-					"0:v", "-vf",
+			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(time),
+					"-i", location, "-map", "0:v", "-vf",
 					"format=rgb24, " + (overlay.length() == 0 ? scale
 							: scale + ", "
-									+ TextHelper.getTextHelper().createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
+									+ TextHelper.getTextHelper().createDrawTextString(shotWidth, shotHeight,
+											overlaySize, overlay)),
 					"-t", "0.5", "-r", "1", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {
