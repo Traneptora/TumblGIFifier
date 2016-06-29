@@ -21,6 +21,12 @@ public final class TumblGIFifier {
 	/** The version of TumblGIFifier */
 	public static final String VERSION = "0.6.0b";
 	
+	/**
+	 * This is so we can cleanup a mess left by older versions.
+	 * The version identifier is written to a file on start.
+	 * TumblGIFifier checks the version identifier written in the file to determine which major changes have been made that need to be cleaned up.
+	 * For example, version identifiers earlier than 1 littered the temp directory with temporary files.
+	 */
 	public static final int VERSION_IDENTIFIER = 2;
 	
 	/**
@@ -34,7 +40,7 @@ public final class TumblGIFifier {
 	 */
 	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
 	
-	public static OutputStream logFileOutputStream;
+	private static OutputStream logFileOutputStream;
 	
 	private static volatile boolean initializedCleanup = false;
 	
