@@ -139,8 +139,7 @@ public class MainFrame extends JFrame {
 							
 							@Override
 							public void run() {
-								File recentOpenFile = new File(
-										ResourcesManager.getResourcesManager().getLocalAppDataLocation(), "recent_open.txt");
+								File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
 								try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
 									recentOpenWriter.write(mostRecentOpenDirectory);
 									recentOpenWriter.close();

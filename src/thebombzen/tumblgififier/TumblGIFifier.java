@@ -49,7 +49,7 @@ public final class TumblGIFifier {
 	 */
 	public static void main(String[] args) throws IOException {
 		
-		File bothLogFile = new File(ResourcesManager.getResourcesManager().getLocalAppDataLocation(), "full_log.log");
+		File bothLogFile = ResourcesManager.getResourcesManager().getLocalResource("full_log.log");
 		
 		logFileOutputStream = new SynchronizedOutputStream(new FileOutputStream(bothLogFile));
 		

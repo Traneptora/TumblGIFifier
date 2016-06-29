@@ -57,7 +57,7 @@ public class ResourcesManager {
 	}
 	
 	public String getOpenSansFontFileLocation() {
-		return new File(getLocalAppDataLocation(), "OpenSans-Semibold.ttf").getAbsolutePath();
+		return getLocalResource("OpenSans-Semibold.ttf").getAbsolutePath();
 	}
 	
 	private static String getFFprogName() {
@@ -79,7 +79,7 @@ public class ResourcesManager {
 	}
 	
 	public File getLocalResource(String name){
-		return new File(this.getLocalAppDataLocation(), name);
+		return new File(this.getLocalResourceLocation(), name);
 	}
 	
 	public ResourceLocation getFFmpegLocation() {
@@ -107,7 +107,7 @@ public class ResourcesManager {
 		}
 	}
 	
-	public String getLocalAppDataLocation() {
+	public String getLocalResourceLocation() {
 		if (localAppDataLocation != null) {
 			return localAppDataLocation;
 		}
@@ -133,7 +133,7 @@ public class ResourcesManager {
 				return new ResourceLocation(new File(el, name).getPath(), true);
 			}
 		}
-		return new ResourceLocation(new File(getLocalAppDataLocation(), name).getPath(), false);
+		return new ResourceLocation(getLocalResource(name).getPath(), false);
 	}
 	
 	public boolean intitilizeExtras(StatusProcessor processor) {
@@ -143,7 +143,7 @@ public class ResourcesManager {
 		
 		URL versions = IOHelper.wrapSafeURL(getFFprogVersionsLocation());
 		
-		File localVersionsFile = new File(getLocalAppDataLocation(), "ffprog-versions.txt");
+		File localVersionsFile = getLocalResource("ffprog-versions.txt");
 		String localVersion = "";
 		try {
 			localVersion = IOHelper.getFirstLineOfFileQuietly(localVersionsFile);
@@ -222,14 +222,13 @@ public class ResourcesManager {
 		}
 		if (needDL) {
 			processor.appendStatus("Downloading FFmpeg from the internet...");
-			File tempFile = new File(getLocalAppDataLocation(), getFFprogName());
+			File tempFile = new File(getLocalResourceLocation(), getFFprogName());
 			URL website = IOHelper.wrapSafeURL(getFFprogDownloadLocation());
 			try {
 				IOHelper.downloadFromInternet(website, tempFile);
 			} catch (IOException ioe) {
 				processor.appendStatus("Error downloading: ");
-				PrintWriter writer = new PrintWriter(new StatusProcessorWriter(processor));
-				ioe.printStackTrace(writer);
+				processor.processException(ioe);
 				return false;
 			}
 			IOHelper.downloadFromInternetQuietly(versions, localVersionsFile);
@@ -240,7 +239,7 @@ public class ResourcesManager {
 				while (null != (entry = zin.getNextEntry())) {
 					String name = entry.getName();
 					processor.appendStatus("Extracting " + name + "...");
-					File path = new File(getLocalAppDataLocation(), name);
+					File path = new File(getLocalResourceLocation(), name);
 					if (path.exists()) {
 						path.delete();
 					}
@@ -250,8 +249,7 @@ public class ResourcesManager {
 				}
 			} catch (IOException ioe) {
 				processor.appendStatus("Error downloading: ");
-				PrintWriter writer = new PrintWriter(new StatusProcessorWriter(processor));
-				ioe.printStackTrace(writer);
+				processor.processException(ioe);
 				return false;
 			} finally {
 				IOHelper.closeQuietly(zin);
@@ -269,8 +267,7 @@ public class ResourcesManager {
 				IOHelper.downloadFromInternet(website, openSansFile);
 			} catch (IOException ioe) {
 				processor.appendStatus("Error downloading: ");
-				PrintWriter writer = new PrintWriter(new StatusProcessorWriter(processor));
-				ioe.printStackTrace(writer);
+				processor.processException(ioe);
 				return false;
 			}
 			processor.appendStatus("Done downloading.");
