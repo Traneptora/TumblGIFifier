@@ -124,7 +124,6 @@ public class VideoProcessor {
 							processor.appendStatus("Error finding duration.");
 						}
 					}
-					
 				}
 		} else {
 			durationTime = 1D / framerate;
