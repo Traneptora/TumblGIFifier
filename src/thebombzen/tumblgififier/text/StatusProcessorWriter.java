@@ -1,7 +1,6 @@
-package thebombzen.tumblgififier.processor;
+package thebombzen.tumblgififier.text;
 
 import thebombzen.tumblgififier.io.SimpleWriter;
-import thebombzen.tumblgififier.util.StatusProcessor;
 
 public class StatusProcessorWriter extends SimpleWriter {
 	

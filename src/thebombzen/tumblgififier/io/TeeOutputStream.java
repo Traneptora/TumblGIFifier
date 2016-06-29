@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import thebombzen.tumblgififier.TumblGIFifier;
 
 public class TeeOutputStream extends OutputStream {
 	
@@ -55,7 +54,7 @@ public class TeeOutputStream extends OutputStream {
 	@Override
 	public void close() {
 		for (OutputStream out : outs) {
-			TumblGIFifier.closeQuietly(out);
+			IOHelper.closeQuietly(out);
 		}
 	}
 }

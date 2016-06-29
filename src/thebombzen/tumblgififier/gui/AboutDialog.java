@@ -13,8 +13,10 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
+import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.util.ExtrasManager;
+import thebombzen.tumblgififier.io.IOHelper;
+import thebombzen.tumblgififier.io.resources.ExtrasManager;
 
 public class AboutDialog extends JDialog {
 	
@@ -27,18 +29,18 @@ public class AboutDialog extends JDialog {
 		outerBox.add(Box.createHorizontalStrut(10));
 		Box box = Box.createVerticalBox();
 		box.add(Box.createVerticalStrut(10));
-		box.add(TumblGIFifier.wrapLeftAligned(new JLabel("TumblGIFifier version " + TumblGIFifier.VERSION)));
-		box.add(TumblGIFifier.wrapLeftAligned(new JLabel("Copyright 2015/2016 Leo Izen (thebombzen)")));
+		box.add(GUIHelper.wrapLeftAligned(new JLabel("TumblGIFifier version " + TumblGIFifier.VERSION)));
+		box.add(GUIHelper.wrapLeftAligned(new JLabel("Copyright 2015/2016 Leo Izen (thebombzen)")));
 		box.add(Box.createVerticalStrut(10));
-		box.add(TumblGIFifier.wrapLeftAligned(new JLabel("Licensed under the MIT license")));
-		box.add(TumblGIFifier.wrapLeftAligned(new JLabel("with included public domain XZ Utils")));
+		box.add(GUIHelper.wrapLeftAligned(new JLabel("Licensed under the MIT license")));
+		box.add(GUIHelper.wrapLeftAligned(new JLabel("with included public domain XZ Utils")));
 		box.add(Box.createVerticalStrut(10));
-		box.add(TumblGIFifier
+		box.add(GUIHelper
 				.wrapLeftAligned(new JLabel("See https://thebombzen.github.io/TumblGIFifier/ for details.")));
 		box.add(Box.createVerticalStrut(10));
 		final JButton checkForUpdates = new JButton("Check for updates");
 		final JButton close = new JButton("Close");
-		box.add(TumblGIFifier.wrapLeftRightAligned(checkForUpdates, close));
+		box.add(GUIHelper.wrapLeftRightAligned(checkForUpdates, close));
 		box.add(Box.createVerticalStrut(10));
 		outerBox.add(box);
 		outerBox.add(Box.createHorizontalStrut(10));
@@ -56,7 +58,7 @@ public class AboutDialog extends JDialog {
 				close.setEnabled(false);
 				checkForUpdates.setEnabled(false);
 				checkForUpdates.setText("Checking...");
-				TumblGIFifier.getThreadPool().submit(new Runnable(){
+				ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 					
 					@Override
 					public void run() {
@@ -87,7 +89,7 @@ public class AboutDialog extends JDialog {
 											if (Desktop.isDesktopSupported()) {
 												try {
 													Desktop.getDesktop()
-															.browse(TumblGIFifier
+															.browse(IOHelper
 																	.wrapSafeURL(
 																			"https://github.com/thebombzen/TumblGIFifier/releases/")
 																	.toURI());

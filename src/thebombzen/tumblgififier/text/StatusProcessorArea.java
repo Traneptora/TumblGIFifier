@@ -1,10 +1,8 @@
-package thebombzen.tumblgififier.gui;
+package thebombzen.tumblgififier.text;
 
 import java.awt.EventQueue;
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
-import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.util.StatusProcessor;
 
 public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 	
@@ -55,7 +53,7 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 				String text = getText();
 				String[] lines = text.split(String.format("%n"));
 				lines[lines.length - 1] = status;
-				text = TumblGIFifier.join(String.format("%n"), lines);
+				text = TextHelper.getTextHelper().join(String.format("%n"), lines);
 				setText(text);
 			}
 		});

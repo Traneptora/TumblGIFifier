@@ -1,7 +1,5 @@
 package thebombzen.tumblgififier.gui;
 
-import static thebombzen.tumblgififier.TumblGIFifier.wrapLeftAligned;
-import static thebombzen.tumblgififier.TumblGIFifier.wrapLeftRightAligned;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -35,12 +33,15 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.processor.VideoProcessor;
-import thebombzen.tumblgififier.util.ExtrasManager;
-import thebombzen.tumblgififier.util.ProcessTerminatedException;
-import thebombzen.tumblgififier.util.ResourceLocation;
-import thebombzen.tumblgififier.util.StatusProcessor;
+import thebombzen.tumblgififier.ConcurrenceManager;
+import thebombzen.tumblgififier.VideoProcessor;
+import thebombzen.tumblgififier.io.IOHelper;
+import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
+import thebombzen.tumblgififier.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.text.StatusProcessor;
+import thebombzen.tumblgififier.text.StatusProcessorArea;
+import thebombzen.tumblgififier.text.TextHelper;
 
 public class MainPanel extends JPanel {
 	
@@ -81,7 +82,7 @@ public class MainPanel extends JPanel {
 			throw new NullPointerException();
 		}
 		setupLayout();
-		TumblGIFifier.getThreadPool().scheduleWithFixedDelay(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -98,8 +99,7 @@ public class MainPanel extends JPanel {
 					}
 				});
 			}
-		}, 0, 1000, TimeUnit.MILLISECONDS); // 1,000,000 nanoseconds is 1
-											// milliseconds
+		}, 1000, TimeUnit.MILLISECONDS);
 	}
 	
 	private void createGIF(final String path) {
@@ -115,7 +115,7 @@ public class MainPanel extends JPanel {
 		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		TumblGIFifier.getThreadPool().submit(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -152,7 +152,7 @@ public class MainPanel extends JPanel {
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		final ResourceLocation ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
-		TumblGIFifier.getThreadPool().submit(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -164,11 +164,11 @@ public class MainPanel extends JPanel {
 						scale = "scale";
 					}
 					
-					TumblGIFifier.exec(true, ffplay.toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v",
+					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v",
 							scan.getLocation(), "-ss", Double.toString(clipStart), "-t",
 							Double.toString(clipEnd - clipStart), "-vf",
 							overlay.length() == 0 ? scale
-									: scale + ", " + TumblGIFifier.createDrawTextString(
+									: scale + ", " + TextHelper.getTextHelper().createDrawTextString(
 											scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
 													: scan.getWidth(),
 											scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
@@ -198,7 +198,7 @@ public class MainPanel extends JPanel {
 		final ResourceLocation ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		
-		TumblGIFifier.getThreadPool().submit(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -206,8 +206,7 @@ public class MainPanel extends JPanel {
 				try {
 					statusArea.appendStatus("Rendering Clip... ");
 					try {
-						tempFile = File.createTempFile("tumblrgififier", ".tmp");
-						tempFile.deleteOnExit();
+						tempFile = IOHelper.createTempFile();
 					} catch (IOException ioe) {
 						ioe.printStackTrace();
 						statusArea.appendStatus("Error rendering clip :(");
@@ -219,24 +218,22 @@ public class MainPanel extends JPanel {
 					} else {
 						scale = "scale";
 					}
-					TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(clipStart), "-i",
+					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
 							"yuv420p", "-vf", overlay.length() == 0 ? scale
 									: scale + ", "
-											+ TumblGIFifier.createDrawTextString(
+											+ TextHelper.getTextHelper().createDrawTextString(
 													scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
 															: scan.getWidth(),
 													scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay),
 							"-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
-					TumblGIFifier.exec(true, ffplay.toString(), "-loop", "0", tempFile.getAbsolutePath());
+					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.toString(), "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
-					TumblGIFifier.stopAll();
+					ConcurrenceManager.getConcurrenceManager().stopAll();
 					return;
 				} finally {
-					if (tempFile != null) {
-						tempFile.delete();
-					}
+					IOHelper.deleteTempFile(tempFile);
 					EventQueue.invokeLater(new Runnable(){
 						
 						@Override
@@ -414,17 +411,17 @@ public class MainPanel extends JPanel {
 		horizontalBox.add(Box.createHorizontalStrut(10));
 		
 		leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
-		leftPanel.add(wrapLeftAligned(new JLabel("Video Stats")));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Video Stats")));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Width:"), new JLabel(Integer.toString(scan.getWidth()))));
+		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Width:"), new JLabel(Integer.toString(scan.getWidth()))));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Height:"), new JLabel(Integer.toString(scan.getHeight()))));
-		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(
-				wrapLeftRightAligned(new JLabel("Duration:"), new JLabel(String.format("%.2f", scan.getDuration()))));
+		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Height:"), new JLabel(Integer.toString(scan.getHeight()))));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(
-				wrapLeftRightAligned(new JLabel("Framerate:"), new JLabel(String.format("%.2f", scan.getFramerate()))));
+				GUIHelper.wrapLeftRightAligned(new JLabel("Duration:"), new JLabel(String.format("%.2f", scan.getDuration()))));
+		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(
+				GUIHelper.wrapLeftRightAligned(new JLabel("Framerate:"), new JLabel(String.format("%.2f", scan.getFramerate()))));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
@@ -456,16 +453,16 @@ public class MainPanel extends JPanel {
 		
 		onDisable.add(maxSizeCheckBox);
 		
-		leftPanel.add(wrapLeftRightAligned(maxSizeCheckBox, maxSizeTextField));
+		leftPanel.add(GUIHelper.wrapLeftRightAligned(maxSizeCheckBox, maxSizeTextField));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftAligned(new JLabel("The maximum size on Tumblr is 2000 Kilobytes.")));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("The maximum size on Tumblr is 2000 Kilobytes.")));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
 		cutFramerateInHalfCheckBox = new JCheckBox(
 				"Cut Output Framerate in Half, to " + String.format("%.2f", scan.getFramerate() * 0.5D));
-		leftPanel.add(wrapLeftAligned(cutFramerateInHalfCheckBox));
-		leftPanel.add(wrapLeftAligned(new JLabel("Halving the framerate will increase the physical size of the GIF.")));
+		leftPanel.add(GUIHelper.wrapLeftAligned(cutFramerateInHalfCheckBox));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Halving the framerate will increase the physical size of the GIF.")));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
@@ -500,9 +497,9 @@ public class MainPanel extends JPanel {
 			}
 		});
 		
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Overlay text:"), overlayTextField));
+		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Overlay text:"), overlayTextField));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Overlay text size:"), overlayTextSizeField));
+		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Overlay text size:"), overlayTextSizeField));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
@@ -516,7 +513,7 @@ public class MainPanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				
 				if (fireButton.getText().equals("STOP")) {
-					TumblGIFifier.stopAll();
+					ConcurrenceManager.getConcurrenceManager().stopAll();
 					MainFrame.getMainFrame().setBusy(false);
 					return;
 				}
@@ -527,7 +524,7 @@ public class MainPanel extends JPanel {
 		createGIFPanel.setMaximumSize(new Dimension(480, 30));
 		leftPanel.add(createGIFPanel);
 		leftPanel.add(Box.createVerticalStrut(20));
-		leftPanel.add(wrapLeftAligned(new JLabel("Status:")));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Status:")));
 		leftPanel.add(Box.createVerticalStrut(5));
 		JScrollPane scrollPane = new JScrollPane();
 		statusArea = new StatusProcessorArea();
@@ -546,7 +543,7 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void updateEndScreenshot() {
-		TumblGIFifier.getThreadPool().submit(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -556,7 +553,7 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void updateStartScreenshot() {
-		TumblGIFifier.getThreadPool().submit(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
 			@Override
 			public void run() {

@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.processor;
+package thebombzen.tumblgififier;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -10,13 +10,15 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
-import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.gui.MainFrame;
-import thebombzen.tumblgififier.gui.StatusProcessorArea;
-import thebombzen.tumblgififier.util.ExtrasManager;
-import thebombzen.tumblgififier.util.ProcessTerminatedException;
-import thebombzen.tumblgififier.util.ResourceLocation;
-import thebombzen.tumblgififier.util.StatusProcessor;
+import thebombzen.tumblgififier.io.IOHelper;
+import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
+import thebombzen.tumblgififier.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.text.StatusProcessor;
+import thebombzen.tumblgififier.text.StatusProcessorArea;
+import thebombzen.tumblgififier.text.StatusProcessorWriter;
+import thebombzen.tumblgififier.text.TextHelper;
 
 public class VideoProcessor {
 	
@@ -31,7 +33,7 @@ public class VideoProcessor {
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(TumblGIFifier.exec(false, ffprobe.toString(),
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(),
 				"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)))) {
 			while (null != (line = br.readLine())) {
 				// System.err.println(line);
@@ -150,9 +152,9 @@ public class VideoProcessor {
 		MainFrame.getMainFrame().setBusy(true);
 		boolean status = convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate,
 				overlaySize);
-		TumblGIFifier.deleteTempFile(gifFile);
-		TumblGIFifier.deleteTempFile(mkvFile);
-		TumblGIFifier.deleteTempFile(paletteFile);
+		IOHelper.deleteTempFile(gifFile);
+		IOHelper.deleteTempFile(mkvFile);
+		IOHelper.deleteTempFile(paletteFile);
 		MainFrame.getMainFrame().setBusy(false);
 		return status;
 	}
@@ -176,9 +178,9 @@ public class VideoProcessor {
 		highscale = 1D;
 		
 		try {
-			this.gifFile = File.createTempFile("tumblgififier", ".tmp");
-			this.mkvFile = File.createTempFile("tumblgififier", ".tmp");
-			this.paletteFile = File.createTempFile("tumblgififier", ".tmp");
+			this.gifFile = IOHelper.createTempFile();
+			this.mkvFile = IOHelper.createTempFile();
+			this.paletteFile = IOHelper.createTempFile();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			return false;
@@ -240,12 +242,12 @@ public class VideoProcessor {
 		String scaleText = "scale=" + newWidth + ":" + newHeight;
 		
 		try {
-			scanPercentDone("Scaling Video... ", endTime - startTime, writer, TumblGIFifier.exec(false,
+			scanPercentDone("Scaling Video... ", endTime - startTime, writer, ConcurrenceManager.getConcurrenceManager().exec(false,
 					ffmpeg.toString(), "-y", "-ss", Double.toString(this.startTime), "-i", location, "-map", "0:v",
 					"-filter:v",
 					overlay.length() == 0 ? scaleText
 							: scaleText + ", "
-									+ TumblGIFifier.createDrawTextString(newWidth, newHeight, overlaySize, overlay),
+									+ TextHelper.getTextHelper().createDrawTextString(newWidth, newHeight, overlaySize, overlay),
 					"-t", Double.toString(this.endTime - this.startTime), "-pix_fmt", "yuv420p",
 					halveFramerate ? "-r" : "-y", halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c",
 					"ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
@@ -253,7 +255,7 @@ public class VideoProcessor {
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Scaling Video... Error.");
-			TumblGIFifier.stopAll();
+			ConcurrenceManager.getConcurrenceManager().stopAll();
 			return false;
 		}
 		
@@ -263,12 +265,12 @@ public class VideoProcessor {
 		writer.flush();
 		
 		try {
-			TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen",
+			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen",
 					"-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating Palette... Error.");
-			TumblGIFifier.stopAll();
+			ConcurrenceManager.getConcurrenceManager().stopAll();
 			return false;
 		}
 		
@@ -278,13 +280,13 @@ public class VideoProcessor {
 		
 		try {
 			scanPercentDone("Generating GIF... ", endTime - startTime, writer,
-					TumblGIFifier.exec(false, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
+					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
 							this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
 							this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating GIF... Error.");
-			TumblGIFifier.stopAll();
+			ConcurrenceManager.getConcurrenceManager().stopAll();
 			return false;
 		}
 		
@@ -405,21 +407,20 @@ public class VideoProcessor {
 		File shotFile = null;
 		try {
 			ResourceLocation ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
-			shotFile = File.createTempFile("tumblgififier", ".tmp");
-			shotFile.deleteOnExit();
+			shotFile = IOHelper.createTempFile();
 			String scale = "scale=" + shotWidth + ":" + shotHeight;
 			
-			TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(time), "-i", location, "-map",
+			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(time), "-i", location, "-map",
 					"0:v", "-vf",
 					"format=rgb24, " + (overlay.length() == 0 ? scale
 							: scale + ", "
-									+ TumblGIFifier.createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
+									+ TextHelper.getTextHelper().createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
 					"-t", "0.5", "-r", "1", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {
 			return null;
 		} finally {
-			shotFile.delete();
+			IOHelper.deleteTempFile(shotFile);
 		}
 	}
 	

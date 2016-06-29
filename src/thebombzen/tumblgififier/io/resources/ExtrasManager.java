@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.util;
+package thebombzen.tumblgififier.io.resources;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -16,7 +16,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.processor.StatusProcessorWriter;
+import thebombzen.tumblgififier.io.IOHelper;
+import thebombzen.tumblgififier.text.StatusProcessor;
+import thebombzen.tumblgififier.text.StatusProcessorWriter;
 
 public class ExtrasManager {
 	
@@ -135,15 +137,15 @@ public class ExtrasManager {
 		boolean noInternet = false;
 		String[] names = {"ffmpeg", "ffprobe", "ffplay"};
 		
-		URL versions = TumblGIFifier.wrapSafeURL(getFFprogVersionsLocation());
+		URL versions = IOHelper.wrapSafeURL(getFFprogVersionsLocation());
 		
 		File localVersionsFile = new File(getLocalAppDataLocation(), "ffprog-versions.txt");
 		String localVersion = "";
 		try {
-			localVersion = TumblGIFifier.getFirstLineOfFileQuietly(localVersionsFile);
+			localVersion = IOHelper.getFirstLineOfFileQuietly(localVersionsFile);
 		} catch (FileNotFoundException fnfe) {
 			try {
-				TumblGIFifier.downloadFromInternet(versions, localVersionsFile);
+				IOHelper.downloadFromInternet(versions, localVersionsFile);
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 				noInternet = true;
@@ -161,7 +163,7 @@ public class ExtrasManager {
 				continue;
 			} else if (!noInternet && version.equals("")) {
 				try {
-					version = TumblGIFifier.downloadFirstLineFromInternet(versions);
+					version = IOHelper.downloadFirstLineFromInternet(versions);
 				} catch (IOException ioe) {
 					ioe.printStackTrace();
 					noInternet = true;
@@ -217,16 +219,16 @@ public class ExtrasManager {
 		if (needDL) {
 			processor.appendStatus("Downloading FFmpeg from the internet...");
 			File tempFile = new File(getLocalAppDataLocation(), getFFprogName());
-			URL website = TumblGIFifier.wrapSafeURL(getFFprogDownloadLocation());
+			URL website = IOHelper.wrapSafeURL(getFFprogDownloadLocation());
 			try {
-				TumblGIFifier.downloadFromInternet(website, tempFile);
+				IOHelper.downloadFromInternet(website, tempFile);
 			} catch (IOException ioe) {
 				processor.appendStatus("Error downloading: ");
 				PrintWriter writer = new PrintWriter(new StatusProcessorWriter(processor));
 				ioe.printStackTrace(writer);
 				return false;
 			}
-			TumblGIFifier.downloadFromInternetQuietly(versions, localVersionsFile);
+			IOHelper.downloadFromInternetQuietly(versions, localVersionsFile);
 			ZipInputStream zin = null;
 			try {
 				zin = new ZipInputStream(new XZInputStream(new BufferedInputStream(new FileInputStream(tempFile))));
@@ -248,8 +250,8 @@ public class ExtrasManager {
 				ioe.printStackTrace(writer);
 				return false;
 			} finally {
-				TumblGIFifier.closeQuietly(zin);
-				TumblGIFifier.deleteTempFile(tempFile);
+				IOHelper.closeQuietly(zin);
+				IOHelper.deleteTempFile(tempFile);
 			}
 			processor.appendStatus("Done downloading.");
 		} else {
@@ -258,9 +260,9 @@ public class ExtrasManager {
 		if (needOpenSansDL) {
 			processor.appendStatus("Downloading Open Sans Semibold from the internet...");
 			File openSansFile = new File(getOpenSansFontFileLocation());
-			URL website = TumblGIFifier.wrapSafeURL(getOpenSansDownloadLocation());
+			URL website = IOHelper.wrapSafeURL(getOpenSansDownloadLocation());
 			try {
-				TumblGIFifier.downloadFromInternet(website, openSansFile);
+				IOHelper.downloadFromInternet(website, openSansFile);
 			} catch (IOException ioe) {
 				processor.appendStatus("Error downloading: ");
 				PrintWriter writer = new PrintWriter(new StatusProcessorWriter(processor));

@@ -20,10 +20,12 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.processor.VideoProcessor;
-import thebombzen.tumblgififier.util.ExtrasManager;
-import thebombzen.tumblgififier.util.StatusProcessor;
+import thebombzen.tumblgififier.VideoProcessor;
+import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.text.StatusProcessor;
+import thebombzen.tumblgififier.text.StatusProcessorArea;
 
 /**
  * This represents the main JFrame of the program, and also serves as the
@@ -133,7 +135,7 @@ public class MainFrame extends JFrame {
 						mostRecentOpenDirectory = fileDialog.getDirectory();
 						final File file = new File(mostRecentOpenDirectory, filename);
 						setBusy(true);
-						TumblGIFifier.getThreadPool().submit(new Runnable(){
+						ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 							
 							@Override
 							public void run() {
@@ -194,7 +196,7 @@ public class MainFrame extends JFrame {
 		});
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
-		TumblGIFifier.getThreadPool().submit(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
 			@Override
 			public void run() {
@@ -221,15 +223,6 @@ public class MainFrame extends JFrame {
 				mostRecentOpenDirectory = null;
 			}
 		}
-	}
-	
-	/**
-	 * We do our cleaning up code here, just in case someone ends the process
-	 * without closing the window or hitting "quit."
-	 */
-	@Override
-	protected void finalize() {
-		TumblGIFifier.cleanUp();
 	}
 	
 	/**
@@ -270,7 +263,7 @@ public class MainFrame extends JFrame {
 			for (Component c : mainPanel.getOnDisable()) {
 				c.setEnabled(!busy);
 			}
-			TumblGIFifier.setEnabled(menuBar, !busy);
+			GUIHelper.setEnabled(menuBar, !busy);
 			mainPanel.getFireButton().requestFocusInWindow();
 		}
 	}
