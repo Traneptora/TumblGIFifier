@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.io.resources.ResourcesManager;
 
 public final class TextHelper {
 	
@@ -32,7 +32,7 @@ public final class TextHelper {
 	/**
 	 * This is the escaped filename of the Open Sans font file location.
 	 */
-	private String fontFile = escapeForVideoFilter(ExtrasManager.getExtrasManager().getOpenSansFontFileLocation());
+	private String fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansFontFileLocation());
 	
 	
 	private TextHelper(){

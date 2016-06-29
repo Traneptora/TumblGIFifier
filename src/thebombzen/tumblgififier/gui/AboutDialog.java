@@ -16,7 +16,7 @@ import javax.swing.WindowConstants;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.io.resources.ResourcesManager;
 
 public class AboutDialog extends JDialog {
 	
@@ -63,7 +63,7 @@ public class AboutDialog extends JDialog {
 					@Override
 					public void run() {
 						try {
-							final String latest = ExtrasManager.getExtrasManager().getLatestVersion();
+							final String latest = ResourcesManager.getResourcesManager().getLatestVersion();
 							if (latest.equals(TumblGIFifier.VERSION)) {
 								EventQueue.invokeLater(new Runnable(){
 									

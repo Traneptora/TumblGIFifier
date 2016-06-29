@@ -20,9 +20,9 @@ import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.text.StatusProcessor;
 import thebombzen.tumblgififier.text.StatusProcessorWriter;
 
-public class ExtrasManager {
+public class ResourcesManager {
 	
-	private static ExtrasManager manager = new ExtrasManager();
+	private static ResourcesManager manager = new ResourcesManager();
 	
 	private static String getApplicationDataLocation() {
 		String name = System.getProperty("os.name");
@@ -36,7 +36,7 @@ public class ExtrasManager {
 		}
 	}
 	
-	public static ExtrasManager getExtrasManager() {
+	public static ResourcesManager getResourcesManager() {
 		return manager;
 	}
 	
@@ -74,7 +74,7 @@ public class ExtrasManager {
 	
 	private String localAppDataLocation = null;
 	
-	private ExtrasManager() {
+	private ResourcesManager() {
 		
 	}
 	

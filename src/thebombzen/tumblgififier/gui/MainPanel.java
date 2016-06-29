@@ -36,7 +36,7 @@ import javax.swing.event.ChangeListener;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.VideoProcessor;
 import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.io.resources.ResourceLocation;
 import thebombzen.tumblgififier.text.StatusProcessor;
@@ -150,7 +150,7 @@ public class MainPanel extends JPanel {
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		final ResourceLocation ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
+		final ResourceLocation ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
@@ -194,8 +194,8 @@ public class MainPanel extends JPanel {
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		
-		final ResourceLocation ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
-		final ResourceLocation ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
+		final ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
+		final ResourceLocation ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
@@ -293,7 +293,7 @@ public class MainPanel extends JPanel {
 			if (!filename.toLowerCase().endsWith(".gif")) {
 				filename += ".gif";
 			}
-			File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_gif.txt");
+			File recentGIFFile = new File(ResourcesManager.getResourcesManager().getLocalAppDataLocation(), "recent_gif.txt");
 			mostRecentGIFDirectory = fileDialog.getDirectory();
 			try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)) {
 				recentGIFWriter.write(mostRecentGIFDirectory);
@@ -532,7 +532,7 @@ public class MainPanel extends JPanel {
 		scrollPane.setViewportView(statusArea);
 		scrollPanePanel.add(scrollPane, BorderLayout.CENTER);
 		leftPanel.add(scrollPanePanel);
-		File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_gif.txt");
+		File recentGIFFile = new File(ResourcesManager.getResourcesManager().getLocalAppDataLocation(), "recent_gif.txt");
 		if (recentGIFFile.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(recentGIFFile))) {
 				mostRecentGIFDirectory = br.readLine();

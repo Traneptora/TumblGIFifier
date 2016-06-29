@@ -23,7 +23,7 @@ import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.VideoProcessor;
-import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.text.StatusProcessor;
 import thebombzen.tumblgififier.text.StatusProcessorArea;
 
@@ -140,7 +140,7 @@ public class MainFrame extends JFrame {
 							@Override
 							public void run() {
 								File recentOpenFile = new File(
-										ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_open.txt");
+										ResourcesManager.getResourcesManager().getLocalAppDataLocation(), "recent_open.txt");
 								try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
 									recentOpenWriter.write(mostRecentOpenDirectory);
 									recentOpenWriter.close();
@@ -200,7 +200,7 @@ public class MainFrame extends JFrame {
 			@Override
 			public void run() {
 				TumblGIFifier.executeOldVersionCleanup();
-				boolean success = ExtrasManager.getExtrasManager().intitilizeExtras(getStatusProcessor());
+				boolean success = ResourcesManager.getResourcesManager().intitilizeExtras(getStatusProcessor());
 				if (success) {
 					setBusy(false);
 					EventQueue.invokeLater(new Runnable(){
@@ -214,7 +214,7 @@ public class MainFrame extends JFrame {
 				}
 			}
 		});
-		File recentOpenFile = ExtrasManager.getExtrasManager().getLocalResource("recent_open.txt");
+		File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
 		if (recentOpenFile.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {
 				mostRecentOpenDirectory = br.readLine();

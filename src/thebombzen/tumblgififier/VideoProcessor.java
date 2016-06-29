@@ -12,7 +12,7 @@ import java.util.Scanner;
 import javax.imageio.ImageIO;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.io.resources.ResourceLocation;
 import thebombzen.tumblgififier.text.StatusProcessor;
@@ -26,7 +26,7 @@ public class VideoProcessor {
 		
 		processor.appendStatus("Scanning File... ");
 		
-		ResourceLocation ffprobe = ExtrasManager.getExtrasManager().getFFprobeLocation();
+		ResourceLocation ffprobe = ResourcesManager.getResourcesManager().getFFprobeLocation();
 		
 		String line = null;
 		int width = -1;
@@ -237,7 +237,7 @@ public class VideoProcessor {
 		
 		writer.flush();
 		
-		ResourceLocation ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
+		ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
 		String scaleText = "scale=" + newWidth + ":" + newHeight;
 		
@@ -406,7 +406,7 @@ public class VideoProcessor {
 		}
 		File shotFile = null;
 		try {
-			ResourceLocation ffmpeg = ExtrasManager.getExtrasManager().getFFmpegLocation();
+			ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 			shotFile = IOHelper.createTempFile();
 			String scale = "scale=" + shotWidth + ":" + shotHeight;
 			

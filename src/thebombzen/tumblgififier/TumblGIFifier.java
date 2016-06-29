@@ -13,7 +13,7 @@ import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.SynchronizedOutputStream;
 import thebombzen.tumblgififier.io.TeeOutputStream;
-import thebombzen.tumblgififier.io.resources.ExtrasManager;
+import thebombzen.tumblgififier.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.text.StatusProcessor;
 
 public final class TumblGIFifier {
@@ -43,7 +43,7 @@ public final class TumblGIFifier {
 	 */
 	public static void main(String[] args) throws IOException {
 		
-		File bothLogFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "full_log.log");
+		File bothLogFile = new File(ResourcesManager.getResourcesManager().getLocalAppDataLocation(), "full_log.log");
 		
 		logFileOutputStream = new SynchronizedOutputStream(new FileOutputStream(bothLogFile));
 		
@@ -70,7 +70,7 @@ public final class TumblGIFifier {
 		StatusProcessor processor = MainFrame.getMainFrame().getStatusProcessor();
 		int version;
 		try {
-			String versionString = IOHelper.getFirstLineOfFile(ExtrasManager.getExtrasManager().getLocalResource("version_identifier.txt"));
+			String versionString = IOHelper.getFirstLineOfFile(ResourcesManager.getResourcesManager().getLocalResource("version_identifier.txt"));
 			version = Integer.parseInt(versionString);
 			if (version <= 0){
 				throw new NumberFormatException();
@@ -97,9 +97,9 @@ public final class TumblGIFifier {
 			}
 			processor.replaceStatus("Cleaning old temporary files... Done.");
 			processor.appendStatus("Cleaning old font files... ");
-			File profileMedium = ExtrasManager.getExtrasManager().getLocalResource("Profile-Medium.otf");
+			File profileMedium = ResourcesManager.getResourcesManager().getLocalResource("Profile-Medium.otf");
 			IOHelper.deleteTempFile(profileMedium);
-			File profileMediumXZ = ExtrasManager.getExtrasManager().getLocalResource("Profile-Medium.otf.xz");
+			File profileMediumXZ = ResourcesManager.getResourcesManager().getLocalResource("Profile-Medium.otf.xz");
 			IOHelper.deleteTempFile(profileMediumXZ);
 			processor.replaceStatus("Cleaning old font files... Done.");
 		}
@@ -109,15 +109,15 @@ public final class TumblGIFifier {
 			
 			processor.appendStatus("Cleaning output/error split...");
 			
-			File error = ExtrasManager.getExtrasManager().getLocalResource("error.log");
+			File error = ResourcesManager.getResourcesManager().getLocalResource("error.log");
 			IOHelper.deleteTempFile(error);
-			File output = ExtrasManager.getExtrasManager().getLocalResource("output.log");
+			File output = ResourcesManager.getResourcesManager().getLocalResource("output.log");
 			IOHelper.deleteTempFile(output);
 			
 			processor.replaceStatus("Cleaning output/error split... done.");
 			
 		}
-		try (Writer w = new OutputStreamWriter(new FileOutputStream(ExtrasManager.getExtrasManager().getLocalResource("version_identifier.txt")), Charset.forName("UTF-8"))){
+		try (Writer w = new OutputStreamWriter(new FileOutputStream(ResourcesManager.getResourcesManager().getLocalResource("version_identifier.txt")), Charset.forName("UTF-8"))){
 			w.write(Integer.toString(TumblGIFifier.VERSION_IDENTIFIER));
 		} catch (IOException ex) {
 			ex.printStackTrace();
