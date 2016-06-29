@@ -24,14 +24,6 @@ public class ConcurrenceManager {
 		return instance;
 	}
 	
-	private ConcurrenceManager(){
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
-			@Override
-			public void run() {
-				cleanUp();
-			}
-		}));
-	}
 
 	/**
 	 * A flag used to determine if we're cleaning up all the subprocesses we've
@@ -48,6 +40,20 @@ public class ConcurrenceManager {
 	private volatile List<Process> processes = new ArrayList<>();
 	
 	private volatile List<Runnable> cleanUpJobs = Collections.synchronizedList(new ArrayList<Runnable>());
+	
+	private ConcurrenceManager(){
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+			@Override
+			public void run() {
+				cleanUp();
+			}
+		}));
+		cleanUpJobs.add(new Runnable(){
+			public void run(){
+				System.out.println("Shutting Down...");
+			}
+		});
+	}
 	
 	public void addShutdownTask(Runnable runnable){
 		cleanUpJobs.add(runnable);
