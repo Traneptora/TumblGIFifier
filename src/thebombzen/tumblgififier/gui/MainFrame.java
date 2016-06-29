@@ -20,7 +20,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 import thebombzen.tumblgififier.util.ExtrasManager;
