@@ -68,6 +68,7 @@ public final class TumblGIFifier {
 			}
 		});
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+			@Override
 			public void run(){
 				TumblGIFifier.cleanUp();
 			}

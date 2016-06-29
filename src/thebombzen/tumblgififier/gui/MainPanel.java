@@ -82,8 +82,10 @@ public class MainPanel extends JPanel {
 		}
 		setupLayout();
 		TumblGIFifier.getThreadPool().scheduleWithFixedDelay(new Runnable(){
+			@Override
 			public void run(){
 				EventQueue.invokeLater(new Runnable(){
+					@Override
 					public void run(){
 						boolean update = !currentText.equals(overlayTextField.getText());
 						currentText = overlayTextField.getText();

@@ -12,6 +12,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.WindowConstants;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.util.ExtrasManager;
 
@@ -53,11 +54,13 @@ public class AboutDialog extends JDialog {
 				checkForUpdates.setEnabled(false);
 				checkForUpdates.setText("Checking...");
 				TumblGIFifier.getThreadPool().submit(new Runnable(){
+					@Override
 					public void run(){
 						try {
 							final String latest = ExtrasManager.getExtrasManager().getLatestVersion();
 							if (latest.equals(TumblGIFifier.VERSION)){
 								EventQueue.invokeLater(new Runnable(){
+									@Override
 									public void run(){
 										checkForUpdates.setText("Up to date.");
 										close.setEnabled(true);
@@ -65,6 +68,7 @@ public class AboutDialog extends JDialog {
 								});
 							} else {
 								EventQueue.invokeLater(new Runnable(){
+									@Override
 									public void run(){
 										int answer = JOptionPane.showConfirmDialog(AboutDialog.this, String.format("Update Available!%nLatest Version: %s%nDo you want to download the latest version?", latest), "New Version", JOptionPane.YES_NO_OPTION);
 										close.setEnabled(true);
@@ -98,6 +102,6 @@ public class AboutDialog extends JDialog {
 		this.pack();
 		this.setLocationRelativeTo(parent);
 		this.setModal(true);
-		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 	}
 }
