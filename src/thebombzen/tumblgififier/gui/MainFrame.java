@@ -20,6 +20,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.processor.VideoProcessor;
 import thebombzen.tumblgififier.util.ExtrasManager;
@@ -146,7 +147,7 @@ public class MainFrame extends JFrame {
 									ioe.printStackTrace();
 								}
 								
-								final VideoProcessor scan = VideoProcessor.scanFile(statusArea, file.getAbsolutePath());
+								final VideoProcessor scan = VideoProcessor.scanFile(getStatusProcessor(), file.getAbsolutePath());
 								if (scan != null) {
 									EventQueue.invokeLater(new Runnable(){
 										
@@ -164,7 +165,7 @@ public class MainFrame extends JFrame {
 										}
 									});
 								} else {
-									statusArea.appendStatus("Error scanning video file.");
+									getStatusProcessor().appendStatus("Error scanning video file.");
 								}
 								setBusy(false);
 							}
@@ -189,11 +190,11 @@ public class MainFrame extends JFrame {
 			}
 		});
 		setBusy(true);
-		statusArea.appendStatus("Initializing Engine. This may take a while on the first execution.");
+		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
 		TumblGIFifier.getThreadPool().submit(new Runnable(){
 			@Override
 			public void run() {
-				boolean success = ExtrasManager.getExtrasManager().intitilizeExtras(statusArea);
+				boolean success = ExtrasManager.getExtrasManager().intitilizeExtras(getStatusProcessor());
 				if (success) {
 					setBusy(false);
 					EventQueue.invokeLater(new Runnable(){
@@ -202,7 +203,7 @@ public class MainFrame extends JFrame {
 						}
 					});
 				} else {
-					statusArea.appendStatus("Error initializing.");
+					getStatusProcessor().appendStatus("Error initializing.");
 				}
 			}
 		});
