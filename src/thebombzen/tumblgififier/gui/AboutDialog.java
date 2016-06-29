@@ -69,7 +69,7 @@ public class AboutDialog extends JDialog {
 									
 									@Override
 									public void run() {
-										checkForUpdates.setText("Up to date.");
+										checkForUpdates.setText("Up to date");
 										close.setEnabled(true);
 									}
 								});
