@@ -78,6 +78,10 @@ public class ExtrasManager {
 		
 	}
 	
+	public File getLocalResource(String name){
+		return new File(this.getLocalAppDataLocation(), name);
+	}
+	
 	public ResourceLocation getFFmpegLocation() {
 		return getXLocation("ffmpeg");
 	}

@@ -197,14 +197,13 @@ public class MainFrame extends JFrame {
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			
 			@Override
 			public void run() {
+				TumblGIFifier.executeOldVersionCleanup();
 				boolean success = ExtrasManager.getExtrasManager().intitilizeExtras(getStatusProcessor());
 				if (success) {
 					setBusy(false);
 					EventQueue.invokeLater(new Runnable(){
-						
 						@Override
 						public void run() {
 							open.setEnabled(true);
@@ -215,7 +214,7 @@ public class MainFrame extends JFrame {
 				}
 			}
 		});
-		File recentOpenFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_open.txt");
+		File recentOpenFile = ExtrasManager.getExtrasManager().getLocalResource("recent_open.txt");
 		if (recentOpenFile.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {
 				mostRecentOpenDirectory = br.readLine();

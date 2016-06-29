@@ -1,12 +1,14 @@
 package thebombzen.tumblgififier.text;
 
 import java.awt.EventQueue;
+import java.io.PrintWriter;
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
 
 public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 	
 	private static final long serialVersionUID = 1L;
+	private PrintWriter processorWriter = new PrintWriter(new StatusProcessorWriter(this));
 	
 	public StatusProcessorArea() {
 		setEditable(false);
@@ -67,6 +69,11 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 		} else {
 			super.setEnabled(enabled);
 		}
+	}
+
+	@Override
+	public void processException(Throwable t) {
+		t.printStackTrace(processorWriter);
 	}
 	
 }

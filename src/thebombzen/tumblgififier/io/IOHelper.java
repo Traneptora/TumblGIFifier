@@ -15,10 +15,12 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.ConcurrenceManager;
+import thebombzen.tumblgififier.TumblGIFifier;
 
 public final class IOHelper {
 	
