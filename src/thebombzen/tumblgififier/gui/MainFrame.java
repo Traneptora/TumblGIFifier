@@ -71,7 +71,7 @@ public class MainFrame extends JFrame {
 	private StatusProcessorArea statusArea = new StatusProcessorArea();
 	
 	private JMenuBar menuBar;
-
+	
 	/**
 	 * True if the program is marked as "busy," i.e. the interface should be
 	 * disabled. For example, rendering a clip or creating a GIF or scanning a
@@ -101,24 +101,28 @@ public class MainFrame extends JFrame {
 		menuBar.add(helpMenu);
 		this.add(menuBar, BorderLayout.NORTH);
 		quit.addActionListener(new ActionListener(){
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				TumblGIFifier.quit();
 			}
 		});
 		about.addActionListener(new ActionListener(){
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				new AboutDialog(MainFrame.this).setVisible(true);
 			}
 		});
 		ActionListener l = new ActionListener(){
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (isBusy()) {
 					JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
 				} else {
-					final FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File", FileDialog.LOAD);
+					final FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File",
+							FileDialog.LOAD);
 					fileDialog.setMultipleMode(false);
 					if (mostRecentOpenDirectory != null) {
 						fileDialog.setDirectory(mostRecentOpenDirectory);
@@ -133,8 +137,8 @@ public class MainFrame extends JFrame {
 							
 							@Override
 							public void run() {
-								File recentOpenFile = new File(ExtrasManager.getExtrasManager()
-										.getLocalAppDataLocation(), "recent_open.txt");
+								File recentOpenFile = new File(
+										ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_open.txt");
 								try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
 									recentOpenWriter.write(mostRecentOpenDirectory);
 									recentOpenWriter.close();
@@ -144,7 +148,8 @@ public class MainFrame extends JFrame {
 									ioe.printStackTrace();
 								}
 								
-								final VideoProcessor scan = VideoProcessor.scanFile(getStatusProcessor(), file.getAbsolutePath());
+								final VideoProcessor scan = VideoProcessor.scanFile(getStatusProcessor(),
+										file.getAbsolutePath());
 								if (scan != null) {
 									EventQueue.invokeLater(new Runnable(){
 										
@@ -181,6 +186,7 @@ public class MainFrame extends JFrame {
 		setLocationRelativeTo(null);
 		this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		this.addWindowListener(new WindowAdapter(){
+			
 			@Override
 			public void windowClosing(WindowEvent e) {
 				TumblGIFifier.quit();
@@ -189,14 +195,16 @@ public class MainFrame extends JFrame {
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
 		TumblGIFifier.getThreadPool().submit(new Runnable(){
+			
 			@Override
 			public void run() {
 				boolean success = ExtrasManager.getExtrasManager().intitilizeExtras(getStatusProcessor());
 				if (success) {
 					setBusy(false);
 					EventQueue.invokeLater(new Runnable(){
+						
 						@Override
-						public void run(){
+						public void run() {
 							open.setEnabled(true);
 						}
 					});
@@ -257,9 +265,9 @@ public class MainFrame extends JFrame {
 		MainFrame.getMainFrame().setAlwaysOnTop(true);
 		MainFrame.getMainFrame().setAlwaysOnTop(false);
 		MainFrame.getMainFrame().requestFocus();
-		if (mainPanel != null){
+		if (mainPanel != null) {
 			mainPanel.getFireButton().setText(busy ? "STOP" : "Create GIF");
-			for (Component c : mainPanel.getOnDisable()){
+			for (Component c : mainPanel.getOnDisable()) {
 				c.setEnabled(!busy);
 			}
 			TumblGIFifier.setEnabled(menuBar, !busy);

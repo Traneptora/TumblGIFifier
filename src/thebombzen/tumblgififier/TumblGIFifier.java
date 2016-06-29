@@ -39,12 +39,11 @@ import thebombzen.tumblgififier.io.TeeOutputStream;
 import thebombzen.tumblgififier.util.ExtrasManager;
 import thebombzen.tumblgififier.util.ProcessTerminatedException;
 
-
 public final class TumblGIFifier {
-
+	
 	/** The version of TumblGIFifier */
 	public static final String VERSION = "0.6.0a";
-
+	
 	/**
 	 * Run our program.
 	 */
@@ -58,18 +57,22 @@ public final class TumblGIFifier {
 		errorLogFileOutputStream = new SynchronizedOutputStream(new FileOutputStream(errorLogFile));
 		bothLogFileOutputStream = new SynchronizedOutputStream(new FileOutputStream(bothLogFile));
 		
-		System.setErr(new PrintStream(new TeeOutputStream(System.err, errorLogFileOutputStream, bothLogFileOutputStream)));
-		System.setOut(new PrintStream(new TeeOutputStream(System.out, outputLogFileOutputStream, bothLogFileOutputStream)));
+		System.setErr(
+				new PrintStream(new TeeOutputStream(System.err, errorLogFileOutputStream, bothLogFileOutputStream)));
+		System.setOut(
+				new PrintStream(new TeeOutputStream(System.out, outputLogFileOutputStream, bothLogFileOutputStream)));
 		
 		EventQueue.invokeLater(new Runnable(){
+			
 			@Override
 			public void run() {
 				new MainFrame().setVisible(true);
 			}
 		});
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+			
 			@Override
-			public void run(){
+			public void run() {
 				TumblGIFifier.cleanUp();
 			}
 		}));
@@ -78,7 +81,7 @@ public final class TumblGIFifier {
 	private static OutputStream outputLogFileOutputStream;
 	private static OutputStream errorLogFileOutputStream;
 	private static OutputStream bothLogFileOutputStream;
-
+	
 	/**
 	 * A flag used to determine if we're cleaning up all the subprocesses we've
 	 * started. Normally, ending a process will just cause the next stage in the
@@ -92,7 +95,7 @@ public final class TumblGIFifier {
 	 * can end them all upon exit.
 	 */
 	private static volatile List<Process> processes = new ArrayList<>();
-
+	
 	/**
 	 * Create a subprocess and execute the arguments. This automatically
 	 * redirects standard error to standard out. If the stream copyTo is not
@@ -133,7 +136,7 @@ public final class TumblGIFifier {
 		}
 		return p.getInputStream();
 	}
-
+	
 	/**
 	 * Create a subprocess and execute the arguments. This automatically
 	 * redirects standard error to standard out.
@@ -160,33 +163,33 @@ public final class TumblGIFifier {
 		} catch (IOException ioe) {
 			// NullOutputStream doesn't throw IOException, so if we get one here
 			// it's really weird.
-			if (ioe.getMessage().equals("Stream closed")){
+			if (ioe.getMessage().equals("Stream closed")) {
 				throw new ProcessTerminatedException(ioe);
 			} else {
 				ioe.printStackTrace();
 				return new NullInputStream();
-			}	
+			}
 		}
 	}
-
+	
 	/**
 	 * Stop all subprocesses, but do not exit the program.
 	 */
-	public static void stopAll(){
+	public static void stopAll() {
 		cleaningUp = true;
 		for (Process p : processes) {
-			if (p.isAlive()){
+			if (p.isAlive()) {
 				p.destroy();
 			}
 		}
 		processes.clear();
 		cleaningUp = false;
 	}
-
+	
 	/**
 	 * This stops all subprocesses and shuts down the thread pool.
 	 */
-	public static void cleanUp(){
+	public static void cleanUp() {
 		stopAll();
 		TumblGIFifier.getThreadPool().shutdown();
 		System.out.println();
@@ -194,9 +197,10 @@ public final class TumblGIFifier {
 		closeQuietly(errorLogFileOutputStream);
 		closeQuietly(bothLogFileOutputStream);
 	}
-
+	
 	/**
-	 * Quit the program. Cleans up the subprocesses, shuts down the thread pool, then exists.
+	 * Quit the program. Cleans up the subprocesses, shuts down the thread pool,
+	 * then exists.
 	 */
 	public static void quit() {
 		cleanUp();
@@ -231,7 +235,7 @@ public final class TumblGIFifier {
 	 * throws IOException
 	 */
 	public static void closeQuietly(Closeable cl) {
-		if (cl == null){
+		if (cl == null) {
 			return;
 		}
 		try {
@@ -300,15 +304,21 @@ public final class TumblGIFifier {
 	/**
 	 * This is the thread pool on which we should run thread-pool tasks.
 	 */
-	private static ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
+	private static ScheduledExecutorService threadPool = Executors
+			.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
 	
 	/**
-	 * Escapes a string to be used in an FFmpeg video filter. Replaces backslash, comma, semicolon, colon, single quote, brackets, and equal signs with escaped versions.
-	 * @param input This is the input string to escape
+	 * Escapes a string to be used in an FFmpeg video filter. Replaces
+	 * backslash, comma, semicolon, colon, single quote, brackets, and equal
+	 * signs with escaped versions.
+	 * 
+	 * @param input
+	 *            This is the input string to escape
 	 * @return An escaped string.
 	 */
-	public static String escapeForVideoFilter(String input){
-		return input.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:").replace("'", "\\'").replace("[", "\\[").replace("]", "\\]").replace("=", "\\=");
+	public static String escapeForVideoFilter(String input) {
+		return input.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:")
+				.replace("'", "\\'").replace("[", "\\[").replace("]", "\\]").replace("=", "\\=");
 	}
 	
 	/**
@@ -324,41 +334,50 @@ public final class TumblGIFifier {
 	/**
 	 * This is the escaped filename of the Open Sans font file location.
 	 */
-	private static String fontFile = escapeForVideoFilter(ExtrasManager.getExtrasManager().getOpenSansFontFileLocation());
+	private static String fontFile = escapeForVideoFilter(
+			ExtrasManager.getExtrasManager().getOpenSansFontFileLocation());
 	
 	static {
 		try {
 			tempOverlayFile = File.createTempFile("tumblgififier", ".tmp").getAbsoluteFile();
 			tempOverlayFilename = escapeForVideoFilter(tempOverlayFile.getAbsolutePath());
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			throw new Error("Cannot create temporary files.");
 		}
 	}
 	
 	/**
-	 * This creates the drawtext filter to be used with the text overlay feature.
-	 * Just drop right after -vf.
-	 * Note that you shouldn't use this more than once at a time,
-	 * because it dumps the message to a file and points the filter to that file.
-	 * @param width The video width
-	 * @param height The video height
-	 * @param fontSize The font point size of the message we want to render
-	 * @param message The text of the message we want to render
-	 * @return A drop-in drawtext filter, to be placed right after the -vf argument.
+	 * This creates the drawtext filter to be used with the text overlay
+	 * feature. Just drop right after -vf. Note that you shouldn't use this more
+	 * than once at a time, because it dumps the message to a file and points
+	 * the filter to that file.
+	 * 
+	 * @param width
+	 *            The video width
+	 * @param height
+	 *            The video height
+	 * @param fontSize
+	 *            The font point size of the message we want to render
+	 * @param message
+	 *            The text of the message we want to render
+	 * @return A drop-in drawtext filter, to be placed right after the -vf
+	 *         argument.
 	 */
 	public static String createDrawTextString(int width, int height, int fontSize, String message) {
-		int size = (int)Math.ceil(fontSize * height / 1080D);
-		int borderw = (int)Math.ceil(size * 7D / fontSize);
-		try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8")))){
+		int size = (int) Math.ceil(fontSize * height / 1080D);
+		int borderw = (int) Math.ceil(size * 7D / fontSize);
+		try (Writer writer = new BufferedWriter(
+				new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8")))) {
 			writer.write(message);
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			return "";
 		}
-		String drawText = "drawtext=x=(w-tw)*0.5:y=0.935*(h-0.5*" + size + "):bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + fontFile + ":fontsize=" + size + ":textfile=" + tempOverlayFilename;
+		String drawText = "drawtext=x=(w-tw)*0.5:y=0.935*(h-0.5*" + size
+				+ "):bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + fontFile + ":fontsize="
+				+ size + ":textfile=" + tempOverlayFilename;
 		return drawText;
 	}
-	
 	
 	public static Component wrapLeftAligned(Component comp) {
 		Box box = Box.createHorizontalBox();
@@ -382,9 +401,9 @@ public final class TumblGIFifier {
 		box.add(right);
 		return box;
 	}
-
-	public static boolean deleteTempFile(File f){
-		if (f == null){
+	
+	public static boolean deleteTempFile(File f) {
+		if (f == null) {
 			return false;
 		}
 		f.deleteOnExit();
@@ -404,11 +423,11 @@ public final class TumblGIFifier {
 		}
 	}
 	
-	public static boolean downloadFromInternetQuietly(URL url, File downloadTo){
+	public static boolean downloadFromInternetQuietly(URL url, File downloadTo) {
 		try {
 			downloadFromInternet(url, downloadTo);
 			return true;
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			return false;
 		}
@@ -435,9 +454,9 @@ public final class TumblGIFifier {
 	public static String getFirstLineOfFileQuietly(File file) throws FileNotFoundException {
 		try {
 			return getFirstLineOfInputStream(new FileInputStream(file));
-		} catch (FileNotFoundException fnfe){
+		} catch (FileNotFoundException fnfe) {
 			throw fnfe;
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			return "";
 		}
@@ -448,17 +467,17 @@ public final class TumblGIFifier {
 		try {
 			reader = new BufferedReader(new InputStreamReader(url.openStream(), Charset.forName("UTF-8")));
 			return reader.readLine();
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			return "";
 		} finally {
 			closeQuietly(reader);
 		}
 	}
 	
-	public static URL wrapSafeURL(String urlLocation){
+	public static URL wrapSafeURL(String urlLocation) {
 		try {
 			return new URL(urlLocation);
-		} catch (MalformedURLException ex){
+		} catch (MalformedURLException ex) {
 			throw new Error("You said it was safe!", ex);
 		}
 	}
@@ -475,13 +494,12 @@ public final class TumblGIFifier {
 			closeQuietly(fos);
 		}
 	}
-
+	
 	/**
-	 * This returns the thread pool for thread-pool-like tasks. 
+	 * This returns the thread pool for thread-pool-like tasks.
 	 */
-	public static ScheduledExecutorService getThreadPool(){
+	public static ScheduledExecutorService getThreadPool() {
 		return threadPool;
 	}
-	
 	
 }

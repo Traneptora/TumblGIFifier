@@ -54,9 +54,9 @@ public class MainPanel extends JPanel {
 	private JTextField maxSizeTextField;
 	private String mostRecentGIFDirectory = null;
 	private JButton playButtonFast;
-
+	
 	private JButton playButtonSlow;
-
+	
 	private ImagePanel previewImageEndPanel;
 	private ImagePanel previewImageStartPanel;
 	private VideoProcessor scan;
@@ -74,7 +74,7 @@ public class MainPanel extends JPanel {
 	public List<Component> getOnDisable() {
 		return onDisable;
 	}
-
+	
 	public MainPanel(VideoProcessor scan) {
 		this.scan = scan;
 		if (scan == null) {
@@ -82,21 +82,24 @@ public class MainPanel extends JPanel {
 		}
 		setupLayout();
 		TumblGIFifier.getThreadPool().scheduleWithFixedDelay(new Runnable(){
+			
 			@Override
-			public void run(){
+			public void run() {
 				EventQueue.invokeLater(new Runnable(){
+					
 					@Override
-					public void run(){
+					public void run() {
 						boolean update = !currentText.equals(overlayTextField.getText());
 						currentText = overlayTextField.getText();
-						if (update){
+						if (update) {
 							updateStartScreenshot();
 							updateEndScreenshot();
 						}
 					}
 				});
 			}
-		}, 0, 1000, TimeUnit.MILLISECONDS); // 1,000,000 nanoseconds is 1 milliseconds
+		}, 0, 1000, TimeUnit.MILLISECONDS); // 1,000,000 nanoseconds is 1
+											// milliseconds
 	}
 	
 	private void createGIF(final String path) {
@@ -116,16 +119,18 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				boolean success = scan.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd, minSizeBytes, maxSizeBytes,
-						halveFramerate, textSize);
+				boolean success = scan.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd,
+						minSizeBytes, maxSizeBytes, halveFramerate, textSize);
 				MainFrame.getMainFrame().setBusy(false);
 				if (success) {
 					statusArea.appendStatus("Done!");
-					//JOptionPane.showMessageDialog(MainPanel.this, "Done!", "Success!", JOptionPane.INFORMATION_MESSAGE);
+					// JOptionPane.showMessageDialog(MainPanel.this, "Done!",
+					// "Success!", JOptionPane.INFORMATION_MESSAGE);
 				} else {
 					statusArea.appendStatus("Some error occured :(");
-					//JOptionPane.showMessageDialog(MainPanel.this, "Some error occured :(", "Error",
-						//	JOptionPane.ERROR_MESSAGE);
+					// JOptionPane.showMessageDialog(MainPanel.this, "Some error
+					// occured :(", "Error",
+					// JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -148,22 +153,30 @@ public class MainPanel extends JPanel {
 		final ResourceLocation ffplay = ExtrasManager.getExtrasManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		TumblGIFifier.getThreadPool().submit(new Runnable(){
+			
 			@Override
 			public void run() {
 				try {
 					String scale;
-					if (scan.getHeight() > 270){
+					if (scan.getHeight() > 270) {
 						scale = "scale=-1:270";
 					} else {
 						scale = "scale";
 					}
 					
-					TumblGIFifier.exec(true, ffplay.toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v", scan.getLocation(), "-ss",
-							Double.toString(clipStart), "-t", Double.toString(clipEnd - clipStart), "-vf", overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
-				} catch (ProcessTerminatedException ex){
+					TumblGIFifier.exec(true, ffplay.toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v",
+							scan.getLocation(), "-ss", Double.toString(clipStart), "-t",
+							Double.toString(clipEnd - clipStart), "-vf",
+							overlay.length() == 0 ? scale
+									: scale + ", " + TumblGIFifier.createDrawTextString(
+											scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
+													: scan.getWidth(),
+											scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
+				} catch (ProcessTerminatedException ex) {
 					return;
 				} finally {
 					EventQueue.invokeLater(new Runnable(){
+						
 						@Override
 						public void run() {
 							MainFrame.getMainFrame().setBusy(false);
@@ -186,6 +199,7 @@ public class MainPanel extends JPanel {
 		final String overlay = overlayTextField.getText();
 		
 		TumblGIFifier.getThreadPool().submit(new Runnable(){
+			
 			@Override
 			public void run() {
 				File tempFile = null;
@@ -200,25 +214,31 @@ public class MainPanel extends JPanel {
 						return;
 					}
 					String scale;
-					if (scan.getHeight() > 270){
+					if (scan.getHeight() > 270) {
 						scale = "scale=-1:270";
 					} else {
 						scale = "scale";
 					}
 					TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-							"yuv420p", "-vf", overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight() : scan.getWidth(), scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay), "-c",
-							"ffv1", "-f", "matroska", tempFile.getAbsolutePath());
+							"yuv420p", "-vf", overlay.length() == 0 ? scale
+									: scale + ", "
+											+ TumblGIFifier.createDrawTextString(
+													scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
+															: scan.getWidth(),
+													scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay),
+							"-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
 					TumblGIFifier.exec(true, ffplay.toString(), "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
 					TumblGIFifier.stopAll();
 					return;
 				} finally {
-					if (tempFile != null){
+					if (tempFile != null) {
 						tempFile.delete();
 					}
 					EventQueue.invokeLater(new Runnable(){
+						
 						@Override
 						public void run() {
 							MainFrame.getMainFrame().setBusy(false);
@@ -233,17 +253,21 @@ public class MainPanel extends JPanel {
 	/**
 	 * Execute this on the Event Dispatch thread
 	 */
-	private void fire(){
+	private void fire() {
 		
 		if (maxSizeCheckBox.isSelected()) {
 			final int maxSizeBytes = 1000 * maxSize;
 			final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
 			final double clipStart = startSlider.getValue() * 0.25D;
 			final double clipEnd = endSlider.getValue() * 0.25D;
-			double newWidth = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate() * (halveFramerate ? 0.5D : 1D) * (clipEnd - clipStart) / (2D * maxSizeBytes));
-			if (newWidth < 300D){
-				int dialogResult = JOptionPane.showConfirmDialog(this, String.format("This GIF will probably be less than 300 pixels wide, which means Tumblr won't expand it to fit the window. Is this okay?%n(If not then you should drag the sliders on the right to decrease the duration.)"), "Warning", JOptionPane.OK_CANCEL_OPTION);
-				if (dialogResult == JOptionPane.CANCEL_OPTION){
+			double newWidth = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate()
+					* (halveFramerate ? 0.5D : 1D) * (clipEnd - clipStart) / (2D * maxSizeBytes));
+			if (newWidth < 300D) {
+				int dialogResult = JOptionPane.showConfirmDialog(this,
+						String.format(
+								"This GIF will probably be less than 300 pixels wide, which means Tumblr won't expand it to fit the window. Is this okay?%n(If not then you should drag the sliders on the right to decrease the duration.)"),
+						"Warning", JOptionPane.OK_CANCEL_OPTION);
+				if (dialogResult == JOptionPane.CANCEL_OPTION) {
 					return;
 				}
 			}
@@ -269,11 +293,10 @@ public class MainPanel extends JPanel {
 		String filename = fileDialog.getFile();
 		
 		if (filename != null) {
-			if (!filename.toLowerCase().endsWith(".gif")){
+			if (!filename.toLowerCase().endsWith(".gif")) {
 				filename += ".gif";
 			}
-			File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(),
-					"recent_gif.txt");
+			File recentGIFFile = new File(ExtrasManager.getExtrasManager().getLocalAppDataLocation(), "recent_gif.txt");
 			mostRecentGIFDirectory = fileDialog.getDirectory();
 			try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)) {
 				recentGIFWriter.write(mostRecentGIFDirectory);
@@ -353,7 +376,7 @@ public class MainPanel extends JPanel {
 		endSlider.setMaximum((int) (scan.getDuration() * 4D) - 1);
 		endSlider.setValue(endSlider.getMaximum() * 2 / 3);
 		rightBox.add(endSlider);
-			
+		
 		onDisable.add(endSlider);
 		
 		startSlider.addChangeListener(new ChangeListener(){
@@ -397,11 +420,11 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(wrapLeftRightAligned(new JLabel("Height:"), new JLabel(Integer.toString(scan.getHeight()))));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Duration:"),
-				new JLabel(String.format("%.2f", scan.getDuration()))));
+		leftPanel.add(
+				wrapLeftRightAligned(new JLabel("Duration:"), new JLabel(String.format("%.2f", scan.getDuration()))));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftRightAligned(new JLabel("Framerate:"),
-				new JLabel(String.format("%.2f", scan.getFramerate()))));
+		leftPanel.add(
+				wrapLeftRightAligned(new JLabel("Framerate:"), new JLabel(String.format("%.2f", scan.getFramerate()))));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
@@ -435,12 +458,12 @@ public class MainPanel extends JPanel {
 		
 		leftPanel.add(wrapLeftRightAligned(maxSizeCheckBox, maxSizeTextField));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(wrapLeftAligned(new JLabel("The maximum size on Tumblr is 2000 Kilobytes.")));		
+		leftPanel.add(wrapLeftAligned(new JLabel("The maximum size on Tumblr is 2000 Kilobytes.")));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
-		cutFramerateInHalfCheckBox = new JCheckBox("Cut Output Framerate in Half, to "
-				+ String.format("%.2f", scan.getFramerate() * 0.5D));
+		cutFramerateInHalfCheckBox = new JCheckBox(
+				"Cut Output Framerate in Half, to " + String.format("%.2f", scan.getFramerate() * 0.5D));
 		leftPanel.add(wrapLeftAligned(cutFramerateInHalfCheckBox));
 		leftPanel.add(wrapLeftAligned(new JLabel("Halving the framerate will increase the physical size of the GIF.")));
 		leftPanel.add(Box.createVerticalStrut(20));
@@ -492,7 +515,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				
-				if (fireButton.getText().equals("STOP")){
+				if (fireButton.getText().equals("STOP")) {
 					TumblGIFifier.stopAll();
 					MainFrame.getMainFrame().setBusy(false);
 					return;
@@ -524,6 +547,7 @@ public class MainPanel extends JPanel {
 	
 	private void updateEndScreenshot() {
 		TumblGIFifier.getThreadPool().submit(new Runnable(){
+			
 			@Override
 			public void run() {
 				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D, textSize));
@@ -533,13 +557,14 @@ public class MainPanel extends JPanel {
 	
 	private void updateStartScreenshot() {
 		TumblGIFifier.getThreadPool().submit(new Runnable(){
+			
 			@Override
 			public void run() {
 				previewImageStartPanel.setImage(scan.screenShot(currentText, startSlider.getValue() * 0.25D, textSize));
 			}
 		});
 	}
-
+	
 	public JButton getFireButton() {
 		return fireButton;
 	}

@@ -54,7 +54,7 @@ public class ExtrasManager {
 		return "https://thebombzen.github.io/TumblGIFifier/resources/ffprog/OpenSans-Semibold.ttf.xz";
 	}
 	
-	public String getOpenSansFontFileLocation(){
+	public String getOpenSansFontFileLocation() {
 		return new File(getLocalAppDataLocation(), "OpenSans-Semibold.ttf").getAbsolutePath();
 	}
 	
@@ -95,7 +95,8 @@ public class ExtrasManager {
 		} catch (MalformedURLException ex) {
 			throw new Error(ex);
 		}
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(latestURL.openStream(), Charset.forName("UTF-8")))){
+		try (BufferedReader reader = new BufferedReader(
+				new InputStreamReader(latestURL.openStream(), Charset.forName("UTF-8")))) {
 			return reader.readLine();
 		}
 	}

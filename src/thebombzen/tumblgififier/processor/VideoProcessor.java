@@ -145,10 +145,11 @@ public class VideoProcessor {
 		this.statusProcessor.appendStatus(sb.toString());
 	}
 	
-	public boolean convert(String overlay, StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
-			long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
+	public boolean convert(String overlay, StatusProcessorArea outputProcessor, String path, double startTime,
+			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		MainFrame.getMainFrame().setBusy(true);
-		boolean status = convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate, overlaySize);
+		boolean status = convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate,
+				overlaySize);
 		TumblGIFifier.deleteTempFile(gifFile);
 		TumblGIFifier.deleteTempFile(mkvFile);
 		TumblGIFifier.deleteTempFile(paletteFile);
@@ -156,8 +157,8 @@ public class VideoProcessor {
 		return status;
 	}
 	
-	private boolean convert0(String overlay, StatusProcessorArea outputProcessor, String path, double startTime, double endTime,
-			long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
+	private boolean convert0(String overlay, StatusProcessorArea outputProcessor, String path, double startTime,
+			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		this.statusProcessor = outputProcessor;
 		this.startTime = startTime;
 		this.endTime = endTime;
@@ -166,8 +167,10 @@ public class VideoProcessor {
 		this.halveFramerate = halveFramerate;
 		
 		lowscale = 0D;
-		scale = minSize <= 0 ? 1D : 1D / Math.sqrt(width * height * framerate * (halveFramerate ? 0.5D : 1D) * (endTime - startTime) / (3D * maxSize));
-		if (scale > 1D){
+		scale = minSize <= 0 ? 1D
+				: 1D / Math.sqrt(width * height * framerate * (halveFramerate ? 0.5D : 1D) * (endTime - startTime)
+						/ (3D * maxSize));
+		if (scale > 1D) {
 			scale = 1D;
 		}
 		highscale = 1D;
@@ -188,13 +191,14 @@ public class VideoProcessor {
 		
 		while (gifFile.length() == 0 || (gifFile.length() < minSize && scale < 1) || gifFile.length() > maxSize) {
 			boolean finished = createGif(overlay, overlaySize);
-			if (!finished){
-				return false; 
+			if (!finished) {
+				return false;
 			}
 			adjustScale();
 			int newWidth = (int) (width * scale);
 			int newHeight = (int) (height * scale);
-			if (newWidth == prevWidth && newHeight == prevHeight || newWidth == prevPrevWidth && newHeight == prevPrevHeight){
+			if (newWidth == prevWidth && newHeight == prevHeight
+					|| newWidth == prevPrevWidth && newHeight == prevPrevHeight) {
 				statusProcessor.appendStatus("Exiting Loop.");
 				break;
 			}
@@ -222,7 +226,7 @@ public class VideoProcessor {
 	private boolean createGif(String overlay, int overlaySize) {
 		int newWidth = (int) (width * scale);
 		int newHeight = (int) (height * scale);
-
+		
 		PrintWriter writer = new PrintWriter(new StatusProcessorWriter(statusProcessor));
 		
 		writer.format("Testing Size: %dx%d%n%n", newWidth, newHeight);
@@ -236,16 +240,16 @@ public class VideoProcessor {
 		String scaleText = "scale=" + newWidth + ":" + newHeight;
 		
 		try {
-			scanPercentDone(
-					"Scaling Video... ",
-					endTime - startTime,
-					writer,
-					TumblGIFifier.exec(false, ffmpeg.toString(), "-y", "-ss", Double.toString(this.startTime), "-i",
-							location, "-map", "0:v", "-filter:v", overlay.length() == 0 ? scaleText : scaleText + ", " + TumblGIFifier.createDrawTextString(newWidth, newHeight, overlaySize, overlay), "-t", Double.toString(this.endTime - this.startTime), "-pix_fmt",
-							"yuv420p", halveFramerate ? "-r" : "-y",
-							halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c", "ffv1", "-f",
-							"matroska", this.mkvFile.getAbsolutePath()));
-					
+			scanPercentDone("Scaling Video... ", endTime - startTime, writer, TumblGIFifier.exec(false,
+					ffmpeg.toString(), "-y", "-ss", Double.toString(this.startTime), "-i", location, "-map", "0:v",
+					"-filter:v",
+					overlay.length() == 0 ? scaleText
+							: scaleText + ", "
+									+ TumblGIFifier.createDrawTextString(newWidth, newHeight, overlaySize, overlay),
+					"-t", Double.toString(this.endTime - this.startTime), "-pix_fmt", "yuv420p",
+					halveFramerate ? "-r" : "-y", halveFramerate ? String.format("%f", framerate * 0.5D) : "-y", "-c",
+					"ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
+			
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Scaling Video... Error.");
@@ -259,8 +263,8 @@ public class VideoProcessor {
 		writer.flush();
 		
 		try {
-			TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf",
-					"palettegen", "-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
+			TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-vf", "palettegen",
+					"-c", "png", "-f", "image2", this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating Palette... Error.");
@@ -273,10 +277,7 @@ public class VideoProcessor {
 		writer.print("Generating GIF... \r");
 		
 		try {
-			scanPercentDone(
-					"Generating GIF... ",
-					endTime - startTime,
-					writer,
+			scanPercentDone("Generating GIF... ", endTime - startTime, writer,
 					TumblGIFifier.exec(false, ffmpeg.toString(), "-y", "-i", this.mkvFile.getAbsolutePath(), "-i",
 							this.paletteFile.getAbsolutePath(), "-lavfi", "paletteuse", "-c", "gif", "-f", "gif",
 							this.gifFile.getAbsolutePath()));
@@ -353,11 +354,12 @@ public class VideoProcessor {
 		return result;
 	}
 	
-	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in) throws ProcessTerminatedException {
+	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in)
+			throws ProcessTerminatedException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(in));
 		String line = null;
 		try {
-			while (null != (line = br.readLine())){
+			while (null != (line = br.readLine())) {
 				if (line.startsWith("frame=")) {
 					String time = "0";
 					Scanner sc2 = new Scanner(line);
@@ -383,7 +385,7 @@ public class VideoProcessor {
 					writer.format("%s%.2f%%\r", prefix, percent);
 				}
 			}
-		} catch (IOException ioe){
+		} catch (IOException ioe) {
 			throw new ProcessTerminatedException(ioe);
 		}
 	}
@@ -407,7 +409,11 @@ public class VideoProcessor {
 			shotFile.deleteOnExit();
 			String scale = "scale=" + shotWidth + ":" + shotHeight;
 			
-			TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(time), "-i", location, "-map", "0:v", "-vf", "format=rgb24, " + (overlay.length() == 0 ? scale : scale + ", " + TumblGIFifier.createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
+			TumblGIFifier.exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(time), "-i", location, "-map",
+					"0:v", "-vf",
+					"format=rgb24, " + (overlay.length() == 0 ? scale
+							: scale + ", "
+									+ TumblGIFifier.createDrawTextString(shotWidth, shotHeight, overlaySize, overlay)),
 					"-t", "0.5", "-r", "1", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {

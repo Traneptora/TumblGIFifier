@@ -4,9 +4,8 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-
 public class SynchronizedOutputStream extends FilterOutputStream {
-
+	
 	public SynchronizedOutputStream(OutputStream out) {
 		super(out);
 	}

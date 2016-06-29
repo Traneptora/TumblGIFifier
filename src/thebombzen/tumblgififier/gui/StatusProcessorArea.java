@@ -20,6 +20,7 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 	@Override
 	public void appendStatus(final String status) {
 		EventQueue.invokeLater(new Runnable(){
+			
 			@Override
 			public void run() {
 				String text = getText();
@@ -37,6 +38,7 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 	@Override
 	public void clearStatus() {
 		EventQueue.invokeLater(new Runnable(){
+			
 			@Override
 			public void run() {
 				setText("");

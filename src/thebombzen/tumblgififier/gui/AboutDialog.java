@@ -17,10 +17,10 @@ import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.util.ExtrasManager;
 
 public class AboutDialog extends JDialog {
-
+	
 	private static final long serialVersionUID = 1L;
 	
-	public AboutDialog(Window parent){
+	public AboutDialog(Window parent) {
 		super(parent, "About");
 		this.setLayout(new BorderLayout());
 		Box outerBox = Box.createHorizontalBox();
@@ -33,7 +33,8 @@ public class AboutDialog extends JDialog {
 		box.add(TumblGIFifier.wrapLeftAligned(new JLabel("Licensed under the MIT license")));
 		box.add(TumblGIFifier.wrapLeftAligned(new JLabel("with included public domain XZ Utils")));
 		box.add(Box.createVerticalStrut(10));
-		box.add(TumblGIFifier.wrapLeftAligned(new JLabel("See https://thebombzen.github.io/TumblGIFifier/ for details.")));
+		box.add(TumblGIFifier
+				.wrapLeftAligned(new JLabel("See https://thebombzen.github.io/TumblGIFifier/ for details.")));
 		box.add(Box.createVerticalStrut(10));
 		final JButton checkForUpdates = new JButton("Check for updates");
 		final JButton close = new JButton("Close");
@@ -42,55 +43,72 @@ public class AboutDialog extends JDialog {
 		outerBox.add(box);
 		outerBox.add(Box.createHorizontalStrut(10));
 		close.addActionListener(new ActionListener(){
+			
 			@Override
-			public void actionPerformed(ActionEvent e){
+			public void actionPerformed(ActionEvent e) {
 				AboutDialog.this.dispose();
 			}
 		});
 		checkForUpdates.addActionListener(new ActionListener(){
+			
 			@Override
-			public void actionPerformed(ActionEvent e){
+			public void actionPerformed(ActionEvent e) {
 				close.setEnabled(false);
 				checkForUpdates.setEnabled(false);
 				checkForUpdates.setText("Checking...");
 				TumblGIFifier.getThreadPool().submit(new Runnable(){
+					
 					@Override
-					public void run(){
+					public void run() {
 						try {
 							final String latest = ExtrasManager.getExtrasManager().getLatestVersion();
-							if (latest.equals(TumblGIFifier.VERSION)){
+							if (latest.equals(TumblGIFifier.VERSION)) {
 								EventQueue.invokeLater(new Runnable(){
+									
 									@Override
-									public void run(){
+									public void run() {
 										checkForUpdates.setText("Up to date.");
 										close.setEnabled(true);
 									}
 								});
 							} else {
 								EventQueue.invokeLater(new Runnable(){
+									
 									@Override
-									public void run(){
-										int answer = JOptionPane.showConfirmDialog(AboutDialog.this, String.format("Update Available!%nLatest Version: %s%nDo you want to download the latest version?", latest), "New Version", JOptionPane.YES_NO_OPTION);
+									public void run() {
+										int answer = JOptionPane.showConfirmDialog(AboutDialog.this,
+												String.format(
+														"Update Available!%nLatest Version: %s%nDo you want to download the latest version?",
+														latest),
+												"New Version", JOptionPane.YES_NO_OPTION);
 										close.setEnabled(true);
 										checkForUpdates.setText("Updates Available");
-										if (answer == JOptionPane.YES_OPTION){
-											if (Desktop.isDesktopSupported()){
+										if (answer == JOptionPane.YES_OPTION) {
+											if (Desktop.isDesktopSupported()) {
 												try {
-													Desktop.getDesktop().browse(TumblGIFifier.wrapSafeURL("https://github.com/thebombzen/TumblGIFifier/releases/").toURI());
-												} catch (RuntimeException ex){
+													Desktop.getDesktop()
+															.browse(TumblGIFifier
+																	.wrapSafeURL(
+																			"https://github.com/thebombzen/TumblGIFifier/releases/")
+																	.toURI());
+												} catch (RuntimeException ex) {
 													throw ex;
-												} catch (Exception e){
+												} catch (Exception e) {
 													e.printStackTrace();
-													JOptionPane.showMessageDialog(AboutDialog.this, "Error opening web browser.", "Error", JOptionPane.ERROR_MESSAGE);
+													JOptionPane.showMessageDialog(AboutDialog.this,
+															"Error opening web browser.", "Error",
+															JOptionPane.ERROR_MESSAGE);
 												}
 											} else {
-												JOptionPane.showMessageDialog(AboutDialog.this, "Error opening web browser.", "Error", JOptionPane.ERROR_MESSAGE);
+												JOptionPane.showMessageDialog(AboutDialog.this,
+														"Error opening web browser.", "Error",
+														JOptionPane.ERROR_MESSAGE);
 											}
 										}
 									}
 								});
 							}
-						} catch (IOException ioe){
+						} catch (IOException ioe) {
 							checkForUpdates.setText("Error checking.");
 							close.setEnabled(true);
 						}

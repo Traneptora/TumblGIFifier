@@ -10,22 +10,22 @@ public class NullInputStream extends InputStream {
 	}
 	
 	@Override
-	public int read(byte[] buf, int off, int len){
+	public int read(byte[] buf, int off, int len) {
 		return -1;
 	}
 	
 	@Override
-	public int read(byte[] buf){
+	public int read(byte[] buf) {
 		return -1;
 	}
 	
 	@Override
-	public int available(){
+	public int available() {
 		return 0;
 	}
 	
 	@Override
-	public void close(){
+	public void close() {
 		// Do nothing
 	}
 	
