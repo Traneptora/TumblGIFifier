@@ -10,7 +10,6 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Iterator;
 import thebombzen.tumblgififier.ConcurrenceManager;
-import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.resources.ExtrasManager;
 

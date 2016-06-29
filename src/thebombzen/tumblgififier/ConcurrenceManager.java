@@ -1,16 +1,9 @@
 package thebombzen.tumblgififier;
 
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,9 +14,7 @@ import java.util.concurrent.TimeUnit;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.NullInputStream;
 import thebombzen.tumblgififier.io.NullOutputStream;
-import thebombzen.tumblgififier.io.resources.ExtrasManager;
 import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
-import thebombzen.tumblgififier.text.StatusProcessor;
 
 public class ConcurrenceManager {
 	
