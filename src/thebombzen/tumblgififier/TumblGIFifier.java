@@ -40,7 +40,7 @@ public final class TumblGIFifier {
 	 */
 	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
 	
-	private static OutputStream logFileOutputStream;
+	static OutputStream logFileOutputStream;
 	
 	private static volatile boolean initializedCleanup = false;
 	
