@@ -102,7 +102,6 @@ public class MainFrame extends JFrame {
 		menuBar.add(helpMenu);
 		this.add(menuBar, BorderLayout.NORTH);
 		quit.addActionListener(new ActionListener(){
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				TumblGIFifier.quit();
@@ -115,7 +114,6 @@ public class MainFrame extends JFrame {
 			}
 		});
 		ActionListener l = new ActionListener(){
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (isBusy()) {
