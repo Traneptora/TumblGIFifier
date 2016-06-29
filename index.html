@@ -23,7 +23,7 @@
 				<p>TumblGIFifier supports overlaying text on the GIF in a white-text-black-border meme style. It uses the font <a href="https://www.google.com/fonts/specimen/Open+Sans">Open Sans Semibold</a> as the font for this. You can change the size of the text overlay or leave it as the default.<p>
 				<p>TumblGIFifier can read practically any video file, because it uses <a href="http://ffmpeg.org/">FFmpeg</a> as a backend.</p>
 				<p>You don't have to crop the video file time-wise beforehand, because TumblGIFifier comes with sliders that allow you to change the start and end times of the GIF.</p>
-				<p>The current release of TumblGIFifier is <b>0.6.0b</b>. All releases will be marked as "pre-releases" until version 1.0.0, when TumblGIFifier is production-ready. At this moment it is not. TumblGIFifier is still in its early stages of development, the UI is a bit clunky, and there <i>WILL</i> be undiscovered bugs.</p>
+				<p>The current release of TumblGIFifier is <b>0.6.0c</b>. All releases will be marked as "pre-releases" until version 1.0.0, when TumblGIFifier is production-ready. At this moment it is not. TumblGIFifier is still in its early stages of development, the UI is a bit clunky, and there <i>WILL</i> be undiscovered bugs.</p>
 			</p>
 		</p>
 		<p>
@@ -42,7 +42,7 @@
 		<p>
 			<div class="section-header">Tips and Tricks</div>
 			<p><ul>
-				<!--<li>If you want to cut the framerate in quarter instead of in half, you can create a GIF with no maximum GIF size but with half the framerate. Then, you can feed that GIF back into TumblGIFifier and cut the framerate in half again. TumblGIFifier supports practically any video input format, including GIF image.</li>-->
+				<li>If you want to cut the framerate in quarter instead of in half, you can create a GIF with no maximum GIF size but with half the framerate. Then, you can feed that GIF back into TumblGIFifier and cut the framerate in half again. TumblGIFifier supports practically any video input format, including GIF image.</li>
 				<li>The sliders have 1/4 second precision. If you have difficulty dragging a slider to get exactly what you need, you can nudge it to the left or the right by 1/4 second by using the left or right arrow keys, as long as the slider is selected.</li>
 				<li>GIFs with very little action, as in, GIFs with a perfectly still background (not a pan/zoom, must be perfectly still) are much better candidates as they will have drastically smaller file sizes, which allows the physical size to be much bigger while remaining under the maximum size. GIFs with lots of action are worse candidates and on average will be significantly smaller.</li>
 				<li>TumblGIFifier will try to warn you if it thinks the GIF will be less than 300 pixels wide before you convert. This is just a guess. It will tend to give false positives for relative still GIFs and false negatives for relatively actoin-filled GIFs. The only way to tell would be to actually create the GIF. You can also feel free to ignore this warning.</li>
