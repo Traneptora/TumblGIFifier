@@ -11,6 +11,10 @@ TumblGIFifier is still in its early stages of development. The UI is a bit clunk
 
 See [https://thebombzen.github.io/TumblGIFifier/](https://thebombzen.github.io/TumblGIFifier/) for details.
 
+## Issues
+
+Submit a bug report or pull request here to submit bugs/patches. Alternatively, you could go to #tumblgififier on freenode, where I'll be around to answer questions.
+
 ## Known Problems
 
 - The user interface is somewhat unintuitive, with the text explanation right next to the controls and weird word wrap.
