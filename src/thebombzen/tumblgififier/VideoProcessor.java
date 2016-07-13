@@ -293,7 +293,7 @@ public class VideoProcessor {
 									: scaleText + ", "
 											+ TextHelper.getTextHelper().createDrawTextString(newWidth, newHeight,
 													overlaySize, overlay),
-							"-t", Double.toString(this.endTime - this.startTime), "-pix_fmt", "yuv420p",
+							"-t", Double.toString(this.endTime - this.startTime), "-pix_fmt", "rgb24",
 							halveFramerate ? "-r" : "-y", halveFramerate ? String.format("%f", framerate * 0.5D) : "-y",
 							"-c", "ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
 			

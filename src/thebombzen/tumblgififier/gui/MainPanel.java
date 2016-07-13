@@ -193,6 +193,8 @@ public class MainPanel extends JPanel {
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
+		final double halfFramerate = scan.getFramerate() * 0.5D;
+		final boolean shouldHalfFramerate = this.cutFramerateInHalfCheckBox.isSelected();
 		
 		final ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		final ResourceLocation ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
@@ -220,7 +222,7 @@ public class MainPanel extends JPanel {
 					}
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-							"yuv420p", "-vf", overlay.length() == 0 ? scale
+							"rgb24", shouldHalfFramerate ? "-r" : "-y", shouldHalfFramerate ? Double.toString(halfFramerate) : "-y", "-vf", overlay.length() == 0 ? scale
 									: scale + ", "
 											+ TextHelper.getTextHelper().createDrawTextString(
 													scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
