@@ -35,6 +35,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.VideoProcessor;
+import thebombzen.tumblgififier.VideoScan;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.io.resources.ResourceLocation;
@@ -60,7 +61,8 @@ public class MainPanel extends JPanel {
 	
 	private ImagePanel previewImageEndPanel;
 	private ImagePanel previewImageStartPanel;
-	private VideoProcessor scan;
+	private VideoProcessor videoProcessor;
+	private VideoScan scan;
 	private JSlider startSlider;
 	private StatusProcessorArea statusArea;
 	private JButton fireButton = new JButton("Create GIF");
@@ -76,11 +78,12 @@ public class MainPanel extends JPanel {
 		return onDisable;
 	}
 	
-	public MainPanel(VideoProcessor scan) {
-		this.scan = scan;
-		if (scan == null) {
+	public MainPanel(VideoProcessor videoProcessor) {
+		if (videoProcessor == null) {
 			throw new NullPointerException();
 		}
+		this.videoProcessor = videoProcessor;
+		this.scan = videoProcessor.getScan();
 		setupLayout();
 		ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
 			
@@ -119,7 +122,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				boolean success = scan.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd,
+				boolean success = videoProcessor.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd,
 						minSizeBytes, maxSizeBytes, halveFramerate, textSize);
 				MainFrame.getMainFrame().setBusy(false);
 				if (success) {
@@ -171,7 +174,7 @@ public class MainPanel extends JPanel {
 									: scale + ", " + TextHelper.getTextHelper().createDrawTextString(
 											scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
 													: scan.getWidth(),
-											scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
+													scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
 				} catch (ProcessTerminatedException ex) {
 					return;
 				} finally {
@@ -227,7 +230,7 @@ public class MainPanel extends JPanel {
 											+ TextHelper.getTextHelper().createDrawTextString(
 													scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
 															: scan.getWidth(),
-													scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay),
+															scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay),
 							"-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.toString(), "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
@@ -309,8 +312,8 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void setupLayout() {
-		BufferedImage previewImageStart = scan.screenShot("", 1D / 3D * scan.getDuration(), textSize);
-		BufferedImage previewImageEnd = scan.screenShot("", 2D / 3D * scan.getDuration(), textSize);
+		BufferedImage previewImageStart = videoProcessor.screenShot("", 1D / 3D * scan.getDuration(), textSize);
+		BufferedImage previewImageEnd = videoProcessor.screenShot("", 2D / 3D * scan.getDuration(), textSize);
 		if (previewImageStart == null) {
 			previewImageStart = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
 		}
@@ -385,7 +388,7 @@ public class MainPanel extends JPanel {
 				if (startSlider.getValue() > endSlider.getValue()) {
 					startSlider.setValue(endSlider.getValue());
 				}
-				if (!startSlider.getValueIsAdjusting() && scan != null) {
+				if (!startSlider.getValueIsAdjusting() && videoProcessor != null) {
 					updateStartScreenshot();
 				}
 				
@@ -399,7 +402,7 @@ public class MainPanel extends JPanel {
 				if (endSlider.getValue() < startSlider.getValue()) {
 					endSlider.setValue(startSlider.getValue());
 				}
-				if (!endSlider.getValueIsAdjusting() && scan != null) {
+				if (!endSlider.getValueIsAdjusting() && videoProcessor != null) {
 					updateEndScreenshot();
 				}
 			}
@@ -548,7 +551,7 @@ public class MainPanel extends JPanel {
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			@Override
 			public void run() {
-				previewImageEndPanel.setImage(scan.screenShot(currentText, endSlider.getValue() * 0.25D - scan.getDurationTime(), textSize));
+				previewImageEndPanel.setImage(videoProcessor.screenShot(currentText, endSlider.getValue() * 0.25D - scan.getSinglePacketDuration(), textSize));
 			}
 		});
 	}
@@ -558,7 +561,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				previewImageStartPanel.setImage(scan.screenShot(currentText, startSlider.getValue() * 0.25D, textSize));
+				previewImageStartPanel.setImage(videoProcessor.screenShot(currentText, startSlider.getValue() * 0.25D, textSize));
 			}
 		});
 	}

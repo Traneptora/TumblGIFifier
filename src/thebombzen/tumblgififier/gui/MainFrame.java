@@ -23,6 +23,7 @@ import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.VideoProcessor;
+import thebombzen.tumblgififier.VideoScan;
 import thebombzen.tumblgififier.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.text.StatusProcessor;
 import thebombzen.tumblgififier.text.StatusProcessorArea;
@@ -149,8 +150,9 @@ public class MainFrame extends JFrame {
 									ioe.printStackTrace();
 								}
 								
-								final VideoProcessor scan = VideoProcessor.scanFile(getStatusProcessor(),
+								final VideoScan scan = VideoScan.scanFile(getStatusProcessor(),
 										file.getAbsolutePath());
+								final VideoProcessor processor = new VideoProcessor(scan);
 								if (scan != null) {
 									EventQueue.invokeLater(new Runnable(){
 										
@@ -161,7 +163,7 @@ public class MainFrame extends JFrame {
 											} else {
 												MainFrame.this.remove(defaultPanel);
 											}
-											mainPanel = new MainPanel(scan);
+											mainPanel = new MainPanel(processor);
 											MainFrame.this.add(mainPanel);
 											MainFrame.this.pack();
 											setLocationRelativeTo(null);
