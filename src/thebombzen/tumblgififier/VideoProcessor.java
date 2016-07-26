@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
 import thebombzen.tumblgififier.gui.MainFrame;
@@ -24,6 +26,13 @@ public class VideoProcessor {
 	
 	public VideoProcessor(VideoScan scan){
 		this.scan = scan;
+		ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Runnable(){
+			public void run(){
+				for (File shotFile : shotFiles.values()){
+					IOHelper.deleteTempFile(shotFile);
+				}
+			}
+		});
 	}
 	
 	private VideoScan scan;
@@ -59,6 +68,8 @@ public class VideoProcessor {
 	private int prevPrevWidth = -2;
 	private int prevHeight = -1;
 	private int prevPrevHeight = -2;
+	
+	private Map<Double, File> shotFiles = new HashMap<>();
 	
 	private void adjustScale() {
 		StringBuilder sb = new StringBuilder();
@@ -278,12 +289,14 @@ public class VideoProcessor {
 		if (time < 0 || time > scan.getDuration()) {
 			throw new IllegalArgumentException("Time out of bounds!");
 		}
-		File shotFile = null;
+		File shotFile = shotFiles.get(time);
 		try {
+			if (shotFile != null){
+				return ImageIO.read(shotFiles.get(time));
+			}
 			ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 			shotFile = IOHelper.createTempFile();
 			String scale = "scale=" + shotWidth + ":" + shotHeight;
-			
 			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(time),
 					"-i", scan.getLocation(), "-map", "0:v", "-vf",
 					"format=rgb24, " + (overlay.length() == 0 ? scale
@@ -293,9 +306,10 @@ public class VideoProcessor {
 					"-t", "0.5", "-r", "1", "-c", "png", "-f", "image2", shotFile.getAbsolutePath());
 			return ImageIO.read(shotFile);
 		} catch (IOException ioe) {
+			shotFile = null;
 			return null;
 		} finally {
-			IOHelper.deleteTempFile(shotFile);
+			shotFiles.put(time, shotFile);
 		}
 	}
 	
