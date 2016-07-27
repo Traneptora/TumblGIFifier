@@ -117,6 +117,7 @@ public class ConcurrenceManager {
 	 *         block then this InputStream will have reached End-Of-File.
 	 */
 	public InputStream exec(boolean join, String... args) throws ProcessTerminatedException {
+		//System.err.println(TextHelper.getTextHelper().join(" ", args));
 		try {
 			if (join) {
 				return exec(new NullOutputStream(), args);

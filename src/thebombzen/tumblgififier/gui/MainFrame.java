@@ -22,11 +22,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.VideoProcessor;
-import thebombzen.tumblgififier.VideoScan;
 import thebombzen.tumblgififier.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.text.StatusProcessor;
 import thebombzen.tumblgififier.text.StatusProcessorArea;
+import thebombzen.tumblgififier.video.VideoScan;
 
 /**
  * This represents the main JFrame of the program, and also serves as the
@@ -137,7 +136,6 @@ public class MainFrame extends JFrame {
 						final File file = new File(mostRecentOpenDirectory, filename);
 						setBusy(true);
 						ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-							
 							@Override
 							public void run() {
 								File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
@@ -149,13 +147,9 @@ public class MainFrame extends JFrame {
 									// we'd like to know on standard error
 									ioe.printStackTrace();
 								}
-								
-								final VideoScan scan = VideoScan.scanFile(getStatusProcessor(),
-										file.getAbsolutePath());
-								final VideoProcessor processor = new VideoProcessor(scan);
+								final VideoScan scan = VideoScan.scanFile(getStatusProcessor(), file.getAbsolutePath());
 								if (scan != null) {
 									EventQueue.invokeLater(new Runnable(){
-										
 										@Override
 										public void run() {
 											if (mainPanel != null) {
@@ -163,7 +157,7 @@ public class MainFrame extends JFrame {
 											} else {
 												MainFrame.this.remove(defaultPanel);
 											}
-											mainPanel = new MainPanel(processor);
+											mainPanel = new MainPanel(scan);
 											MainFrame.this.add(mainPanel);
 											MainFrame.this.pack();
 											setLocationRelativeTo(null);

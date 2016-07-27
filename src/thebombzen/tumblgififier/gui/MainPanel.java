@@ -17,7 +17,11 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -34,8 +38,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import thebombzen.tumblgififier.ConcurrenceManager;
-import thebombzen.tumblgififier.VideoProcessor;
-import thebombzen.tumblgififier.VideoScan;
+import thebombzen.tumblgififier.Tuple;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.io.resources.ResourceLocation;
@@ -43,6 +46,9 @@ import thebombzen.tumblgififier.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.text.StatusProcessor;
 import thebombzen.tumblgififier.text.StatusProcessorArea;
 import thebombzen.tumblgififier.text.TextHelper;
+import thebombzen.tumblgififier.video.ShotCache;
+import thebombzen.tumblgififier.video.VideoProcessor;
+import thebombzen.tumblgififier.video.VideoScan;
 
 public class MainPanel extends JPanel {
 	
@@ -73,18 +79,27 @@ public class MainPanel extends JPanel {
 	private int textSize = 96;
 	
 	private String currentText = "";
+	private Map<Tuple<String, Integer>, ShotCache> cacheMap = new HashMap<>();
 	
 	public List<Component> getOnDisable() {
 		return onDisable;
 	}
 	
-	public MainPanel(VideoProcessor videoProcessor) {
-		if (videoProcessor == null) {
+	public MainPanel(final VideoScan videoScan) {
+		if (videoScan == null) {
 			throw new NullPointerException();
 		}
-		this.videoProcessor = videoProcessor;
-		this.scan = videoProcessor.getScan();
+		this.scan = videoScan;
+		this.videoProcessor = new VideoProcessor(videoScan);
+		this.cacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
 		setupLayout();
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+			public void run(){
+				updateStartScreenshot();
+				updateEndScreenshot();
+			}
+		});
+
 		ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
 			
 			@Override
@@ -93,16 +108,28 @@ public class MainPanel extends JPanel {
 					
 					@Override
 					public void run() {
-						boolean update = !currentText.equals(overlayTextField.getText());
+						int newTextSize = textSize;
+						try {
+							newTextSize = Integer.parseInt(overlayTextSizeField.getText());
+						} catch (NumberFormatException e){
+							// nothing
+						}
+						boolean update = !currentText.equals(overlayTextField.getText()) || newTextSize != textSize;
 						currentText = overlayTextField.getText();
+						textSize = newTextSize;
 						if (update) {
+							Tuple<String, Integer> tuple = new Tuple<>(currentText, textSize);
+							if (cacheMap.get(tuple) == null){
+								cacheMap.put(tuple, new ShotCache(scan));
+							}
 							updateStartScreenshot();
 							updateEndScreenshot();
 						}
 					}
 				});
 			}
-		}, 1000, TimeUnit.MILLISECONDS);
+		}, 2500, TimeUnit.MILLISECONDS);
+		
 	}
 	
 	private void createGIF(final String path) {
@@ -312,14 +339,6 @@ public class MainPanel extends JPanel {
 	}
 	
 	private void setupLayout() {
-		BufferedImage previewImageStart = videoProcessor.screenShot("", 1D / 3D * scan.getDuration(), textSize);
-		BufferedImage previewImageEnd = videoProcessor.screenShot("", 2D / 3D * scan.getDuration(), textSize);
-		if (previewImageStart == null) {
-			previewImageStart = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
-		}
-		if (previewImageEnd == null) {
-			previewImageEnd = new BufferedImage(480, 270, BufferedImage.TYPE_INT_RGB);
-		}
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		this.add(Box.createVerticalStrut(10));
 		Box horizontalBox = Box.createHorizontalBox();
@@ -331,7 +350,7 @@ public class MainPanel extends JPanel {
 		horizontalBox.add(leftPanel);
 		horizontalBox.add(Box.createHorizontalStrut(10));
 		Box rightBox = Box.createVerticalBox();
-		previewImageStartPanel = new ImagePanel(previewImageStart);
+		previewImageStartPanel = new ImagePanel(null);
 		previewImageStartPanel.setPreferredSize(new Dimension(480, 270));
 		rightBox.add(previewImageStartPanel);
 		rightBox.add(Box.createVerticalStrut(10));
@@ -409,7 +428,7 @@ public class MainPanel extends JPanel {
 		});
 		
 		rightBox.add(Box.createVerticalStrut(10));
-		previewImageEndPanel = new ImagePanel(previewImageEnd);
+		previewImageEndPanel = new ImagePanel(null);
 		previewImageEndPanel.setPreferredSize(new Dimension(480, 270));
 		rightBox.add(previewImageEndPanel);
 		horizontalBox.add(rightBox);
@@ -551,17 +570,56 @@ public class MainPanel extends JPanel {
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			@Override
 			public void run() {
-				previewImageEndPanel.setImage(videoProcessor.screenShot(currentText, endSlider.getValue() * 0.25D - scan.getSinglePacketDuration(), textSize));
+				try {
+					Future<BufferedImage> future = cacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize);
+					while (!future.isDone()){
+						EventQueue.invokeLater(new Runnable(){
+							public void run(){
+								endSlider.setEnabled(false);
+							}
+						});
+						previewImageEndPanel.setImage(null);
+						Thread.sleep(10);
+					}
+					previewImageEndPanel.setImage(future.get());
+					EventQueue.invokeLater(new Runnable(){
+						public void run(){
+							endSlider.setEnabled(true);
+							endSlider.requestFocusInWindow();
+						}
+					});
+				} catch (InterruptedException | ExecutionException ex) {
+					getStatusProcessor().processException(ex);
+				}
 			}
 		});
 	}
 	
 	private void updateStartScreenshot() {
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			
 			@Override
 			public void run() {
-				previewImageStartPanel.setImage(videoProcessor.screenShot(currentText, startSlider.getValue() * 0.25D, textSize));
+				try {
+					Future<BufferedImage> future = cacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize);
+					while (!future.isDone()){
+						EventQueue.invokeLater(new Runnable(){
+							public void run(){
+								startSlider.setEnabled(false);
+							}
+						});
+						previewImageStartPanel.setImage(null);
+						Thread.sleep(10);
+					}
+					previewImageStartPanel.setImage(future.get());
+					EventQueue.invokeLater(new Runnable(){
+						public void run(){
+							startSlider.setEnabled(true);
+							startSlider.requestFocusInWindow();
+						}
+					});
+				} catch (InterruptedException | ExecutionException ex) {
+					getStatusProcessor().processException(ex);
+				}
 			}
 		});
 	}

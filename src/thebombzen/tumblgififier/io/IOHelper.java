@@ -44,6 +44,11 @@ public final class IOHelper {
 		tempFiles.add(f.getCanonicalPath());
 		return f;
 	}
+	
+	public static void markTempFile(String file) {
+		tempFiles.add(file);
+		new File(file).deleteOnExit();
+	}
 
 	/**
 	 * Close a stream quietly because we honestly don't care if a stream.close()
