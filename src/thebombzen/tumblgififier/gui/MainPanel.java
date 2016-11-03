@@ -79,7 +79,8 @@ public class MainPanel extends JPanel {
 	private int textSize = 96;
 	
 	private String currentText = "";
-	private Map<Tuple<String, Integer>, ShotCache> cacheMap = new HashMap<>();
+	private Map<Tuple<String, Integer>, ShotCache> startCacheMap = new HashMap<>();
+	private Map<Tuple<String, Integer>, ShotCache> endCacheMap = new HashMap<>();
 	
 	public List<Component> getOnDisable() {
 		return onDisable;
@@ -91,7 +92,8 @@ public class MainPanel extends JPanel {
 		}
 		this.scan = videoScan;
 		this.videoProcessor = new VideoProcessor(videoScan);
-		this.cacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
+		this.startCacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
+		this.endCacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
 		setupLayout();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			public void run(){
@@ -119,8 +121,11 @@ public class MainPanel extends JPanel {
 						textSize = newTextSize;
 						if (update) {
 							Tuple<String, Integer> tuple = new Tuple<>(currentText, textSize);
-							if (cacheMap.get(tuple) == null){
-								cacheMap.put(tuple, new ShotCache(scan));
+							if (startCacheMap.get(tuple) == null){
+								startCacheMap.put(tuple, new ShotCache(scan));
+							}
+							if (endCacheMap.get(tuple) == null){
+								endCacheMap.put(tuple, new ShotCache(scan));
 							}
 							updateStartScreenshot();
 							updateEndScreenshot();
@@ -571,7 +576,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				try {
-					Future<BufferedImage> future = cacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize);
+					Future<BufferedImage> future = endCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize, true);
 					while (!future.isDone()){
 						EventQueue.invokeLater(new Runnable(){
 							public void run(){
@@ -600,7 +605,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				try {
-					Future<BufferedImage> future = cacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize);
+					Future<BufferedImage> future = startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, false);
 					while (!future.isDone()){
 						EventQueue.invokeLater(new Runnable(){
 							public void run(){

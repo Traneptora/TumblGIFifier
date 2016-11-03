@@ -3,6 +3,10 @@ package thebombzen.tumblgififier.io;
 import java.io.IOException;
 import java.io.Writer;
 
+/**
+ * This is a simple implementation of Writer that allows subclasses to only determine what happens to data one character at a time. It is inefficient but easy to work with, so it's ideal for small data sets.
+ * Users of subclasses of this should probably buffer the data in some way, perhaps with BufferedWriter.  
+ */
 public abstract class SimpleWriter extends Writer {
 	
 	@Override

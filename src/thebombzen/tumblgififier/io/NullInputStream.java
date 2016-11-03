@@ -2,6 +2,9 @@ package thebombzen.tumblgififier.io;
 
 import java.io.InputStream;
 
+/**
+ * This input stream behaves like /dev/null. In other words, it returns end-of-file on any attempt to read from it.
+ */
 public class NullInputStream extends InputStream {
 	
 	@Override

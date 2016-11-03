@@ -16,10 +16,17 @@ import thebombzen.tumblgififier.io.NullInputStream;
 import thebombzen.tumblgififier.io.NullOutputStream;
 import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
 
-public class ConcurrenceManager {
+/**
+ * This class handles all the program-wide concurrence utilities. 
+ *
+ */
+public final class ConcurrenceManager {
 	
 	private static final ConcurrenceManager instance = new ConcurrenceManager();
 	
+	/**
+	 * There is one instance of a ConcurrentManager. This returns the singleton instance.
+	 */
 	public static ConcurrenceManager getConcurrenceManager(){
 		return instance;
 	}
@@ -27,9 +34,8 @@ public class ConcurrenceManager {
 
 	/**
 	 * A flag used to determine if we're cleaning up all the subprocesses we've
-	 * started. Normally, ending a process will just cause the next stage in the
-	 * GIF creation to continue. If this flag is set, we won't create any more
-	 * processes.
+	 * started. Normally, if a sub-process ends, it will be assumed to be "completed," and the next stage in the
+	 * GIF creation to continue. Setting this flag prevents the creation of new processes in order to safely clean up.
 	 */
 	private volatile boolean cleaningUp = false;
 	
@@ -39,8 +45,14 @@ public class ConcurrenceManager {
 	 */
 	private volatile List<Process> processes = new ArrayList<>();
 	
+	/**
+	 * These are a list of jobs that must be executed when the program shuts down normally (instead of halting).
+	 */
 	private volatile List<Runnable> cleanUpJobs = Collections.synchronizedList(new ArrayList<Runnable>());
 	
+	/**
+	 * This constructor creates the singleton instance of this class. It's private so only there can only be one instance.
+	 */
 	private ConcurrenceManager(){
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
 			@Override
@@ -55,6 +67,10 @@ public class ConcurrenceManager {
 		});
 	}
 	
+	/**
+	 * We want users to be able to add shutdown tasks, but not to be able to remove them. This adds a Runnable as a shutdown task in a way that it cannot be removed.
+	 * @param runnable This will be executed upon a clean exit of the program.
+	 */
 	public void addShutdownTask(Runnable runnable){
 		cleanUpJobs.add(runnable);
 	}
@@ -62,9 +78,10 @@ public class ConcurrenceManager {
 	/**
 	 * Create a subprocess and execute the arguments. This automatically
 	 * redirects standard error to standard out. If the stream copyTo is not
-	 * null, it will automatically copy the standard output of that process to
+	 * null, it will automatically copy the standard output of the created process to
 	 * the OutputStream copyTo. Copying the stream will cause this method to
-	 * block. Declining to copy will cause this method to return immediately.
+	 * block until the process's output returns an end-of-file.
+	 * Declining to copy will cause this method to return immediately.
 	 * 
 	 * @param copyTo
 	 *            If this is not null, this method will block until the process
@@ -115,6 +132,7 @@ public class ConcurrenceManager {
 	 * @return This returns an InputStream that reads from the Standard
 	 *         output/error stream of the process. If this method was set to
 	 *         block then this InputStream will have reached End-Of-File.
+	 * @throws ProcessTerminatedException if "join" is set to true but the process ends before its end-of-file is reached
 	 */
 	public InputStream exec(boolean join, String... args) throws ProcessTerminatedException {
 		//System.err.println(TextHelper.getTextHelper().join(" ", args));
@@ -137,7 +155,7 @@ public class ConcurrenceManager {
 	}
 	
 	/**
-	 * Stop all subprocesses, but do not exit the program.
+	 * Stop all subprocesses, but do not exit the program. This is uses to interrupt GIF creation.
 	 */
 	public void stopAll() {
 		cleaningUp = true;
@@ -149,8 +167,9 @@ public class ConcurrenceManager {
 		processes.clear();
 		cleaningUp = false;
 	}
+	
 	/**
-	 * This stops all subprocesses and shuts down the thread pool.
+	 * Stops all subprocesses, shuts down the thread pool, and executes shutdown tasks.
 	 */
 	protected void cleanUp() {
 		stopAll();
@@ -163,18 +182,23 @@ public class ConcurrenceManager {
 	}
 	
 	/**
-	 * This is the thread pool on which we should run thread-pool tasks.
+	 * This is the thread pool on which we should run thread-pool tasks. We add 1 because this allows us to use all processors while one thread is waiting on I/O.
 	 */
 	private ScheduledExecutorService threadPool = Executors
 			.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
 	
+	/**
+	 * This queues a given Runnable to be executed "soon" but with unimportant timing.
+	 */
 	public Future<?> executeLater(Runnable r) {
 		return threadPool.submit(r);
 	}
 	
+	/** This queues a runnable to be executed at regular intervals.
+	 * It's called an "Imprecise" tick clock because there is no guarantee that the intervals will be exact, and if the tasks takes longer to complete, the longer it will be until the next iteration is executed.
+	 */
 	public Future<?> createImpreciseTickClock(Runnable r, long tickTime, TimeUnit timeUnit){
 		return threadPool.scheduleWithFixedDelay(r, 0, tickTime, timeUnit);
 	}
-	
 	
 }

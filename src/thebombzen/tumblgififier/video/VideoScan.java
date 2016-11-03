@@ -149,6 +149,10 @@ public class VideoScan {
 		return scanPacketDuration;
 	}
 	
+	public double getFrameDuration(){
+		return 1D / getFramerate();
+	}
+	
 	public double getDuration() {
 		return scanDuration;
 	}

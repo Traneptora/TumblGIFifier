@@ -4,6 +4,10 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * This is a thread-safe filtered output stream. It ensures that only one thread can write to it at once, to prevent 
+ *
+ */
 public class SynchronizedOutputStream extends FilterOutputStream {
 	
 	public SynchronizedOutputStream(OutputStream out) {
