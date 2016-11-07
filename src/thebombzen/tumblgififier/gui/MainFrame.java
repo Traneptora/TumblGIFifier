@@ -120,57 +120,7 @@ public class MainFrame extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (isBusy()) {
-					JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
-				} else {
-					final FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File",
-							FileDialog.LOAD);
-					fileDialog.setMultipleMode(false);
-					if (mostRecentOpenDirectory != null) {
-						fileDialog.setDirectory(mostRecentOpenDirectory);
-					}
-					fileDialog.setVisible(true);
-					final String filename = fileDialog.getFile();
-					if (filename != null) {
-						mostRecentOpenDirectory = fileDialog.getDirectory();
-						final File file = new File(mostRecentOpenDirectory, filename);
-						setBusy(true);
-						ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-							@Override
-							public void run() {
-								File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
-								try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
-									recentOpenWriter.write(mostRecentOpenDirectory);
-									recentOpenWriter.close();
-								} catch (IOException ioe) {
-									// we don't really care if this fails, but
-									// we'd like to know on standard error
-									ioe.printStackTrace();
-								}
-								final VideoScan scan = VideoScan.scanFile(getStatusProcessor(), file.getAbsolutePath());
-								if (scan != null) {
-									EventQueue.invokeLater(new Runnable(){
-										@Override
-										public void run() {
-											if (mainPanel != null) {
-												MainFrame.this.remove(mainPanel);
-											} else {
-												MainFrame.this.remove(defaultPanel);
-											}
-											mainPanel = new MainPanel(scan);
-											MainFrame.this.add(mainPanel);
-											MainFrame.this.pack();
-											setLocationRelativeTo(null);
-										}
-									});
-								} else {
-									getStatusProcessor().appendStatus("Error scanning video file.");
-								}
-								setBusy(false);
-							}
-						});
-					}
-				}
+				openDialog();
 			}
 		};
 		defaultPanel.setLayout(new BorderLayout());
@@ -191,6 +141,14 @@ public class MainFrame extends JFrame {
 		});
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
+		File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
+		if (recentOpenFile.exists()) {
+			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {
+				mostRecentOpenDirectory = br.readLine();
+			} catch (IOException ioe) {
+				mostRecentOpenDirectory = null;
+			}
+		}
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			@Override
 			public void run() {
@@ -209,12 +167,66 @@ public class MainFrame extends JFrame {
 				}
 			}
 		});
-		File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
-		if (recentOpenFile.exists()) {
-			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {
-				mostRecentOpenDirectory = br.readLine();
-			} catch (IOException ioe) {
-				mostRecentOpenDirectory = null;
+	}
+	
+	public void open(String path){
+		if (isBusy()) {
+			JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
+		} else {
+			setBusy(true);
+			final VideoScan scan = VideoScan.scanFile(getStatusProcessor(), path);
+			if (scan != null) {
+				EventQueue.invokeLater(new Runnable(){
+					@Override
+					public void run() {
+						if (mainPanel != null) {
+							MainFrame.this.remove(mainPanel);
+						} else {
+							MainFrame.this.remove(defaultPanel);
+						}
+						mainPanel = new MainPanel(scan);
+						MainFrame.this.add(mainPanel);
+						MainFrame.this.pack();
+						setLocationRelativeTo(null);
+					}
+				});
+			} else {
+				getStatusProcessor().appendStatus("Error scanning video file.");
+			}
+			setBusy(false);
+		}
+	}
+	
+	public void openDialog(){
+		if (isBusy()) {
+			JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
+		} else {
+			final FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File",
+					FileDialog.LOAD);
+			fileDialog.setMultipleMode(false);
+			if (mostRecentOpenDirectory != null) {
+				fileDialog.setDirectory(mostRecentOpenDirectory);
+			}
+			fileDialog.setVisible(true);
+			final String filename = fileDialog.getFile();
+			if (filename != null) {
+				mostRecentOpenDirectory = fileDialog.getDirectory();
+				final File file = new File(mostRecentOpenDirectory, filename);
+				ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+					@Override
+					public void run() {
+						File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
+						try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
+							recentOpenWriter.write(mostRecentOpenDirectory);
+							recentOpenWriter.close();
+						} catch (IOException ioe) {
+							// we don't really care if this fails, but
+							// we'd like to know on standard error
+							ioe.printStackTrace();
+						}
+						open(file.getAbsolutePath());
+					}
+				});
 			}
 		}
 	}

@@ -47,7 +47,7 @@ public final class TumblGIFifier {
 	/**
 	 * Run our program.
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException {
 		
 		File bothLogFile = ResourcesManager.getResourcesManager().getLocalResource("full_log.log");
 		
@@ -58,16 +58,40 @@ public final class TumblGIFifier {
 		System.setOut(
 				new PrintStream(new TeeOutputStream(System.out, logFileOutputStream)));
 		
+		if (args.length != 0){
+			if ("--help".equals(args[0])){
+				printHelpAndExit(true);
+			} else if (args.length != 1){
+				printHelpAndExit(false);
+			} else {
+				ConcurrenceManager.getConcurrenceManager().addPostInitTask(new Runnable(){
+					public void run(){
+						MainFrame.getMainFrame().open(args[0]);
+					}
+				});
+			}
+		}
+		
 		EventQueue.invokeLater(new Runnable(){
 			
 			@Override
 			public void run() {
 				new MainFrame().setVisible(true);
+				ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+					public void run(){
+						ConcurrenceManager.getConcurrenceManager().postInit();
+					}
+				});
 			}
 		});
 
 	}
 	
+	private static void printHelpAndExit(boolean good){
+		System.out.println("tumblgififier\t--help");
+		System.out.println("tumblgififier\t[filename]");
+		System.exit(good ? 0 : 1);
+	}
 	
 	public static synchronized void executeOldVersionCleanup(){
 		if (initializedCleanup){

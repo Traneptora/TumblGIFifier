@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.NullInputStream;
 import thebombzen.tumblgififier.io.NullOutputStream;
@@ -51,6 +52,11 @@ public final class ConcurrenceManager {
 	private volatile List<Runnable> cleanUpJobs = Collections.synchronizedList(new ArrayList<Runnable>());
 	
 	/**
+	 * These are a list of jobs that must be executed after the program is fully initialized.
+	 */
+	private volatile List<Runnable> postInitJobs = Collections.synchronizedList(new ArrayList<Runnable>());
+	
+	/**
 	 * This constructor creates the singleton instance of this class. It's private so only there can only be one instance.
 	 */
 	private ConcurrenceManager(){
@@ -65,6 +71,15 @@ public final class ConcurrenceManager {
 				System.out.println("Shutting Down...");
 			}
 		});
+		postInitJobs.add(new Runnable(){
+			public void run(){
+				MainFrame.getMainFrame().getStatusProcessor().appendStatus("Initialization successful. Now, open a video file with File -> Open.");
+			}
+		});
+	}
+	
+	public void addPostInitTask(Runnable runnable){
+		postInitJobs.add(runnable);
 	}
 	
 	/**
@@ -179,6 +194,12 @@ public final class ConcurrenceManager {
 			r.run();
 		}
 		IOHelper.closeQuietly(TumblGIFifier.logFileOutputStream);
+	}
+	
+	protected void postInit(){
+		for (Runnable r : postInitJobs){
+			r.run();
+		}
 	}
 	
 	/**

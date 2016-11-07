@@ -272,7 +272,6 @@ public class ResourcesManager {
 		} else {
 			processor.appendStatus("Open Sans Semibold found.");
 		}
-		processor.appendStatus("Initialization successful. Now, open a video file with File -> Open.");
 		return true;
 	}
 }
