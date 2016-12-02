@@ -41,6 +41,7 @@ public final class TextHelper {
 		try {
 			tempOverlayFile = IOHelper.createTempFile().getAbsoluteFile();
 			ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Runnable(){
+				@Override
 				public void run(){
 					IOHelper.deleteTempFile(tempOverlayFile);
 				}

@@ -67,11 +67,13 @@ public final class ConcurrenceManager {
 			}
 		}));
 		cleanUpJobs.add(new Runnable(){
+			@Override
 			public void run(){
 				System.out.println("Shutting Down...");
 			}
 		});
 		postInitJobs.add(new Runnable(){
+			@Override
 			public void run(){
 				MainFrame.getMainFrame().getStatusProcessor().appendStatus("Initialization successful. Now, open a video file with File -> Open.");
 			}

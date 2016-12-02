@@ -37,6 +37,7 @@ public final class IOHelper {
 	 */
 	static {
 		ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Runnable(){
+			@Override
 			public void run(){
 				for (String f : tempFiles){
 					new File(f).delete();

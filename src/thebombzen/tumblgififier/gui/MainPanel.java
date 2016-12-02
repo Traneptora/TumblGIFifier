@@ -96,6 +96,7 @@ public class MainPanel extends JPanel {
 		this.endCacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
 		setupLayout();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+			@Override
 			public void run(){
 				updateStartScreenshot();
 				updateEndScreenshot();
@@ -558,6 +559,7 @@ public class MainPanel extends JPanel {
 					Future<BufferedImage> future = endCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize, true);
 					while (!future.isDone()){
 						EventQueue.invokeLater(new Runnable(){
+							@Override
 							public void run(){
 								endSlider.setEnabled(false);
 							}
@@ -567,6 +569,7 @@ public class MainPanel extends JPanel {
 					}
 					previewImageEndPanel.setImage(future.get());
 					EventQueue.invokeLater(new Runnable(){
+						@Override
 						public void run(){
 							endSlider.setEnabled(true);
 							endSlider.requestFocusInWindow();
@@ -587,6 +590,7 @@ public class MainPanel extends JPanel {
 					Future<BufferedImage> future = startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, false);
 					while (!future.isDone()){
 						EventQueue.invokeLater(new Runnable(){
+							@Override
 							public void run(){
 								startSlider.setEnabled(false);
 							}
@@ -596,6 +600,7 @@ public class MainPanel extends JPanel {
 					}
 					previewImageStartPanel.setImage(future.get());
 					EventQueue.invokeLater(new Runnable(){
+						@Override
 						public void run(){
 							startSlider.setEnabled(true);
 							startSlider.requestFocusInWindow();

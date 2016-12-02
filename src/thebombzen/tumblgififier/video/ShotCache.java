@@ -117,6 +117,7 @@ public class ShotCache {
 		if (shotFiles.get(frameNumber) == null) {
 			ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 				
+				@Override
 				public void run() {
 					try {
 						screenShot0(overlay, frameNumberF - 8, shotWidth, shotHeight, overlaySize, 17, end);

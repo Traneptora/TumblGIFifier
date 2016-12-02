@@ -65,6 +65,7 @@ public final class TumblGIFifier {
 				printHelpAndExit(false);
 			} else {
 				ConcurrenceManager.getConcurrenceManager().addPostInitTask(new Runnable(){
+					@Override
 					public void run(){
 						MainFrame.getMainFrame().open(args[0]);
 					}
@@ -78,6 +79,7 @@ public final class TumblGIFifier {
 			public void run() {
 				new MainFrame().setVisible(true);
 				ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+					@Override
 					public void run(){
 						ConcurrenceManager.getConcurrenceManager().postInit();
 					}
