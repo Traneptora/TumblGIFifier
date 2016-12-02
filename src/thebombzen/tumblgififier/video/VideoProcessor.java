@@ -153,6 +153,7 @@ public class VideoProcessor {
 			ioe.printStackTrace();
 			return false;
 		}
+
 		return true;
 	}
 	
@@ -170,18 +171,13 @@ public class VideoProcessor {
 		
 		ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
-		String scaleText = "scale=" + newWidth + ":" + newHeight;
+		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=rgb24", newWidth, newHeight, false, halveFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		
 		try {
 			scanPercentDone("Scaling Video... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-ss",
-							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "0:v", "-filter:v",
-							overlay.length() == 0 ? scaleText
-									: scaleText + ", "
-											+ TextHelper.getTextHelper().createDrawTextString(newWidth, newHeight,
-													overlaySize, overlay),
-							"-t", Double.toString(this.clipEndTime - this.clipStartTime), "-pix_fmt", "rgb24",
-							halveFramerate ? "-r" : "-y", halveFramerate ? String.format("%f", scan.getFramerate() * 0.5D) : "-y",
+							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "0:v", "-vf", videoFilter,
+							"-t", Double.toString(this.clipEndTime - this.clipStartTime),
 							"-c", "ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
 			
 		} catch (ProcessTerminatedException ex) {

@@ -141,12 +141,9 @@ public class ShotCache {
 		IOHelper.deleteTempFile(shotFile);
 		ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
-		String videoFilter = "fps=4, format=rgb24";
-		if (overlay.length() != 0){
-			videoFilter += ", " + TextHelper.getTextHelper().createDrawTextString(scan.getWidth(), scan.getHeight(), overlaySize, overlay);
-		}
 		double ffmpegStartTime = frameNumber / 4D - ( end ? scan.getFrameDuration() : 0);
-		videoFilter += ", scale=w=" + shotWidth + ":h=" + shotHeight + ":force_original_aspect_ratio=decrease";
+		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=4, format=rgb24", null, shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
+		
 		ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(ffmpegStartTime),
 				"-i", scan.getLocation(), "-map", "0:v", "-vf",
 				 videoFilter, "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",

@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.resources.ResourcesManager;
@@ -116,8 +118,9 @@ public final class TextHelper {
 	 * @return An escaped string.
 	 */
 	public String escapeForVideoFilter(String input) {
-		return input.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:")
-				.replace("'", "\\'").replace("[", "\\[").replace("]", "\\]").replace("=", "\\=");
+		//return input.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:")
+		//		.replace("'", "\\'").replace("[", "\\[").replace("]", "\\]").replace("=", "\\=");
+		return "'" + input.replace("'", "'\\''") + "'";
 	}
 
 	/**
@@ -152,4 +155,23 @@ public final class TextHelper {
 				+ size + ":textfile=" + tempOverlayFilename;
 		return drawText;
 	}
+	
+	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale, int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText){
+		List<String> filters = new ArrayList<String>();
+		if (preprocess != null && !preprocess.isEmpty()){
+			filters.add(preprocess);
+		}
+		if (decimator > 0){
+			filters.add("framestep=" + (1 << decimator));
+		}
+		if (!overlayText.isEmpty()){
+			filters.add(createDrawTextString(originalWidth, originalHeight, overlaySize, overlayText));
+		}
+		filters.add("scale=w=" + width + ":h=" + height + (boxedScale ? ":force_original_aspect_ratio=decrease" : ""));
+		if (postprocess != null && !postprocess.isEmpty()){
+			filters.add(postprocess);
+		}
+		return join(",", filters);
+	}
+	
 }

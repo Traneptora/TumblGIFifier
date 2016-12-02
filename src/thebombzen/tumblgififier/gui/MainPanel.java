@@ -183,6 +183,8 @@ public class MainPanel extends JPanel {
 	private void playClipFast() {
 		MainFrame.getMainFrame().setBusy(true);
 		
+		final boolean shouldHalfFramerate = this.cutFramerateInHalfCheckBox.isSelected();
+		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		final ResourceLocation ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
@@ -192,21 +194,10 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				try {
-					String scale;
-					if (scan.getHeight() > 270) {
-						scale = "scale=-1:270";
-					} else {
-						scale = "scale";
-					}
-					
+					String videoFilter = TextHelper.getTextHelper().createVideoFilter("format=yuv420p", null, -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v",
 							scan.getLocation(), "-ss", Double.toString(clipStart), "-t",
-							Double.toString(clipEnd - clipStart), "-vf",
-							overlay.length() == 0 ? scale
-									: scale + ", " + TextHelper.getTextHelper().createDrawTextString(
-											scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
-													: scan.getWidth(),
-													scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay));
+							Double.toString(clipEnd - clipStart), "-vf", videoFilter);
 				} catch (ProcessTerminatedException ex) {
 					return;
 				} finally {
@@ -228,7 +219,6 @@ public class MainPanel extends JPanel {
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		final double halfFramerate = scan.getFramerate() * 0.5D;
 		final boolean shouldHalfFramerate = this.cutFramerateInHalfCheckBox.isSelected();
 		
 		final ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
@@ -249,20 +239,9 @@ public class MainPanel extends JPanel {
 						statusArea.appendStatus("Error rendering clip :(");
 						return;
 					}
-					String scale;
-					if (scan.getHeight() > 270) {
-						scale = "scale=-1:270";
-					} else {
-						scale = "scale";
-					}
+					String videoFilter = TextHelper.getTextHelper().createVideoFilter("format=yuv420p", null, -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(clipStart), "-i",
-							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-pix_fmt",
-							"rgb24", shouldHalfFramerate ? "-r" : "-y", shouldHalfFramerate ? Double.toString(halfFramerate) : "-y", "-vf", overlay.length() == 0 ? scale
-									: scale + ", "
-											+ TextHelper.getTextHelper().createDrawTextString(
-													scan.getHeight() > 270 ? scan.getWidth() * 270 / scan.getHeight()
-															: scan.getWidth(),
-															scan.getHeight() > 270 ? 270 : scan.getHeight(), textSize, overlay),
+							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter,
 							"-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.toString(), "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
