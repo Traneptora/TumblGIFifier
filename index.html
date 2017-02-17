@@ -3,7 +3,8 @@
 <head>
 	<title>TumblGIFifier</title>
 	<link rel="stylesheet" type="text/css" href="../styles.css">
-	<script type="text/javascript" src="../contentloaded.js"></script> 
+	<link rel="icon" href="../images/favicon.ico">
+	<!--<script type="text/javascript" src="../contentloaded.js"></script>-->
 	<meta charset="UTF-8">
 	<meta name="description" content="TumblGIFifier home page">
 	<meta name="keywords" content="tumblgififier,automatic,gif,creator,tumblr,thebombzen,github,bombzen">
@@ -15,71 +16,72 @@
 			TumblGIFifier
 		</div>
 		<hr>
-		<p>
-			<div class="section-header">About</div>
-			<p>
-				<p>TumblGIFifier is a Java program that automatically creates GIFs from videos sized to Tumblr's liking. <a href="http://tumblr.com/">Tumblr</a> has a maximum GIF size of 2.0 MB, and TumblGIFifier will automatically resize it as close as it can to that threshold. You can also have it create a GIF with no maximum size, or change the maximum size to something else on a per-GIF basis.</p>
-				<p>TumblGIFifier allows you to cut the framerate of the input video in half. This gives the GIF more of a GIF feel and allows you to fit a larger physical size inside the two megabytes maximum file size. You could also leave the framerate at full to capture the full smoothness of an action scene if necessary.</p>
-				<p>TumblGIFifier supports overlaying text on the GIF in a white-text-black-border meme style. It uses the font <a href="https://www.google.com/fonts/specimen/Open+Sans">Open Sans Semibold</a> as the font for this. You can change the size of the text overlay or leave it as the default.<p>
-				<p>TumblGIFifier can read practically any video file, because it uses <a href="http://ffmpeg.org/">FFmpeg</a> as a backend.</p>
-				<p>You don't have to crop the video file time-wise beforehand, because TumblGIFifier comes with sliders that allow you to change the start and end times of the GIF.</p>
-				<p>The current release of TumblGIFifier is <b>0.7.0</b>. All releases will be marked as "pre-releases" until version 1.0.0, when TumblGIFifier is production-ready. At this moment it is not. TumblGIFifier is still in its early stages of development, the UI is a bit clunky, and there <i>WILL</i> be undiscovered bugs.</p>
-			</p>
-		</p>
-		<p>
-			<div class="section-header">Downloading and Running</div>
-			<p>
-				<p>TumblGIFifier is hosted at Github, at <a href="https://github.com/thebombzen/TumblGIFifier">https://github.com/thebombzen/TumblGIFifier</a>.</p>
-				<p>To download the most recent version of the program, go to the <a href="https://github.com/thebombzen/TumblGIFifier/releases">releases page</a>. Download the most recent release, which should be at the top. There will be several downloads - download the JAR file, not the zips containing the source code.</p>
-				<p>TumblGIFifier comes as an executable JAR file. You need to have at least Java 1.7 to run it. If you don't have java installed, download it <a href="http://java.com/">here</a> and install it.</p>
+		<article>
+			<section>
+				<div class="section-header">About</div>
+				<p>
+					<p>TumblGIFifier is a Java program that automatically creates GIFs from videos sized to Tumblr's liking. <a href="http://tumblr.com/">Tumblr</a> has a maximum GIF size of 2.0 MB, and TumblGIFifier will automatically resize it as close as it can to that threshold. You can also have it create a GIF with no maximum size, or change the maximum size to something else on a per-GIF basis.</p>
+					<p>TumblGIFifier allows you to cut the framerate of the input video in half. This gives the GIF more of a GIF feel and allows you to fit a larger physical size inside the two megabytes maximum file size. You could also leave the framerate at full to capture the full smoothness of an action scene if necessary.</p>
+					<p>TumblGIFifier supports overlaying text on the GIF in a white-text-black-border meme style. It uses the font <a href="https://www.google.com/fonts/specimen/Open+Sans">Open Sans Semibold</a> as the font for this. You can change the size of the text overlay or leave it as the default.<p>
+					<p>TumblGIFifier can read practically any video file, because it uses <a href="http://ffmpeg.org/">FFmpeg</a> as a backend.</p>
+					<p>You don't have to crop the video file time-wise beforehand, because TumblGIFifier comes with sliders that allow you to change the start and end times of the GIF.</p>
+					<p>The current release of TumblGIFifier is <b>0.7.1</b>. All releases will be marked as "pre-releases" until version 1.0.0, when TumblGIFifier is production-ready. At this moment it is not. TumblGIFifier is still in its early stages of development, the UI is a bit clunky, and there <i>WILL</i> be undiscovered bugs.</p>
+				</p>
+			</section>
+			<section>
+				<div class="section-header">Downloading and Running</div>
+				<p>
+					<p>TumblGIFifier is hosted at Github, at <a href="https://github.com/thebombzen/TumblGIFifier">https://github.com/thebombzen/TumblGIFifier</a>.</p>
+					<p>To download the most recent version of the program, go to the <a href="https://github.com/thebombzen/TumblGIFifier/releases">releases page</a>. Download the most recent release, which should be at the top. There will be several downloads - download the JAR file, not the zips containing the source code.</p>
+					<p>TumblGIFifier comes as an executable JAR file. You need to have at least Java 1.7 to run it. If you don't have java installed, download it <a href="http://java.com/">here</a> and install it.</p>
+					<p><ul>
+						<li>To execute the JAR file on Windows, doubleclicking it should work as long as you have Java installed. However, some archive programs might try to open it as an archive. If so, open it with the Java Platform (and you should probably set the Java Platform as the default for opening JAR files anyway).</li>
+						<li>To execute the JAR file on a Mac, you need to open it with JAR Launcher. If you try to open it using the default way you might accidentally unzip it and barf a bunch of files all over your desktop. Try not to do that.</li>
+						<li>To execute the JAR file on Linux, you really don't need me to finish this sentence.</li>
+					</ul></p>
+				</p>
+			</section>
+			<section>
+				<div class="section-header">Issues</div>
+				<p>
+					<p>TumblGIFifier has a freenode IRC channel at #tumblgififier. You can get help there. If you find a bug, you can open a ticket on its <a href="https://github.com/thebombzen/TumblGIFifier/issues">Github Bug Tracker</a>. If you want to submit a patch, you can submit a <a href="https://github.com/thebombzen/TumblGIFifier/pulls">Pull Request</a> for me to review (as the maintainer).</p>
+					<p>Feel free to submit other pull requests or issues, not just ones pertaining to bugs or fixing bugs.</p>
+				</p>
+			</section>
+			<section>
+				<div class="section-header">Tips and Tricks</div>
 				<p><ul>
-					<li>To execute the JAR file on Windows, doubleclicking it should work as long as you have Java installed. However, some archive programs might try to open it as an archive. If so, open it with the Java Platform (and you should probably set the Java Platform as the default for opening JAR files anyway).</li>
-					<li>To execute the JAR file on a Mac, you need to open it with JAR Launcher. If you try to open it using the default way you might accidentally unzip it and barf a bunch of files all over your desktop. Try not to do that.</li>
-					<li>To execute the JAR file on Linux, you really don't need me to finish this sentence.</li>
+					<li>If you want to cut the framerate in quarter instead of in half, you can create a GIF with no maximum GIF size but with half the framerate. Then, you can feed that GIF back into TumblGIFifier and cut the framerate in half again. TumblGIFifier supports practically any video input format, including GIF image.</li>
+					<li>The sliders have 1/4 second precision. If you have difficulty dragging a slider to get exactly what you need, you can nudge it to the left or the right by 1/4 second by using the left or right arrow keys, as long as the slider is selected.</li>
+					<li>GIFs with very little action, as in, GIFs with a perfectly still background (not a pan/zoom, must be perfectly still) are much better candidates as they will have drastically smaller file sizes, which allows the physical size to be much bigger while remaining under the maximum size. GIFs with lots of action are worse candidates and on average will be significantly smaller.</li>
+					<li>TumblGIFifier will try to warn you if it thinks the GIF will be less than 300 pixels wide before you convert. This is just a guess. It will tend to give false positives for relative still GIFs and false negatives for relatively action-filled GIFs. The only way to tell would be to actually create the GIF. You can also feel free to ignore this warning.</li>
+					<li>TumblGIFifier uses a binary search to get the GIF to be the right size. In order to save time on this search, it uses an initial guess. For GIFs that are fairly still, it will tend to underestimate how big it can be. If the GIF is still enough it's possible that the original video size will be enough. In this case, TumblGIFifier will keep guessing for longer than it should and eventually settle upon a GIF that's extremely close to the max size. If this happens, try creating the GIF without the maximum size in order to see if you'll actually get something under two megabytes. (This is essentially a bug that I have to fix. You will have to use this workaround until I fix it. Expect a fix sometime in the future.)</li>
 				</ul></p>
-			</p>
-		</p>
-		<p>
-			<div class="section-header">Issues</div>
-			<p>
-				<p>TumblGIFifier has a freenode IRC channel at #tumblgififier. You can get help there. If you find a bug, you can open a ticket on its <a href="https://github.com/thebombzen/TumblGIFifier/issues">Github Bug Tracker</a>. If you want to submit a patch, you can submit a <a href="https://github.com/thebombzen/TumblGIFifier/pulls">Pull Request</a> for me to review (as the maintainer).</p>
-				<p>Feel free to submit other pull requests or issues, not just ones pertaining to bugs or fixing bugs.</p>
-			</p>
-		</p>
-		<p>
-			<div class="section-header">Tips and Tricks</div>
-			<p><ul>
-				<li>If you want to cut the framerate in quarter instead of in half, you can create a GIF with no maximum GIF size but with half the framerate. Then, you can feed that GIF back into TumblGIFifier and cut the framerate in half again. TumblGIFifier supports practically any video input format, including GIF image.</li>
-				<li>The sliders have 1/4 second precision. If you have difficulty dragging a slider to get exactly what you need, you can nudge it to the left or the right by 1/4 second by using the left or right arrow keys, as long as the slider is selected.</li>
-				<li>GIFs with very little action, as in, GIFs with a perfectly still background (not a pan/zoom, must be perfectly still) are much better candidates as they will have drastically smaller file sizes, which allows the physical size to be much bigger while remaining under the maximum size. GIFs with lots of action are worse candidates and on average will be significantly smaller.</li>
-				<li>TumblGIFifier will try to warn you if it thinks the GIF will be less than 300 pixels wide before you convert. This is just a guess. It will tend to give false positives for relative still GIFs and false negatives for relatively actoin-filled GIFs. The only way to tell would be to actually create the GIF. You can also feel free to ignore this warning.</li>
-				<li>TumblGIFifier uses a binary search to get the GIF to be the right size. In order to save time on this search, it uses an initial guess. For GIFs that are fairly still, it will tend to underestimate how big it can be. If the GIF is still enough it's possible that the original video size will be enough. In this case, TumblGIFifier will keep guessing for longer than it should and eventually settle upon a GIF that's extremely close to the max size. If this happens, try creating the GIF without the maximum size in order to see if you'll actually get something under two megabytes. (This is essentially a bug that I have to fix. You will have to use this workaround until I fix it. Expect a fix sometime soon.)</li>
-			</ul></p>
-		</p>
-		<p>
-			<div class="section-header">Compilation From Source</div>
-			<p>
-				First, you need to clone the repository with
-				<pre><code>$ git clone https://github.com/thebombzen/TumblGIFifier</code></pre>
-				The first time you clone this repository, you also need to grab <code>xz-java</code>. To do this, navigate to the directory to which you cloed TumblGIFifier and run:
-				<pre><code>$ git submodule init && git submodule update</code></pre>
-				This will pull in the XZ Java submodule. Then, to compile, run:
-				<pre><code>$ ant</code></pre>
-				To clean the build, run:
-				<pre><code>$ ant clean</code></pre>
-				Note that you have to clean the build if you make a change and then want to recompile.
-			</p>
-		</p>
-		<p>
-			<div class="section-header">Dependencies and Legal</div>
-			<p>
-				<p>TumblGIFifier is copyright Leo Izen, (thebombzen) 2015-2016, and is licensed under the <a href="https://github.com/thebombzen/TumblGIFifier/blob/master/LICENSE">MIT License</a>. This means in basic terms that you can do practically anything with it except change the license. Included within the program is the Java Port of the <a href="http://tukaani.org/xz/">XZ Utils</a>, which are licensed under the public domain.</p>
-				<p>TumblGIFifier is based of <a href="http://ffmpeg.org/">FFmpeg</a>. If the program finds <code>ffmpeg</code>, <code>ffprobe</code>, and <code>ffplay</code> in your path, it will use those. If not, it will download a pre-built binary from an internet repository and use that as long there isn't any FFmpeg in the path. TumblGIFifier will also download the <a href="https://www.google.com/fonts/specimen/Open+Sans">Open Sans Semibold</a> font and use it for the purpose of overlaying text. Open Sans is copyright Google and Steve Matteson, and licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.html">Apache License 2.0</a>.</p>
-			</p>
-		</p>
+			</section>
+			<section>
+				<div class="section-header">Compilation From Source</div>
+				<p>
+					First, you need to clone the repository with
+					<pre><code>$ git clone https://github.com/thebombzen/TumblGIFifier</code></pre>
+					The first time you clone this repository, you also need to grab <code>xz-java</code>. To do this, navigate to the directory to which you cloed TumblGIFifier and run:
+					<pre><code>$ git submodule init && git submodule update</code></pre>
+					This will pull in the XZ Java submodule. Then, to compile, run:
+					<pre><code>$ ant</code></pre>
+					To clean the build, run:
+					<pre><code>$ ant clean</code></pre>
+					Note that you have to clean the build if you make a change and then want to recompile.
+				</p>
+			</section>
+			<section>
+				<div class="section-header">Dependencies and Legal</div>
+				<p>
+					<p>TumblGIFifier is copyright Leo Izen, (thebombzen) 2015-2017, and is licensed under the <a href="https://github.com/thebombzen/TumblGIFifier/blob/master/LICENSE">MIT License</a>. This means in basic terms that you can do practically anything with it except change the license. Included within the program is the Java Port of the <a href="http://tukaani.org/xz/">XZ Utils</a>, which are licensed under the public domain.</p>
+					<p>TumblGIFifier is based of <a href="http://ffmpeg.org/">FFmpeg</a>. If the program finds <code>ffmpeg</code>, <code>ffprobe</code>, and <code>ffplay</code> in your path, it will use those. If not, it will download a pre-built binary from here and use that as long there isn't any FFmpeg in the path. TumblGIFifier will also download the <a href="https://www.google.com/fonts/specimen/Open+Sans">Open Sans Semibold</a> font (from here) and use it for the purpose of overlaying text. Open Sans is copyright Google and Steve Matteson, and licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.html">Apache License 2.0</a>.</p>
+				</p>
+			</section>
+		</article>
 		<hr>
 		<div id="footer"></div>
 	</div>
 </body>
 </html>
-
