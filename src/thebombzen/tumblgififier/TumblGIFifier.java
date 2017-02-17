@@ -9,6 +9,11 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.SynchronizedOutputStream;
@@ -19,15 +24,21 @@ import thebombzen.tumblgififier.text.StatusProcessor;
 public final class TumblGIFifier {
 	
 	/** The version of TumblGIFifier */
-	public static final String VERSION = "0.7.0";
+	public static final String VERSION = "0.7.1";
 	
 	/**
 	 * This is so we can cleanup a mess left by older versions.
 	 * The version identifier is written to a file on start.
 	 * TumblGIFifier checks the version identifier written in the file to determine which major changes have been made that need to be cleaned up.
-	 * For example, version identifiers earlier than 1 littered the temp directory with temporary files.
+	 * For example, version identifiers earlier than 1 littered the temp directory with temporary files. Major changes:
+	 * 
+	 * 0 - Initial
+	 * 1 - No longer littler the temp directory with persistent temp files
+	 * 2 - No longer split the output/error stream.
+	 * 3 - Moved the local directory from ~/.tumblgififier to ~/.config/tumblgififier
+	 * 
 	 */
-	public static final int VERSION_IDENTIFIER = 2;
+	public static final int VERSION_IDENTIFIER = 3;
 	
 	/**
 	 * True if the system is detected as a windows system, false otherwise.
@@ -64,7 +75,7 @@ public final class TumblGIFifier {
 			} else if (args.length != 1){
 				printHelpAndExit(false);
 			} else {
-				ConcurrenceManager.getConcurrenceManager().addPostInitTask(new Runnable(){
+				ConcurrenceManager.getConcurrenceManager().addPostInitTask(new Task(80){
 					@Override
 					public void run(){
 						MainFrame.getMainFrame().open(args[0]);
@@ -107,47 +118,87 @@ public final class TumblGIFifier {
 			if (version <= 0){
 				throw new NumberFormatException();
 			}
-		} catch (IOException | NumberFormatException e){
+		} catch (RuntimeIOException | NumberFormatException e){
 			version = 0;
 		}
 		if (version < 1){
-			processor.appendStatus("Executing Cleanup Routine: 1.");
-			processor.appendStatus("Cleaning old temporary files... ");
+			boolean did = false;
+
 			try {
 				File tempFile = IOHelper.createTempFile();
 				File tempFileDirectory = tempFile.getParentFile();
 				IOHelper.deleteTempFile(tempFile);
 				for (File f : tempFileDirectory.listFiles()){
 					if (f.getName().matches("^tumblgififier(.*)\\.tmp$")){
+						if (!did){
+							//processor.appendStatus("Executing Cleanup Routine: 1.");
+							processor.appendStatus("Cleaning old temporary files... ");
+						}
+						did = true;
 						processor.replaceStatus("Cleaning old temporary files... " + f.getName());
 						IOHelper.deleteTempFile(f);
 					}
 				}
-			} catch (IOException ioe){
+			} catch (RuntimeIOException ioe){
 				processor.appendStatus("Error cleaning old temporary files.");
 				processor.processException(ioe);
 			}
-			processor.replaceStatus("Cleaning old temporary files... Done.");
-			processor.appendStatus("Cleaning old font files... ");
+			if (did){
+				processor.replaceStatus("Cleaning old temporary files... Done.");
+			}
 			File profileMedium = ResourcesManager.getResourcesManager().getLocalResource("Profile-Medium.otf");
-			IOHelper.deleteTempFile(profileMedium);
 			File profileMediumXZ = ResourcesManager.getResourcesManager().getLocalResource("Profile-Medium.otf.xz");
-			IOHelper.deleteTempFile(profileMediumXZ);
-			processor.replaceStatus("Cleaning old font files... Done.");
+			if (profileMedium.exists() || profileMediumXZ.exists()){
+				processor.appendStatus("Cleaning old font files... ");
+				IOHelper.deleteTempFile(profileMedium);
+				IOHelper.deleteTempFile(profileMediumXZ);
+				processor.replaceStatus("Cleaning old font files... Done.");
+			}
+			
 		}
 		if (version < 2){
-			
-			processor.appendStatus("Executing Cleanup Routine: 2.");
-			
-			processor.appendStatus("Cleaning output/error split...");
-			
+			//processor.appendStatus("Executing Cleanup Routine: 2.");
 			File error = ResourcesManager.getResourcesManager().getLocalResource("error.log");
-			IOHelper.deleteTempFile(error);
 			File output = ResourcesManager.getResourcesManager().getLocalResource("output.log");
-			IOHelper.deleteTempFile(output);
 			
-			processor.replaceStatus("Cleaning output/error split... done.");
-			
+			if (error.exists() || output.exists()){
+				processor.appendStatus("Cleaning output/error split...");
+				IOHelper.deleteTempFile(error);
+				IOHelper.deleteTempFile(output);
+				processor.replaceStatus("Cleaning output/error split... done.");
+			}
+		}
+		if (version < 3) {
+			File legacyLocation = new File(ResourcesManager.getLegacyLocalResourceLocation());
+			if (legacyLocation.exists()) {
+				try {
+					processor.appendStatus("Cleaning legacy appdata location...");
+					Files.walkFileTree(legacyLocation.toPath(), new SimpleFileVisitor<Path>(){
+						
+						@Override
+						public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+							Files.delete(file);
+							return FileVisitResult.CONTINUE;
+						}
+						
+						@Override
+						public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
+							if (e == null) {
+								Files.delete(dir);
+								return FileVisitResult.CONTINUE;
+							} else {
+								// directory iteration failed
+								throw e;
+							}
+						}
+						
+					});
+					processor.replaceStatus("Cleaning legacy appdata location... done.");
+				} catch (IOException ioe) {
+					processor.appendStatus("Error cleaning old temporary files.");
+					processor.processException(ioe);
+				}
+			}
 		}
 		try (Writer w = new OutputStreamWriter(new FileOutputStream(ResourcesManager.getResourcesManager().getLocalResource("version_identifier.txt")), Charset.forName("UTF-8"))){
 			w.write(Integer.toString(TumblGIFifier.VERSION_IDENTIFIER));

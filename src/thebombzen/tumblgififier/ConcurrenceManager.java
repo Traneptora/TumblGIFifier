@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import thebombzen.tumblgififier.gui.MainFrame;
@@ -49,12 +50,12 @@ public final class ConcurrenceManager {
 	/**
 	 * These are a list of jobs that must be executed when the program shuts down normally (instead of halting).
 	 */
-	private volatile List<Runnable> cleanUpJobs = Collections.synchronizedList(new ArrayList<Runnable>());
+	private volatile Queue<Task> cleanUpJobs = new PriorityBlockingQueue<Task>();
 	
 	/**
 	 * These are a list of jobs that must be executed after the program is fully initialized.
 	 */
-	private volatile List<Runnable> postInitJobs = Collections.synchronizedList(new ArrayList<Runnable>());
+	private volatile Queue<Task> postInitJobs = new PriorityBlockingQueue<Task>();
 	
 	/**
 	 * This constructor creates the singleton instance of this class. It's private so only there can only be one instance.
@@ -66,13 +67,13 @@ public final class ConcurrenceManager {
 				cleanUp();
 			}
 		}));
-		cleanUpJobs.add(new Runnable(){
+		addShutdownTask(new Task(){
 			@Override
 			public void run(){
 				System.out.println("Shutting Down...");
 			}
 		});
-		postInitJobs.add(new Runnable(){
+		addPostInitTask(new Task(50){
 			@Override
 			public void run(){
 				MainFrame.getMainFrame().getStatusProcessor().appendStatus("Initialization successful. Now, open a video file with File -> Open.");
@@ -80,16 +81,32 @@ public final class ConcurrenceManager {
 		});
 	}
 	
-	public void addPostInitTask(Runnable runnable){
-		postInitJobs.add(runnable);
+	public void addPostInitTask(Task task){
+		postInitJobs.add(task);
 	}
 	
+	public void addPostInitTask(final Runnable r, final int priority){
+		this.addPostInitTask(new Task(priority){
+			public void run(){
+				r.run();
+			}
+		});
+	}
+
 	/**
 	 * We want users to be able to add shutdown tasks, but not to be able to remove them. This adds a Runnable as a shutdown task in a way that it cannot be removed.
-	 * @param runnable This will be executed upon a clean exit of the program.
+	 * @param task This will be executed upon a clean exit of the program.
 	 */
-	public void addShutdownTask(Runnable runnable){
-		cleanUpJobs.add(runnable);
+	public void addShutdownTask(Task task){
+		cleanUpJobs.add(task);
+	}
+	
+	public void addShutdownTask(final Runnable r, final int priority){
+		this.addShutdownTask(new Task(priority){
+			public void run(){
+				r.run();
+			}
+		});
 	}
 	
 	/**
@@ -192,15 +209,17 @@ public final class ConcurrenceManager {
 		stopAll();
 		threadPool.shutdown();
 		System.out.println();
-		for (Runnable r : cleanUpJobs){
-			r.run();
+		Task task;
+		while (null != (task = cleanUpJobs.poll())){
+			task.run();
 		}
 		IOHelper.closeQuietly(TumblGIFifier.logFileOutputStream);
 	}
 	
 	protected void postInit(){
-		for (Runnable r : postInitJobs){
-			r.run();
+		Task task;
+		while (null != (task = postInitJobs.poll())){
+			task.run();
 		}
 	}
 	

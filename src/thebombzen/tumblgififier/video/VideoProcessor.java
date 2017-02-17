@@ -9,6 +9,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Scanner;
 import thebombzen.tumblgififier.ConcurrenceManager;
+import thebombzen.tumblgififier.RuntimeIOException;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
@@ -81,16 +82,21 @@ public class VideoProcessor {
 	public boolean convert(String overlay, StatusProcessorArea outputProcessor, String path, double startTime,
 			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		MainFrame.getMainFrame().setBusy(true);
-		boolean status = convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate,
-				overlaySize);
+		boolean success = true;
+		try {
+			convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate, overlaySize);
+		} catch (RuntimeIOException ioe){
+			ioe.printStackTrace();
+			success = false;
+		}
 		IOHelper.deleteTempFile(gifFile);
 		IOHelper.deleteTempFile(mkvFile);
 		IOHelper.deleteTempFile(paletteFile);
 		MainFrame.getMainFrame().setBusy(false);
-		return status;
+		return success;
 	}
 	
-	private boolean convert0(String overlay, StatusProcessorArea outputProcessor, String path, double startTime,
+	private void convert0(String overlay, StatusProcessorArea outputProcessor, String path, double startTime,
 			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		this.statusProcessor = outputProcessor;
 		this.clipStartTime = startTime;
@@ -108,14 +114,9 @@ public class VideoProcessor {
 		}
 		highscale = 1D;
 		
-		try {
-			this.gifFile = IOHelper.createTempFile();
-			this.mkvFile = IOHelper.createTempFile();
-			this.paletteFile = IOHelper.createTempFile();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			return false;
-		}
+		this.gifFile = IOHelper.createTempFile();
+		this.mkvFile = IOHelper.createTempFile();
+		this.paletteFile = IOHelper.createTempFile();
 		
 		prevWidth = -1;
 		prevHeight = -1;
@@ -123,10 +124,7 @@ public class VideoProcessor {
 		prevPrevHeight = -2;
 		
 		while (gifFile.length() == 0 || (gifFile.length() < minSize && scale < 1) || gifFile.length() > maxSize) {
-			boolean success = createGif(overlay, overlaySize);
-			if (!success) {
-				return false;
-			}
+			createGif(overlay, overlaySize);
 			adjustScale();
 			int newWidth = (int) (scan.getWidth() * scale);
 			int newHeight = (int) (scan.getHeight() * scale);
@@ -150,14 +148,12 @@ public class VideoProcessor {
 		try {
 			Files.copy(gifFile.toPath(), newFile.toPath());
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			return false;
+			throw new RuntimeIOException(ioe);
 		}
 
-		return true;
 	}
 	
-	private boolean createGif(String overlay, int overlaySize) {
+	private void createGif(String overlay, int overlaySize) {
 		int newWidth = (int) (scan.getWidth() * scale);
 		int newHeight = (int) (scan.getHeight() * scale);
 		
@@ -184,7 +180,7 @@ public class VideoProcessor {
 			ex.printStackTrace();
 			writer.println("Scaling Video... Error.");
 			ConcurrenceManager.getConcurrenceManager().stopAll();
-			return false;
+			throw new RuntimeIOException(ex);
 		}
 		
 		writer.println("Scaling Video... Done.");
@@ -200,7 +196,7 @@ public class VideoProcessor {
 			ex.printStackTrace();
 			writer.println("Generating Palette... Error.");
 			ConcurrenceManager.getConcurrenceManager().stopAll();
-			return false;
+			throw new RuntimeIOException(ex);
 		}
 		
 		writer.println("Generating Palette... Done.");
@@ -216,13 +212,12 @@ public class VideoProcessor {
 			ex.printStackTrace();
 			writer.println("Generating GIF... Error.");
 			ConcurrenceManager.getConcurrenceManager().stopAll();
-			return false;
+			throw new RuntimeIOException(ex);
 		}
 		
 		writer.println("Generating GIF... Done.");
 		writer.flush();
-		
-		return true;
+
 	}
 
 	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in)

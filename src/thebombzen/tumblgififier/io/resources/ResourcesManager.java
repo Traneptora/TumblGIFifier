@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -14,8 +13,10 @@ import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
+import thebombzen.tumblgififier.RuntimeIOException;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.io.IOHelper;
+import thebombzen.tumblgififier.io.RuntimeFNFException;
 import thebombzen.tumblgififier.text.StatusProcessor;
 
 public class ResourcesManager {
@@ -30,8 +31,24 @@ public class ResourcesManager {
 				|| name.toLowerCase().contains("os x")) {
 			return System.getProperty("user.home") + "/Library/Application Support";
 		} else {
+			return System.getProperty("user.home") + "/.config";
+		}
+	}
+	
+	private static String getLegacyApplicationDataLocation(){
+		String name = System.getProperty("os.name");
+		if (name.toLowerCase().contains("windows")) {
+			return System.getenv("appdata");
+		} else if (name.toLowerCase().contains("mac") || name.toLowerCase().contains("osx")
+				|| name.toLowerCase().contains("os x")) {
+			return System.getProperty("user.home") + "/Library/Application Support";
+		} else {
 			return System.getProperty("user.home");
 		}
+	}
+	
+	public static String getLegacyLocalResourceLocation() {
+		return new File(getLegacyApplicationDataLocation(), ".tumblgififier").getAbsolutePath();
 	}
 	
 	public static ResourcesManager getResourcesManager() {
@@ -92,7 +109,7 @@ public class ResourcesManager {
 		return getXLocation("ffprobe");
 	}
 	
-	public String getLatestVersion() throws IOException {
+	public String getLatestVersion() {
 		URL latestURL;
 		try {
 			latestURL = new URL(getLatestDownloadLocation());
@@ -102,6 +119,8 @@ public class ResourcesManager {
 		try (BufferedReader reader = new BufferedReader(
 				new InputStreamReader(latestURL.openStream(), Charset.forName("UTF-8")))) {
 			return reader.readLine();
+		} catch (IOException ioe){
+			throw new RuntimeIOException(ioe);
 		}
 	}
 	
@@ -111,7 +130,7 @@ public class ResourcesManager {
 		}
 		try {
 			String appData = getApplicationDataLocation();
-			File localAppDataFile = new File(appData, ".tumblgififier").getCanonicalFile();
+			File localAppDataFile = new File(appData, "tumblgififier").getCanonicalFile();
 			if (localAppDataFile.exists() && !localAppDataFile.isDirectory()) {
 				localAppDataFile.delete();
 			}
@@ -119,7 +138,7 @@ public class ResourcesManager {
 			localAppDataLocation = localAppDataFile.getCanonicalPath();
 			return localAppDataLocation;
 		} catch (IOException ioe) {
-			throw new RuntimeException(ioe);
+			throw new RuntimeIOException(ioe);
 		}
 	}
 	
@@ -134,7 +153,7 @@ public class ResourcesManager {
 		return new ResourceLocation(getLocalResource(name).getPath(), false);
 	}
 	
-	public boolean intitilizeExtras(StatusProcessor processor) {
+	public void intitilizeExtras(StatusProcessor processor) {
 		boolean needDL = false;
 		boolean noInternet = false;
 		String[] names = {"ffmpeg", "ffprobe", "ffplay"};
@@ -144,11 +163,11 @@ public class ResourcesManager {
 		File localVersionsFile = getLocalResource("ffprog-versions.txt");
 		String localVersion = "";
 		try {
-			localVersion = IOHelper.getFirstLineOfFileQuietly(localVersionsFile);
-		} catch (FileNotFoundException fnfe) {
+			localVersion = IOHelper.getFirstLineOfFile(localVersionsFile);
+		} catch (RuntimeFNFException fnfe) {
 			try {
 				IOHelper.downloadFromInternet(versions, localVersionsFile);
-			} catch (IOException ioe) {
+			} catch (RuntimeIOException ioe) {
 				ioe.printStackTrace();
 				noInternet = true;
 			}
@@ -166,7 +185,7 @@ public class ResourcesManager {
 			} else if (!noInternet && version.equals("")) {
 				try {
 					version = IOHelper.downloadFirstLineFromInternet(versions);
-				} catch (IOException ioe) {
+				} catch (RuntimeIOException ioe) {
 					ioe.printStackTrace();
 					noInternet = true;
 				}
@@ -180,7 +199,7 @@ public class ResourcesManager {
 				boolean did = f.delete();
 				if (!did) {
 					processor.appendStatus("Error: Bad " + name + ": " + f.getPath());
-					return false;
+					throw new RuntimeException();
 				} else {
 					processor.appendStatus("Found Bad " + name + ". Deleted.");
 					processor.appendStatus(" ");
@@ -202,7 +221,7 @@ public class ResourcesManager {
 			boolean did = f.delete();
 			if (!did) {
 				processor.appendStatus("Error: Bad Open Sans Semibold in Path: " + f.getPath());
-				return false;
+				throw new RuntimeException();
 			} else {
 				processor.appendStatus("Found Bad Open Sans Semibold in Path. Deleted.");
 			}
@@ -216,7 +235,7 @@ public class ResourcesManager {
 		if ((needDL || needOpenSansDL) && noInternet) {
 			processor.appendStatus(
 					"Need to download dependencies from the internet, but it appears you have no internet access.");
-			return false;
+			throw new RuntimeException();
 		}
 		if (needDL) {
 			processor.appendStatus("Downloading FFmpeg from the internet...");
@@ -224,12 +243,17 @@ public class ResourcesManager {
 			URL website = IOHelper.wrapSafeURL(getFFprogDownloadLocation());
 			try {
 				IOHelper.downloadFromInternet(website, tempFile);
-			} catch (IOException ioe) {
+			} catch (RuntimeIOException ioe) {
 				processor.appendStatus("Error downloading: ");
 				processor.processException(ioe);
-				return false;
+				throw ioe;
 			}
-			IOHelper.downloadFromInternetQuietly(versions, localVersionsFile);
+			try {
+				IOHelper.downloadFromInternet(versions, localVersionsFile);
+			} catch (RuntimeIOException ioe){
+				ioe.printStackTrace();
+				// we don't actually care, but logging it is nice
+			}
 			ZipInputStream zin = null;
 			try {
 				zin = new ZipInputStream(new XZInputStream(new BufferedInputStream(new FileInputStream(tempFile))));
@@ -248,7 +272,11 @@ public class ResourcesManager {
 			} catch (IOException ioe) {
 				processor.appendStatus("Error downloading: ");
 				processor.processException(ioe);
-				return false;
+				throw new RuntimeIOException(ioe);
+			} catch (RuntimeIOException ioe) {
+				processor.appendStatus("Error downloading: ");
+				processor.processException(ioe);
+				throw ioe;
 			} finally {
 				IOHelper.closeQuietly(zin);
 				IOHelper.deleteTempFile(tempFile);
@@ -263,15 +291,14 @@ public class ResourcesManager {
 			URL website = IOHelper.wrapSafeURL(getOpenSansDownloadLocation());
 			try {
 				IOHelper.downloadFromInternet(website, openSansFile);
-			} catch (IOException ioe) {
+			} catch (RuntimeIOException ioe) {
 				processor.appendStatus("Error downloading: ");
 				processor.processException(ioe);
-				return false;
+				throw ioe;
 			}
 			processor.appendStatus("Done downloading.");
 		} else {
 			processor.appendStatus("Open Sans Semibold found.");
 		}
-		return true;
 	}
 }

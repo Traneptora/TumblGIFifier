@@ -38,6 +38,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import thebombzen.tumblgififier.ConcurrenceManager;
+import thebombzen.tumblgififier.RuntimeIOException;
 import thebombzen.tumblgififier.Tuple;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
@@ -235,7 +236,7 @@ public class MainPanel extends JPanel {
 					statusArea.appendStatus("Rendering Clip... ");
 					try {
 						tempFile = IOHelper.createTempFile();
-					} catch (IOException ioe) {
+					} catch (RuntimeIOException ioe) {
 						ioe.printStackTrace();
 						statusArea.appendStatus("Error rendering clip :(");
 						return;

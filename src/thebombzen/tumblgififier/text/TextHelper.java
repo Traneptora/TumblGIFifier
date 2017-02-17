@@ -12,14 +12,18 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import thebombzen.tumblgififier.ConcurrenceManager;
+import thebombzen.tumblgififier.Task;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.resources.ResourcesManager;
 
 public final class TextHelper {
 	
-	private static final TextHelper instance = new TextHelper();
+	private static TextHelper instance = null;
 	
 	public static TextHelper getTextHelper(){
+		if (instance == null){
+			instance = new TextHelper();
+		}
 		return instance;
 	}
 	
@@ -37,20 +41,16 @@ public final class TextHelper {
 	private String fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansFontFileLocation());
 	
 	
-	private TextHelper(){
-		try {
-			tempOverlayFile = IOHelper.createTempFile().getAbsoluteFile();
-			ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Runnable(){
-				@Override
-				public void run(){
-					IOHelper.deleteTempFile(tempOverlayFile);
-				}
-			});
-			tempOverlayFilename = escapeForVideoFilter(tempOverlayFile.getAbsolutePath());
-		} catch (IOException ioe) {
-			throw new Error("Cannot create temporary files.");
-		}
-		
+	private TextHelper() {
+		tempOverlayFile = IOHelper.createTempFile().getAbsoluteFile();
+		ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Task(){
+			
+			@Override
+			public void run() {
+				IOHelper.deleteTempFile(tempOverlayFile);
+			}
+		});
+		tempOverlayFilename = escapeForVideoFilter(tempOverlayFile.getAbsolutePath());
 	}
 
 	/**

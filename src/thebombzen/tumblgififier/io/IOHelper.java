@@ -19,6 +19,8 @@ import java.util.Collections;
 import java.util.List;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.ConcurrenceManager;
+import thebombzen.tumblgififier.RuntimeIOException;
+import thebombzen.tumblgififier.Task;
 /**
  * Java's I/O libraries are nice but not perfect. This class contains some helper routines to make everything easier.
  */
@@ -27,6 +29,7 @@ public final class IOHelper {
 	private IOHelper(){
 		
 	}
+	
 	/**
 	 * We manage our own temp files. This is a list of the file names of temp files we've created. It's synchronized so we don't have to worry about anything like a ConcurrentModificationException.
 	 */
@@ -36,7 +39,7 @@ public final class IOHelper {
 	 * In general, temp files should be deleted, but this is a backup just to be safe. 
 	 */
 	static {
-		ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Task(){
 			@Override
 			public void run(){
 				for (String f : tempFiles){
@@ -51,11 +54,15 @@ public final class IOHelper {
 	 * Files created by this are also automatically deleted when the program exits.
 	 * This will usually not throw an I/O exception, but could in some corner cases, like if the temp filesystem is mounted as read-only.
 	 */
-	public static File createTempFile() throws IOException {
-		File f = File.createTempFile("tumblgififier", ".tmp");
-		f.deleteOnExit();
-		tempFiles.add(f.getCanonicalPath());
-		return f;
+	public static File createTempFile() {
+		try {
+			File f = File.createTempFile("tumblgififier", ".tmp");
+			f.deleteOnExit();
+			tempFiles.add(f.getCanonicalPath());
+			return f;
+		} catch (IOException ioe){
+			throw new RuntimeIOException(ioe);
+		}
 	}
 	
 	/**
@@ -67,8 +74,7 @@ public final class IOHelper {
 	}
 
 	/**
-	 * Close a stream quietly because we honestly don't care if a stream.close()
-	 * throws IOException
+	 * Close a stream quietly because we honestly don't care if a stream.close() throws IOException
 	 */
 	public static void closeQuietly(Closeable cl) {
 		if (cl == null) {
@@ -107,13 +113,15 @@ public final class IOHelper {
 	 * Download a file from the given URL, and save it to the given File. This should only be used for small files, because it blocks while the file is downloading and doesn't provide a progress indicator.
 	 * If an error occurs, an exception will be thrown.
 	 */
-	public static void downloadFromInternet(URL url, File downloadTo) throws IOException {
+	public static void downloadFromInternet(URL url, File downloadTo) throws RuntimeIOException {
 		ReadableByteChannel rbc = null;
 		FileOutputStream fos = null;
 		try {
 			rbc = Channels.newChannel(url.openStream());
 			fos = new FileOutputStream(downloadTo);
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+		} catch (IOException ioe){
+			throw new RuntimeIOException(ioe);
 		} finally {
 			closeQuietly(rbc);
 			closeQuietly(fos);
@@ -124,6 +132,7 @@ public final class IOHelper {
 	 * Download a file from the given URL, and save it to the given File. This should only be used for small files, because it blocks while the file is downloading and doesn't provide a progress indicator.
 	 * If an error occurs, this method will return false, and upon success, return true. This is mostly useful for un-important downloads whom are non-critical errors if they fail.
 	 */
+	/*
 	public static boolean downloadFromInternetQuietly(URL url, File downloadTo) {
 		try {
 			downloadFromInternet(url, downloadTo);
@@ -133,6 +142,7 @@ public final class IOHelper {
 			return false;
 		}
 	}
+	*/
 
 	/**
 	 * Download the first line of a text file from the given URL and return it as a string.
@@ -140,19 +150,25 @@ public final class IOHelper {
 	 * If an error occurs an exception will be thrown.
 	 * The file is assumed to be in UTF-8.
 	 */
-	public static String downloadFirstLineFromInternet(URL url) throws IOException {
-		return IOHelper.getFirstLineOfInputStream(url.openStream());
+	public static String downloadFirstLineFromInternet(URL url) throws RuntimeIOException {
+		try {
+			return IOHelper.getFirstLineOfInputStream(url.openStream());
+		} catch (IOException ioe){
+			throw new RuntimeIOException(ioe);
+		}
 	}
 
 	/**
 	 * This method reads from the given InputStream and decodes it into text, assuming it's in UTF-8. Then it returns the first line of that text and closes the InputStream.
 	 * If an I/O error occurs an exception will be thrown, but the stream will still be closed.
 	 */
-	public static String getFirstLineOfInputStream(InputStream in) throws IOException {
+	public static String getFirstLineOfInputStream(InputStream in) throws RuntimeIOException {
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(in, Charset.forName("UTF-8")));
 			return reader.readLine();
+		} catch (IOException ioe){
+			throw new RuntimeIOException(ioe);
 		} finally {
 			closeQuietly(reader);
 		}
@@ -162,15 +178,19 @@ public final class IOHelper {
 	 * This method reads from the given File and decodes it into text, assuming its contents are encoded in UTF-8. Then it returns the first line of that text.
 	 * If an I/O error occurs an exception will be thrown, but the stream will still be closed.
 	 */
-	public static String getFirstLineOfFile(File file) throws IOException {
-		return getFirstLineOfInputStream(new FileInputStream(file));
+	public static String getFirstLineOfFile(File file) throws RuntimeFNFException, RuntimeIOException {
+		try {
+			return getFirstLineOfInputStream(new FileInputStream(file));
+		} catch (FileNotFoundException fnfe){
+			throw new RuntimeFNFException(fnfe);
+		}
 	}
 
 	/**
 	 * This method reads from the given File and decodes it into text, assuming its contents are encoded in UTF-8. Then it returns the first line of that text.
 	 * If an I/O error occurs then an empty string will be returned, unless it's a FileNotFoundException. That will be passed on to the caller.
 	 */
-	public static String getFirstLineOfFileQuietly(File file) throws FileNotFoundException {
+	/*public static String getFirstLineOfFileQuietly(File file) throws FileNotFoundException {
 		try {
 			return getFirstLineOfInputStream(new FileInputStream(file));
 		} catch (FileNotFoundException fnfe) {
@@ -179,7 +199,7 @@ public final class IOHelper {
 			ioe.printStackTrace();
 			return "";
 		}
-	}
+	}*/
 
 	/**
 	 * Download the first line of a text file from the given URL and return it as a string.
@@ -187,7 +207,7 @@ public final class IOHelper {
 	 * If an error occurs an empty string will be returned.
 	 * The file is assumed to be in UTF-8.
 	 */
-	public static String downloadFirstLineFromInternetQuietly(URL url) {
+	/*public static String downloadFirstLineFromInternetQuietly(URL url) {
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(url.openStream(), Charset.forName("UTF-8")));
@@ -197,7 +217,7 @@ public final class IOHelper {
 		} finally {
 			closeQuietly(reader);
 		}
-	}
+	}*/
 
 	/**
 	 * Java checks if a String represents a valid URL before it allows you to construct a URL, via the checked exception MalformedURLException.
@@ -217,13 +237,15 @@ public final class IOHelper {
 	 * The URL is assumed to point to an XZ-compressed file. It will decompress the file in realtime as it saves it, so the version downloaded will be uncompressed.
 	 * If an error occurs, an exception will be thrown.
 	 */
-	public static void downloadFromInternetXZ(URL url, File downloadTo) throws IOException {
+	public static void downloadFromInternetXZ(URL url, File downloadTo) throws RuntimeIOException {
 		ReadableByteChannel rbc = null;
 		FileOutputStream fos = null;
 		try {
 			rbc = Channels.newChannel(new XZInputStream(url.openStream()));
 			fos = new FileOutputStream(downloadTo);
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+		} catch (IOException ioe){
+			throw new RuntimeIOException(ioe);
 		} finally {
 			closeQuietly(rbc);
 			closeQuietly(fos);

@@ -21,6 +21,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.ConcurrenceManager;
+import thebombzen.tumblgififier.Task;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.text.StatusProcessor;
@@ -129,7 +130,7 @@ public class MainFrame extends JFrame {
 		defaultPanel.add(scrollPane, BorderLayout.CENTER);
 		open.addActionListener(l);
 		open.setEnabled(false);
-		this.setSize(640, 360);
+		this.setSize(1280, 720);
 		setLocationRelativeTo(null);
 		this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		this.addWindowListener(new WindowAdapter(){
@@ -149,12 +150,12 @@ public class MainFrame extends JFrame {
 				mostRecentOpenDirectory = null;
 			}
 		}
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+		ConcurrenceManager.getConcurrenceManager().addPostInitTask(new Task(-50){
 			@Override
 			public void run() {
 				TumblGIFifier.executeOldVersionCleanup();
-				boolean success = ResourcesManager.getResourcesManager().intitilizeExtras(getStatusProcessor());
-				if (success) {
+				try {
+					ResourcesManager.getResourcesManager().intitilizeExtras(getStatusProcessor());
 					setBusy(false);
 					EventQueue.invokeLater(new Runnable(){
 						@Override
@@ -162,7 +163,8 @@ public class MainFrame extends JFrame {
 							open.setEnabled(true);
 						}
 					});
-				} else {
+				} catch (RuntimeException re){
+					re.printStackTrace();
 					getStatusProcessor().appendStatus("Error initializing.");
 				}
 			}

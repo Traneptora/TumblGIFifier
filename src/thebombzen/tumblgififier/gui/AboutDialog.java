@@ -6,7 +6,6 @@ import java.awt.EventQueue;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -14,6 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 import thebombzen.tumblgififier.ConcurrenceManager;
+import thebombzen.tumblgififier.RuntimeIOException;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.resources.ResourcesManager;
@@ -30,7 +30,7 @@ public class AboutDialog extends JDialog {
 		Box box = Box.createVerticalBox();
 		box.add(Box.createVerticalStrut(10));
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("TumblGIFifier version " + TumblGIFifier.VERSION)));
-		box.add(GUIHelper.wrapLeftAligned(new JLabel("Copyright 2015/2016 Leo Izen (thebombzen)")));
+		box.add(GUIHelper.wrapLeftAligned(new JLabel("Copyright 2015-2017 Leo Izen (thebombzen)")));
 		box.add(Box.createVerticalStrut(10));
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("Licensed under the MIT license")));
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("with included public domain XZ Utils")));
@@ -110,7 +110,7 @@ public class AboutDialog extends JDialog {
 									}
 								});
 							}
-						} catch (IOException ioe) {
+						} catch (RuntimeIOException ioe) {
 							checkForUpdates.setText("Error checking.");
 							close.setEnabled(true);
 						}
