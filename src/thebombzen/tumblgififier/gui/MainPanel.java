@@ -195,7 +195,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				try {
-					String videoFilter = TextHelper.getTextHelper().createVideoFilter("format=yuv420p", null, -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
+					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v",
 							scan.getLocation(), "-ss", Double.toString(clipStart), "-t",
 							Double.toString(clipEnd - clipStart), "-vf", videoFilter);
@@ -240,7 +240,7 @@ public class MainPanel extends JPanel {
 						statusArea.appendStatus("Error rendering clip :(");
 						return;
 					}
-					String videoFilter = TextHelper.getTextHelper().createVideoFilter("format=yuv420p", null, -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
+					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v", "-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter,
 							"-c", "ffv1", "-f", "matroska", tempFile.getAbsolutePath());
