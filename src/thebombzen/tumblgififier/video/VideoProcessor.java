@@ -171,12 +171,12 @@ public class VideoProcessor {
 		
 		ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
-		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=rgb24", newWidth, newHeight, false, halveFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
+		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", newWidth, newHeight, false, halveFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		
 		try {
 			scanPercentDone("Scaling Video... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-ss",
-							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "0:v", "-vf", videoFilter,
+							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "v", "-vf", videoFilter,
 							"-t", Double.toString(this.clipEndTime - this.clipStartTime),
 							"-c", "ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
 			
@@ -194,7 +194,7 @@ public class VideoProcessor {
 		
 		try {
 			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-i",
-					this.mkvFile.getAbsolutePath(), "-vf", "palettegen", "-c", "png", "-f", "image2",
+					this.mkvFile.getAbsolutePath(), "-vf", "palettegen=max_colors=128", "-c", "png", "-f", "image2",
 					this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
@@ -211,7 +211,7 @@ public class VideoProcessor {
 			scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-i",
 							this.mkvFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi",
-							"paletteuse", "-c", "gif", "-f", "gif", this.gifFile.getAbsolutePath()));
+							"paletteuse=dither=bayer:bayer_scale=3", "-c", "gif", "-f", "gif", this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating GIF... Error.");
