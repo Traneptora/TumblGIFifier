@@ -38,6 +38,7 @@ public class ShotCache {
 	}
 	
 	private Map<Integer, File> shotFiles = new HashMap<>();
+	private Map<Integer, File> endShotFiles = new HashMap<>();
 	
 	public Future<BufferedImage> screenShot(StatusProcessor processor, String overlay, int frameNumber, int overlaySize, final boolean end) {
 		return screenShot(processor, overlay, frameNumber, scan.getWidth(), scan.getHeight(), overlaySize, end);
@@ -49,6 +50,7 @@ public class ShotCache {
 	
 	public Future<BufferedImage> screenShot(final StatusProcessor processor, final String overlay, int frameNumber,
 			final int shotWidth, final int shotHeight, final int overlaySize, final boolean end) {
+		final Map<Integer, File> shotFiles = end ? this.endShotFiles : this.shotFiles;
 		double time = frameNumber * 0.25D;
 		if (time < 0 || time > scan.getDuration()) {
 			throw new IllegalArgumentException("Time out of bounds!");
@@ -137,16 +139,17 @@ public class ShotCache {
 		if (frameNumber + frames > scan.getDuration() * 4D) {
 			frames = (int)(scan.getDuration() * 4D - frameNumber); 
 		}
+		final Map<Integer, File> shotFiles = end ? this.endShotFiles : this.shotFiles;
 		File shotFile = IOHelper.createTempFile();
 		String shotFilename = shotFile.getAbsolutePath();
 		IOHelper.deleteTempFile(shotFile);
 		ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
 		double ffmpegStartTime = frameNumber / 4D - ( end ? scan.getFrameDuration() : 0);
-		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=4, format=rgb24", null, shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
+		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=fps=4:round=up" + ":start_time=" + ffmpegStartTime, "format=rgb24", shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		
 		ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(ffmpegStartTime),
-				"-i", scan.getLocation(), "-map", "0:v", "-vf",
+				"-copyts", "-i", scan.getLocation(), "-map", "0:v", "-vf",
 				 videoFilter, "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
 				shotFilename + "_%06d.png");
 		for (int i = 0; i < frames; i++) {
