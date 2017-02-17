@@ -33,6 +33,7 @@
     <manifest file="MANIFEST.MF">
 		<attribute name="Main-Class" value="thebombzen.tumblgififier.TumblGIFifier"/>
 	</manifest>
+	<copy file="LICENSE" todir="${build}" />
     <jar jarfile="${jar}" basedir="${build}" manifest="MANIFEST.MF" />
   </target>
 
