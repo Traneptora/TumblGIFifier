@@ -83,10 +83,20 @@ public final class ConcurrenceManager {
 		});
 	}
 	
+	/**
+	 * Add a task to be executed on Post-Init. Priority zero is the default.
+	 * Lower numbers will be executed first, so negative refers to more immediate priority and positive numbers are less immediate.
+	 * The task object will be discarded upon execution.
+	 */
 	public void addPostInitTask(Task task){
 		postInitJobs.add(task);
 	}
 	
+	/**
+	 * Add a (runnable) task to be executed on Post-Init, with the given priority. Priority zero is the default.
+	 * Lower numbers will be executed first, so negative refers to more immediate priority and positive numbers are less immediate.
+	 * The task object will be discarded upon execution.
+	 */
 	public void addPostInitTask(final Runnable r, final int priority){
 		this.addPostInitTask(new Task(priority){
 			public void run(){
@@ -96,13 +106,19 @@ public final class ConcurrenceManager {
 	}
 
 	/**
-	 * We want users to be able to add shutdown tasks, but not to be able to remove them. This adds a Runnable as a shutdown task in a way that it cannot be removed.
-	 * @param task This will be executed upon a clean exit of the program.
+	 * Add a task to be executed on shutdown. Priority zero is the default.
+	 * Lower numbers will be executed first, so negative refers to more immediate priority and positive numbers are less immediate.
+	 * The task object will be discarded upon execution.
 	 */
 	public void addShutdownTask(Task task){
 		cleanUpJobs.add(task);
 	}
 	
+	/**
+	 * Add a (runnable) task to be executed on shutdown, with the given priority. Priority zero is the default.
+	 * Lower numbers will be executed first, so negative refers to more immediate priority and positive numbers are less immediate.
+	 * The task object will be discarded upon execution.
+	 */
 	public void addShutdownTask(final Runnable r, final int priority){
 		this.addShutdownTask(new Task(priority){
 			public void run(){
@@ -218,6 +234,9 @@ public final class ConcurrenceManager {
 		IOHelper.closeQuietly(TumblGIFifier.getLogFileOutputStream());
 	}
 	
+	/**
+	 * Initiate post-init tasks. Do not execute more than once or bad things might happen. 
+	 */
 	public void postInit(){
 		Task task;
 		while (null != (task = postInitJobs.poll())){
