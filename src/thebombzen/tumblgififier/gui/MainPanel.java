@@ -43,7 +43,7 @@ import thebombzen.tumblgififier.util.Tuple;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
-import thebombzen.tumblgififier.util.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 import thebombzen.tumblgififier.util.text.StatusProcessorArea;
@@ -190,7 +190,7 @@ public class MainPanel extends JPanel {
 		
 		final double clipStart = startSlider.getValue() * 0.25D;
 		final double clipEnd = endSlider.getValue() * 0.25D;
-		final ResourceLocation ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
+		final Resource ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
@@ -224,8 +224,8 @@ public class MainPanel extends JPanel {
 		final double clipEnd = endSlider.getValue() * 0.25D;
 		final boolean shouldHalfFramerate = this.cutFramerateInHalfCheckBox.isSelected();
 		
-		final ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
-		final ResourceLocation ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
+		final Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
+		final Resource ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){

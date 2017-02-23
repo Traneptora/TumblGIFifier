@@ -14,7 +14,7 @@ import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
-import thebombzen.tumblgififier.util.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 import thebombzen.tumblgififier.util.text.StatusProcessorArea;
@@ -166,7 +166,7 @@ public class VideoProcessor {
 		
 		writer.flush();
 		
-		ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
+		Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
 		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", newWidth, newHeight, false, halveFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		

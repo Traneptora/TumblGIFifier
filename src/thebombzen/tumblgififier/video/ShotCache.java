@@ -14,7 +14,7 @@ import javax.imageio.ImageIO;
 
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.io.IOHelper;
-import thebombzen.tumblgififier.util.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 import thebombzen.tumblgififier.util.text.TextHelper;
@@ -143,7 +143,7 @@ public class ShotCache {
 		File shotFile = IOHelper.createTempFile();
 		String shotFilename = shotFile.getAbsolutePath();
 		IOHelper.deleteTempFile(shotFile);
-		ResourceLocation ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
+		Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
 		double ffmpegStartTime = frameNumber / 4D - ( end ? scan.getFrameDuration() : 0);
 		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=fps=4:round=up" + ":start_time=" + ffmpegStartTime, "format=rgb24", shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);

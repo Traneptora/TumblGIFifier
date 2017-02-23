@@ -13,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
+import java.util.Set;
 
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
@@ -57,6 +59,14 @@ public final class TumblGIFifier {
 	private static PrintStream logFileOutputStream;
 	
 	private static volatile boolean initializedCleanup = false;
+	
+	public static final Set<String> loadedPkgs = new HashSet<>();
+	public static final Set<String> requiredPkgs = new HashSet<>();
+	public static final Set<String> optionalPkgs = new HashSet<>();
+	static {
+		requiredPkgs.add("FFmpeg");
+		requiredPkgs.add("OpenSans");
+	}
 	
 	/**
 	 * Run our program.

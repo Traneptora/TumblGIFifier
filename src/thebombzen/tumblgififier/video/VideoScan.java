@@ -8,7 +8,7 @@ import java.util.Queue;
 import java.util.regex.Pattern;
 
 import thebombzen.tumblgififier.util.ConcurrenceManager;
-import thebombzen.tumblgififier.util.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 
@@ -24,7 +24,7 @@ public class VideoScan {
 		
 		processor.appendStatus("Scanning File... ");
 		
-		ResourceLocation ffprobe = ResourcesManager.getResourcesManager().getFFprobeLocation();
+		Resource ffprobe = ResourcesManager.getResourcesManager().getFFprobeLocation();
 		
 		String line = null;
 		int width = -1;
