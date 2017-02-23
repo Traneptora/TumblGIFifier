@@ -20,8 +20,9 @@ import java.util.List;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.ConcurrenceManager;
 import thebombzen.tumblgififier.Task;
+
 /**
- * Java's I/O libraries are nice but not perfect. This class contains some helper routines to make everything easier.
+ * Java's I/O libraries are nice but not perfect. This class contains a (sigh) framework and some helper routines to make everything easier.
  */
 public final class IOHelper {
 	
@@ -127,7 +128,7 @@ public final class IOHelper {
 		}
 	}
 
-	/**
+	/*
 	 * Download a file from the given URL, and save it to the given File. This should only be used for small files, because it blocks while the file is downloading and doesn't provide a progress indicator.
 	 * If an error occurs, this method will return false, and upon success, return true. This is mostly useful for un-important downloads whom are non-critical errors if they fail.
 	 */
@@ -185,7 +186,7 @@ public final class IOHelper {
 		}
 	}
 
-	/**
+	/*
 	 * This method reads from the given File and decodes it into text, assuming its contents are encoded in UTF-8. Then it returns the first line of that text.
 	 * If an I/O error occurs then an empty string will be returned, unless it's a FileNotFoundException. That will be passed on to the caller.
 	 */

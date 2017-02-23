@@ -5,8 +5,6 @@ import java.io.OutputStream;
 /**
  * This OutputStream behaves like /dev/null.
  * In other words, it discards all output written to it.
- * @author leo
- *
  */
 public class NullOutputStream extends OutputStream {
 	

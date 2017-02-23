@@ -7,6 +7,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * This stream behaves like a FilterOutputStream for several output stream.
+ * It forks the output into several output streams.
+ */
+
 public class TeeOutputStream extends OutputStream {
 	
 	protected List<? extends OutputStream> outs;
@@ -48,8 +53,7 @@ public class TeeOutputStream extends OutputStream {
 	}
 	
 	/**
-	 * This implementation of this method does not throw IOException no matter
-	 * what.
+	 * This implementation of this method does not throw IOException no matter what.
 	 */
 	@Override
 	public void close() {

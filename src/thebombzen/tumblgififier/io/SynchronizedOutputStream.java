@@ -6,7 +6,7 @@ import java.io.OutputStream;
 
 /**
  * This is a thread-safe filtered output stream. It ensures that only one thread can write to it at once, to prevent 
- *
+ * two threads from writing a line at the same time and splitting it.
  */
 public class SynchronizedOutputStream extends FilterOutputStream {
 	
