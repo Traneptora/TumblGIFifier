@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.List;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.ConcurrenceManager;
-import thebombzen.tumblgififier.RuntimeIOException;
 import thebombzen.tumblgififier.Task;
 /**
  * Java's I/O libraries are nice but not perfect. This class contains some helper routines to make everything easier.

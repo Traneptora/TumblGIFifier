@@ -16,6 +16,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.io.IOHelper;
+import thebombzen.tumblgififier.io.RuntimeIOException;
 import thebombzen.tumblgififier.io.SynchronizedOutputStream;
 import thebombzen.tumblgififier.io.TeeOutputStream;
 import thebombzen.tumblgififier.io.resources.ResourcesManager;

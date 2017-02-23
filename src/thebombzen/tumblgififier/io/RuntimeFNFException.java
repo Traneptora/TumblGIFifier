@@ -1,7 +1,6 @@
 package thebombzen.tumblgififier.io;
 
 import java.io.FileNotFoundException;
-import thebombzen.tumblgififier.RuntimeIOException;
 
 
 public class RuntimeFNFException extends RuntimeIOException {

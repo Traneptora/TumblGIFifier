@@ -13,10 +13,11 @@ import java.nio.file.Files;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
-import thebombzen.tumblgififier.RuntimeIOException;
+
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.io.IOHelper;
 import thebombzen.tumblgififier.io.RuntimeFNFException;
+import thebombzen.tumblgififier.io.RuntimeIOException;
 import thebombzen.tumblgififier.text.StatusProcessor;
 
 public class ResourcesManager {
