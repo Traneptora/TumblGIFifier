@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier;
+package thebombzen.tumblgififier.util;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -12,11 +12,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.gui.MainFrame;
-import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.NullInputStream;
-import thebombzen.tumblgififier.io.NullOutputStream;
-import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
+import thebombzen.tumblgififier.util.io.IOHelper;
+import thebombzen.tumblgififier.util.io.NullInputStream;
+import thebombzen.tumblgififier.util.io.NullOutputStream;
+import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
 
 /**
  * This class handles all the program-wide concurrence utilities. 
@@ -213,10 +215,10 @@ public final class ConcurrenceManager {
 		while (null != (task = cleanUpJobs.poll())){
 			task.run();
 		}
-		IOHelper.closeQuietly(TumblGIFifier.logFileOutputStream);
+		IOHelper.closeQuietly(TumblGIFifier.getLogFileOutputStream());
 	}
 	
-	protected void postInit(){
+	public void postInit(){
 		Task task;
 		while (null != (task = postInitJobs.poll())){
 			task.run();

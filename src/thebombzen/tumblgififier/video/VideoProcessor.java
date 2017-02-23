@@ -8,17 +8,18 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Scanner;
-import thebombzen.tumblgififier.ConcurrenceManager;
+
 import thebombzen.tumblgififier.gui.MainFrame;
-import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.RuntimeIOException;
-import thebombzen.tumblgififier.io.resources.ProcessTerminatedException;
-import thebombzen.tumblgififier.io.resources.ResourceLocation;
-import thebombzen.tumblgififier.io.resources.ResourcesManager;
-import thebombzen.tumblgififier.text.StatusProcessor;
-import thebombzen.tumblgififier.text.StatusProcessorArea;
-import thebombzen.tumblgififier.text.StatusProcessorWriter;
-import thebombzen.tumblgififier.text.TextHelper;
+import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.io.IOHelper;
+import thebombzen.tumblgififier.util.io.RuntimeIOException;
+import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
+import thebombzen.tumblgififier.util.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
+import thebombzen.tumblgififier.util.text.StatusProcessor;
+import thebombzen.tumblgififier.util.text.StatusProcessorArea;
+import thebombzen.tumblgififier.util.text.StatusProcessorWriter;
+import thebombzen.tumblgififier.util.text.TextHelper;
 
 public class VideoProcessor {
 	

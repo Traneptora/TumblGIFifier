@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.io.resources;
+package thebombzen.tumblgififier.util.io.resources;
 
 public class ResourceLocation {
 	

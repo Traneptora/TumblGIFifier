@@ -12,12 +12,12 @@ import java.util.concurrent.TimeoutException;
 
 import javax.imageio.ImageIO;
 
-import thebombzen.tumblgififier.ConcurrenceManager;
-import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.resources.ResourceLocation;
-import thebombzen.tumblgififier.io.resources.ResourcesManager;
-import thebombzen.tumblgififier.text.StatusProcessor;
-import thebombzen.tumblgififier.text.TextHelper;
+import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.io.IOHelper;
+import thebombzen.tumblgififier.util.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
+import thebombzen.tumblgififier.util.text.StatusProcessor;
+import thebombzen.tumblgififier.util.text.TextHelper;
 
 public class ShotCache {
 	

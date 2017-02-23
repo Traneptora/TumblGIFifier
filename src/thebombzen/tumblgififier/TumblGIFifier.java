@@ -15,12 +15,14 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import thebombzen.tumblgififier.gui.MainFrame;
-import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.RuntimeIOException;
-import thebombzen.tumblgififier.io.SynchronizedOutputStream;
-import thebombzen.tumblgififier.io.TeeOutputStream;
-import thebombzen.tumblgififier.io.resources.ResourcesManager;
-import thebombzen.tumblgififier.text.StatusProcessor;
+import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.Task;
+import thebombzen.tumblgififier.util.io.IOHelper;
+import thebombzen.tumblgififier.util.io.RuntimeIOException;
+import thebombzen.tumblgififier.util.io.SynchronizedOutputStream;
+import thebombzen.tumblgififier.util.io.TeeOutputStream;
+import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
+import thebombzen.tumblgififier.util.text.StatusProcessor;
 
 public final class TumblGIFifier {
 	
@@ -52,7 +54,7 @@ public final class TumblGIFifier {
 	 */
 	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
 	
-	static OutputStream logFileOutputStream;
+	private static PrintStream logFileOutputStream;
 	
 	private static volatile boolean initializedCleanup = false;
 	
@@ -63,12 +65,12 @@ public final class TumblGIFifier {
 		
 		File bothLogFile = ResourcesManager.getResourcesManager().getLocalResource("full_log.log");
 		
-		logFileOutputStream = new SynchronizedOutputStream(new FileOutputStream(bothLogFile));
+		logFileOutputStream = new PrintStream(new SynchronizedOutputStream(new FileOutputStream(bothLogFile)), true, "UTF-8");
 		
 		System.setErr(
-				new PrintStream(new TeeOutputStream(System.err, logFileOutputStream)));
+				new PrintStream(new TeeOutputStream(System.err, logFileOutputStream), true, "UTF-8"));
 		System.setOut(
-				new PrintStream(new TeeOutputStream(System.out, logFileOutputStream)));
+				new PrintStream(new TeeOutputStream(System.out, logFileOutputStream), true, "UTF-8"));
 		
 		if (args.length != 0){
 			if ("--help".equals(args[0])){
@@ -99,6 +101,10 @@ public final class TumblGIFifier {
 			}
 		});
 
+	}
+	
+	public static PrintStream getLogFileOutputStream(){
+		return logFileOutputStream;
 	}
 	
 	private static void printHelpAndExit(boolean good){

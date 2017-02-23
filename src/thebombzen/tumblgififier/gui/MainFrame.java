@@ -20,12 +20,13 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import thebombzen.tumblgififier.ConcurrenceManager;
-import thebombzen.tumblgififier.Task;
+
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.io.resources.ResourcesManager;
-import thebombzen.tumblgififier.text.StatusProcessor;
-import thebombzen.tumblgififier.text.StatusProcessorArea;
+import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.Task;
+import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
+import thebombzen.tumblgififier.util.text.StatusProcessor;
+import thebombzen.tumblgififier.util.text.StatusProcessorArea;
 import thebombzen.tumblgififier.video.VideoScan;
 
 /**

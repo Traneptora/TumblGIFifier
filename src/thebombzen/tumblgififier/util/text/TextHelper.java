@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.text;
+package thebombzen.tumblgififier.util.text;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import thebombzen.tumblgififier.ConcurrenceManager;
-import thebombzen.tumblgififier.Task;
-import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.resources.ResourcesManager;
+
+import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.Task;
+import thebombzen.tumblgififier.util.io.IOHelper;
+import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 
 public final class TextHelper {
 	

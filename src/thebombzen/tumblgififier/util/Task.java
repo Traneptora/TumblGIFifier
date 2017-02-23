@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier;
+package thebombzen.tumblgififier.util;
 
 public abstract class Task implements Runnable, Comparable<Task> {
 	

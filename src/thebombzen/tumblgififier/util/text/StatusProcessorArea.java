@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.text;
+package thebombzen.tumblgififier.util.text;
 
 import java.awt.EventQueue;
 import java.io.PrintWriter;

@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.io;
+package thebombzen.tumblgififier.util.io;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -18,8 +18,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.tukaani.xz.XZInputStream;
-import thebombzen.tumblgififier.ConcurrenceManager;
-import thebombzen.tumblgififier.Task;
+
+import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.Task;
 
 /**
  * Java's I/O libraries are nice but not perfect. This class contains a (sigh) framework and some helper routines to make everything easier.

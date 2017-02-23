@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.text;
+package thebombzen.tumblgififier.util.text;
 
 public interface StatusProcessor {
 	

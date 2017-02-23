@@ -12,11 +12,12 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
-import thebombzen.tumblgififier.ConcurrenceManager;
+
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.RuntimeIOException;
-import thebombzen.tumblgififier.io.resources.ResourcesManager;
+import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.io.IOHelper;
+import thebombzen.tumblgififier.util.io.RuntimeIOException;
+import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 
 public class AboutDialog extends JDialog {
 	

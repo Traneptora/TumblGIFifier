@@ -6,10 +6,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.regex.Pattern;
-import thebombzen.tumblgififier.ConcurrenceManager;
-import thebombzen.tumblgififier.io.resources.ResourceLocation;
-import thebombzen.tumblgififier.io.resources.ResourcesManager;
-import thebombzen.tumblgififier.text.StatusProcessor;
+
+import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.io.resources.ResourceLocation;
+import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
+import thebombzen.tumblgififier.util.text.StatusProcessor;
 
 public class VideoScan {
 	private final double scanDuration;

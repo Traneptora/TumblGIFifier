@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier.io.resources;
+package thebombzen.tumblgififier.util.io.resources;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -15,10 +15,10 @@ import java.util.zip.ZipInputStream;
 import org.tukaani.xz.XZInputStream;
 
 import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.io.IOHelper;
-import thebombzen.tumblgififier.io.RuntimeFNFException;
-import thebombzen.tumblgififier.io.RuntimeIOException;
-import thebombzen.tumblgififier.text.StatusProcessor;
+import thebombzen.tumblgififier.util.io.IOHelper;
+import thebombzen.tumblgififier.util.io.RuntimeFNFException;
+import thebombzen.tumblgififier.util.io.RuntimeIOException;
+import thebombzen.tumblgififier.util.text.StatusProcessor;
 
 public class ResourcesManager {
 	

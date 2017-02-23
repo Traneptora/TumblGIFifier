@@ -1,4 +1,4 @@
-package thebombzen.tumblgififier;
+package thebombzen.tumblgififier.util;
 
 /**
  * This represents a tuple of two elements, i.e. an ordered pair. The purpose is to use a Tuple in a Map or a Set, so we can can create a set of ordered pairs or a Map whose domain is a set of ordered pairs.
