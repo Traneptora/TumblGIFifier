@@ -28,6 +28,21 @@ public class NullInputStream extends InputStream {
 	}
 	
 	@Override
+	public boolean markSupported(){
+		return true;
+	}
+	
+	@Override
+	public void mark(int readlimit){
+		// do nothing
+	}
+	
+	@Override
+	public void reset(){
+		// do nothing
+	}
+	
+	@Override
 	public void close() {
 		// Do nothing
 	}
