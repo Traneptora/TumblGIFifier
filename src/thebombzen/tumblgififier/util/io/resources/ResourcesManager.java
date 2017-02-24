@@ -137,6 +137,7 @@ public class ResourcesManager {
 	static {
 		ResourcesManager.requiredPkgs.add("FFmpeg");
 		ResourcesManager.optionalPkgs.add("OpenSans");
+		ResourcesManager.optionalPkgs.add("gifsicle");
 	}
 	
 	private ResourcesManager() {
@@ -197,7 +198,7 @@ public class ResourcesManager {
 		}
 	}
 	
-	private Resource getXLocation(String pkg, String x) {
+	public Resource getXLocation(String pkg, String x) {
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
 		String name = x + TumblGIFifier.EXE_EXTENSION;
 		for (String el : pathElements) {
@@ -325,42 +326,49 @@ public class ResourcesManager {
 		return mightHaveInternet;
 	}
 	
-	private boolean initializeOpenSans(boolean mightHaveInternet, StatusProcessor processor){
-		boolean needDL = false;
-		File fontFile = getLocalFile("OpenSans-Semibold.ttf");
-		processor.appendStatus("Checking for Open Sans Semibold ...");
-		if (fontFile.exists() && !fontFile.isFile()) {
-			boolean did = fontFile.delete();
-			if (!did) {
-				throw new ResourceNotFoundException("OpenSans", "Error: Bad Open Sans Semibold in Path: " + fontFile.getPath());
-			} else {
-				processor.appendStatus("Found Bad Open Sans Semibold in Path. Deleted.");
+	private boolean initializeSingletonPackage(String pkg, String fullname, String localfilename, String dlLocation, boolean isExe, boolean mightHaveInternet, StatusProcessor processor){
+		if (isExe){
+			Resource res = getXLocation(pkg, localfilename);
+			if (res.isInPath){
+				processor.appendStatus("Checking for "+fullname+"... found in PATH.");
+				return mightHaveInternet;
 			}
 		}
-		if (!fontFile.exists()) {
-			processor.replaceStatus("Checking for Open Sans Semibold... not found.");
+		boolean needDL = false;
+		File localfile = getLocalFile(localfilename);
+		processor.appendStatus("Checking for " + fullname + " ...");
+		if (localfile.exists() && !localfile.isFile()) {
+			boolean did = localfile.delete();
+			if (!did) {
+				throw new ResourceNotFoundException(pkg, "Error: Bad "+fullname+" in Path: " + localfile.getPath());
+			} else {
+				processor.appendStatus("Found Bad "+fullname+" in Path. Deleted.");
+			}
+		}
+		if (!localfile.exists()) {
+			processor.replaceStatus("Checking for "+fullname+"... not found.");
 			needDL = true;
 		} else {
-			processor.replaceStatus("Checking for Open Sans Semibold... found.");
+			processor.replaceStatus("Checking for "+fullname+"... found.");
 		}
 		
 		if (!needDL){
-			processor.appendStatus("Open Sans Semibold found.");
+			processor.appendStatus(fullname+" found.");
 			return mightHaveInternet;
 		}
 		
 		if (needDL && !mightHaveInternet){
-			throw new ResourceNotFoundException("OpenSans", "Need to OpenSans dependencies from the internet, but it appears you have no internet access.");
+			throw new ResourceNotFoundException(pkg, "Need " + pkg + " dependencies from the internet, but it appears you have no internet access.");
 		}
 		
-		processor.appendStatus("Downloading Open Sans Semibold from the internet...");
-		URL website = IOHelper.wrapSafeURL(getOpenSansDownloadLocation());
+		processor.appendStatus("Downloading "+fullname+" from the internet...");
+		URL website = IOHelper.wrapSafeURL(dlLocation);
 		try {
-			IOHelper.downloadFromInternet(website, fontFile);
+			IOHelper.downloadFromInternetXZ(website, localfile);
 		} catch (RuntimeIOException ioe) {
-			throw new ResourceNotFoundException("OpenSans", "Error downloading", ioe);
+			throw new ResourceNotFoundException(pkg, "Error downloading.", ioe);
 		}
-		processor.appendStatus("Done downloading.");
+		processor.appendStatus("Done downloading " + fullname + ".");
 		
 		return mightHaveInternet;
 	}
@@ -384,9 +392,19 @@ public class ResourcesManager {
 		}
 		
 		try {
-			mightHaveInternet = initializeOpenSans(mightHaveInternet, processor);
+			mightHaveInternet = initializeSingletonPackage("OpenSans", "Open Sans Semibold", "OpenSans-Semibold.ttf", getOpenSansDownloadLocation(), false, mightHaveInternet, processor);
 			pkgs.add("OpenSans");
 			openSans = new Resource("OpenSans", "OpenSans-Semibold", getLocalFile("OpenSans-Semibold.ttf").getAbsolutePath(), false);
+		} catch (ResourceNotFoundException rnfe){
+			processor.appendStatus(rnfe.getMessage());
+			if (rnfe.getCause() != null){
+				rnfe.getCause().printStackTrace();
+			}
+		}
+		
+		try {
+			mightHaveInternet = initializeSingletonPackage("gifsicle", "gifsicle", "gifsicle", "", true, mightHaveInternet, processor);
+			pkgs.add("gifsicle");
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null){

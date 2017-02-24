@@ -217,6 +217,21 @@ public class VideoProcessor {
 		}
 		
 		writer.println("Generating GIF... Done.");
+		
+		if (ResourcesManager.loadedPkgs.contains("gifsicle")){
+			try {
+				Resource gifsicle = ResourcesManager.getResourcesManager().getXLocation("gifsicle", "gifsicle");
+				writer.print("Crushing GIF... \r");
+				ConcurrenceManager.getConcurrenceManager().exec(true, gifsicle.location, "--batch", "--unoptimize", "--optimize=3", "--optimize=keep-transparent", this.gifFile.getAbsolutePath());
+				writer.println("Crushing GIF... Done.");
+			} catch (ProcessTerminatedException ex){
+				ex.printStackTrace();
+				writer.println("Crushing GIF... Error.");
+				ConcurrenceManager.getConcurrenceManager().stopAll();
+				throw new RuntimeIOException(ex);
+			}
+		}
+		
 		writer.flush();
 
 	}

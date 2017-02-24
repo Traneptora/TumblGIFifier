@@ -204,7 +204,11 @@ public class MainFrame extends JFrame {
 							case "OpenSans":
 								getStatusProcessor().appendStatus("Missing Open Sans. Text overlay is disabled.");
 								break;
+							case "gifsicle":
+								getStatusProcessor().appendStatus("Missing gifsicle. GIFs will be less optimized.");
+								break;
 							default:
+								getStatusProcessor().appendStatus("Unknown missing package: " + pkg);
 								throw new Error("Unknown missing package.");
 							}
 						}
@@ -216,7 +220,7 @@ public class MainFrame extends JFrame {
 							}
 						});
 					}
-				} catch (RuntimeException re){
+				} catch (Throwable re){
 					re.printStackTrace();
 					getStatusProcessor().appendStatus("Error initializing.");
 				}
