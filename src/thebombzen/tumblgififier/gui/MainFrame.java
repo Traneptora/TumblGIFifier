@@ -4,8 +4,11 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.FileDialog;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -13,6 +16,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -135,11 +139,38 @@ public class MainFrame extends JFrame {
 		setLocationRelativeTo(null);
 		this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		this.addWindowListener(new WindowAdapter(){
-			
 			@Override
 			public void windowClosing(WindowEvent e) {
 				TumblGIFifier.quit();
 			}
+		});
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher(){
+			@Override
+			public boolean dispatchKeyEvent(KeyEvent e) {
+				if (e.getID() == KeyEvent.KEY_PRESSED){
+					switch (e.getKeyCode()){
+					case KeyEvent.VK_Q:
+						if (e.isControlDown() && !e.isShiftDown()){
+							ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+								@Override
+								public void run(){
+									TumblGIFifier.quit();
+								}
+							});
+							return true;
+						}
+						break;
+					case KeyEvent.VK_O:
+						if (e.isControlDown() && !e.isShiftDown()){
+							openDialog();
+							return true;
+						}
+						break;
+					}
+				}
+				return false;
+			}
+			
 		});
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
