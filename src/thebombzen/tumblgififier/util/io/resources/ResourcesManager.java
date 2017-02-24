@@ -11,7 +11,9 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -97,6 +99,15 @@ public class ResourcesManager {
 	}
 	
 	private String localAppDataLocation = null;
+	
+	public static final Set<String> optionalPkgs = new HashSet<>();
+	public static final Set<String> requiredPkgs = new HashSet<>();
+	public static final Set<String> loadedPkgs = new HashSet<>();
+	
+	static {
+		ResourcesManager.requiredPkgs.add("FFmpeg");
+		ResourcesManager.requiredPkgs.add("OpenSans");
+	}
 	
 	private ResourcesManager() {
 		

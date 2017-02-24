@@ -187,16 +187,16 @@ public class MainFrame extends JFrame {
 			public void run() {
 				TumblGIFifier.executeOldVersionCleanup();
 				try {
-					TumblGIFifier.loadedPkgs.addAll(ResourcesManager.getResourcesManager().initializeResources(getStatusProcessor()));
-					TumblGIFifier.requiredPkgs.removeAll(TumblGIFifier.loadedPkgs);
-					if (!TumblGIFifier.requiredPkgs.isEmpty()){
+					ResourcesManager.loadedPkgs.addAll(ResourcesManager.getResourcesManager().initializeResources(getStatusProcessor()));
+					ResourcesManager.requiredPkgs.removeAll(ResourcesManager.loadedPkgs);
+					if (!ResourcesManager.requiredPkgs.isEmpty()){
 						getStatusProcessor().appendStatus("Unable to load all required resources.");
-						for (String pkg : TumblGIFifier.requiredPkgs){
+						for (String pkg : ResourcesManager.requiredPkgs){
 							getStatusProcessor().appendStatus("Missing: " + pkg);
 						}
 					} else {
-						TumblGIFifier.optionalPkgs.removeAll(TumblGIFifier.loadedPkgs);
-						for (String pkg : TumblGIFifier.optionalPkgs){
+						ResourcesManager.optionalPkgs.removeAll(ResourcesManager.loadedPkgs);
+						for (String pkg : ResourcesManager.optionalPkgs){
 							switch (pkg){
 							case "OpenSans":
 								getStatusProcessor().appendStatus("Missing Open Sans. Text overlay is disabled.");
