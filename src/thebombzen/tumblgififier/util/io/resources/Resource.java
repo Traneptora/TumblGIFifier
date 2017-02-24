@@ -38,4 +38,44 @@ public class Resource {
 	public String toString() {
 		return location;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (isInPath ? 1231 : 1237);
+		result = prime * result + ((location == null) ? 0 : location.hashCode());
+		result = prime * result + ((resourceName == null) ? 0 : resourceName.hashCode());
+		result = prime * result + ((resourcePackage == null) ? 0 : resourcePackage.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Resource other = (Resource) obj;
+		if (isInPath != other.isInPath)
+			return false;
+		if (location == null) {
+			if (other.location != null)
+				return false;
+		} else if (!location.equals(other.location))
+			return false;
+		if (resourceName == null) {
+			if (other.resourceName != null)
+				return false;
+		} else if (!resourceName.equals(other.resourceName))
+			return false;
+		if (resourcePackage == null) {
+			if (other.resourcePackage != null)
+				return false;
+		} else if (!resourcePackage.equals(other.resourcePackage))
+			return false;
+		return true;
+	}
 }
