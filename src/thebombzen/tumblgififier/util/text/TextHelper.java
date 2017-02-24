@@ -36,10 +36,19 @@ public final class TextHelper {
 	 * This is the escaped filename of the tempOverlayFile.
 	 */
 	private String tempOverlayFilename;
+	
+	private String fontFile = null;
+	
 	/**
 	 * This is the escaped filename of the Open Sans font file location.
+	 * Using a getter allows it to be lazily populated.
 	 */
-	private String fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansResource().location);
+	private String getFontFile(){
+		if (fontFile == null){
+			fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansResource().location);
+		}
+		return fontFile;
+	}
 	
 	
 	private TextHelper() {
@@ -153,7 +162,7 @@ public final class TextHelper {
 			return "";
 		}
 		String drawText = "drawtext=x=(w-tw)*0.5:y=0.935*(h-0.5*" + size
-				+ "):bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + fontFile + ":fontsize="
+				+ "):bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + getFontFile() + ":fontsize="
 				+ size + ":textfile=" + tempOverlayFilename;
 		return drawText;
 	}
@@ -166,7 +175,7 @@ public final class TextHelper {
 		if (decimator > 0){
 			filters.add("framestep=" + (1 << decimator));
 		}
-		if (!overlayText.isEmpty()){
+		if (!overlayText.isEmpty() && ResourcesManager.loadedPkgs.contains("OpenSans")){
 			filters.add(createDrawTextString(originalWidth, originalHeight, overlaySize, overlayText));
 		}
 		filters.add("scale=w=" + width + ":h=" + height + (boxedScale ? ":force_original_aspect_ratio=decrease" : ""));

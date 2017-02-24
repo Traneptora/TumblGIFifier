@@ -105,39 +105,40 @@ public class MainPanel extends JPanel {
 			}
 		});
 
-		ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
-			
-			@Override
-			public void run() {
-				EventQueue.invokeLater(new Runnable(){
-					
-					@Override
-					public void run() {
-						int newTextSize = textSize;
-						try {
-							newTextSize = Integer.parseInt(overlayTextSizeField.getText());
-						} catch (NumberFormatException e){
-							// nothing
-						}
-						boolean update = !currentText.equals(overlayTextField.getText()) || newTextSize != textSize;
-						currentText = overlayTextField.getText();
-						textSize = newTextSize;
-						if (update) {
-							Tuple<String, Integer> tuple = new Tuple<>(currentText, textSize);
-							if (startCacheMap.get(tuple) == null){
-								startCacheMap.put(tuple, new ShotCache(scan));
+		if (ResourcesManager.loadedPkgs.contains("OpenSans")){
+			ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
+				
+				@Override
+				public void run() {
+					EventQueue.invokeLater(new Runnable(){
+						
+						@Override
+						public void run() {
+							int newTextSize = textSize;
+							try {
+								newTextSize = Integer.parseInt(overlayTextSizeField.getText());
+							} catch (NumberFormatException e){
+								// nothing
 							}
-							if (endCacheMap.get(tuple) == null){
-								endCacheMap.put(tuple, new ShotCache(scan));
+							boolean update = !currentText.equals(overlayTextField.getText()) || newTextSize != textSize;
+							currentText = overlayTextField.getText();
+							textSize = newTextSize;
+							if (update) {
+								Tuple<String, Integer> tuple = new Tuple<>(currentText, textSize);
+								if (startCacheMap.get(tuple) == null){
+									startCacheMap.put(tuple, new ShotCache(scan));
+								}
+								if (endCacheMap.get(tuple) == null){
+									endCacheMap.put(tuple, new ShotCache(scan));
+								}
+								updateStartScreenshot();
+								updateEndScreenshot();
 							}
-							updateStartScreenshot();
-							updateEndScreenshot();
 						}
-					}
-				});
-			}
-		}, 2500, TimeUnit.MILLISECONDS);
-		
+					});
+				}
+			}, 2500, TimeUnit.MILLISECONDS);
+		}
 	}
 	
 	private void createGIF(final String path) {
