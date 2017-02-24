@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,12 +76,12 @@ public class ResourcesManager {
 		return "https://thebombzen.github.io/TumblGIFifier/resources/latest.txt";
 	}
 	
-	private static String getFFprogVersionsLocation() {
-		return "https://thebombzen.github.io/TumblGIFifier/resources/ffprog-versions.txt";
+	private static String getFFmpegVersionsLocation() {
+		return "https://thebombzen.github.io/TumblGIFifier/resources/FFmpeg/FFmpeg-versions.txt";
 	}
 	
-	private static String getFFprogDownloadLocation() {
-		return "https://thebombzen.github.io/TumblGIFifier/resources/ffprog/" + getFFprogName();
+	private static String getExeDownloadLocation(String pkg) {
+		return "https://thebombzen.github.io/TumblGIFifier/resources/" + pkg + "/" + getExeDLPkg(pkg);
 	}
 	
 	private static String getOpenSansDownloadLocation() {
@@ -105,13 +106,16 @@ public class ResourcesManager {
 		return new File(this.getLocalResourceLocation(), name);
 	}
 	
-	private static String getFFprogName() {
+	private static String getExeDLPkg(String pkg) {
 		String name = System.getProperty("os.name");
 		if (name.toLowerCase().contains("windows")) {
-			return "ffprog.windows.zip.xz";
+			return pkg + ".windows.zip.xz";
 		} else if (name.toLowerCase().contains("mac") || name.toLowerCase().contains("osx")
 				|| name.toLowerCase().contains("os x")) {
-			return "ffprog.osx.zip.xz";
+			if (pkg.equals("gifsicle")){
+				return "";
+			}
+			return pkg + ".osx.zip.xz";
 		} else {
 			return "";
 		}
@@ -209,35 +213,41 @@ public class ResourcesManager {
 		return new Resource(pkg, x, new File(this.getLocalResourceLocation(), name).getAbsolutePath(), false);
 	}
 	
-	private boolean initializeFFmpeg(boolean mightHaveInternet, StatusProcessor processor) {
-		String[] names = {"ffmpeg", "ffprobe", "ffplay"};
+	
+	private boolean initializeMultiExePackage(String pkg, String[] resources, String remoteVersionURL, String localVersionFilename, boolean mightHaveInternet, StatusProcessor processor){
+		
 		boolean needDL = false;
-		URL versions = IOHelper.wrapSafeURL(getFFprogVersionsLocation());
-		File localVersionsFile = getLocalFile("ffprog-versions.txt");
+		
 		String localVersion = "";
-		try {
-			localVersion = IOHelper.getFirstLineOfFile(localVersionsFile);
-		} catch (RuntimeFNFException fnfe) {
+		URL versions = null;
+		File localVersionsFile = null;
+		if (!remoteVersionURL.isEmpty()){
+			versions = IOHelper.wrapSafeURL(remoteVersionURL);
+			localVersionsFile = getLocalFile(localVersionFilename);
 			try {
-				if (mightHaveInternet){
-					IOHelper.downloadFromInternet(versions, localVersionsFile);
+				localVersion = IOHelper.getFirstLineOfFile(localVersionsFile);
+			} catch (RuntimeFNFException fnfe) {
+				try {
+					if (mightHaveInternet){
+						IOHelper.downloadFromInternet(versions, localVersionsFile);
+					}
+				} catch (RuntimeIOException ioe) {
+					ioe.printStackTrace();
+					mightHaveInternet = false;
 				}
-			} catch (RuntimeIOException ioe) {
-				ioe.printStackTrace();
-				mightHaveInternet = false;
 			}
 		}
 		
 		String remoteVersion = "";
 		
-		for (String name : names) {
-			Resource res = getXLocation("FFmpeg", name);
+		for (String name : resources){
+			Resource res = getXLocation(pkg, name);
 			File resFile = new File(res.location).getAbsoluteFile();
 			processor.appendStatus("Checking for " + name + "...");
 			if (res.isInPath && resFile.exists() && !resFile.isDirectory() && resFile.canExecute()) {
 				processor.replaceStatus("Checking for " + name + "... found in PATH.");
 				continue;
-			} else if (mightHaveInternet && remoteVersion.equals("")) {
+			} else if (mightHaveInternet && !remoteVersionURL.isEmpty() && remoteVersion.equals("")) {
 				try {
 					remoteVersion = IOHelper.downloadFirstLineFromInternet(versions);
 				} catch (RuntimeIOException ioe) {
@@ -245,8 +255,8 @@ public class ResourcesManager {
 					mightHaveInternet = false;
 				}
 			}
-			if (mightHaveInternet && (localVersion.equals("") || !remoteVersion.equals(localVersion))) {
-				processor.appendStatus("New version of FFmpeg found. Will re-download from the internet.");
+			if (mightHaveInternet && !remoteVersionURL.isEmpty() && (localVersion.equals("") || !remoteVersion.equals(localVersion))) {
+				processor.appendStatus("New version of "+pkg+" found. Will re-download from the internet.");
 				needDL = true;
 				break;
 			}
@@ -254,7 +264,7 @@ public class ResourcesManager {
 				boolean did = resFile.delete();
 				if (!did) {
 					processor.appendStatus("Error: Bad " + name + ": " + resFile.getPath());
-					throw new ResourceNotFoundException("FFmpeg");
+					throw new ResourceNotFoundException(pkg);
 				} else {
 					processor.appendStatus("Found Bad " + name + ". Deleted.");
 					processor.appendStatus(" ");
@@ -271,35 +281,37 @@ public class ResourcesManager {
 		}
 		
 		if (!needDL){
-			processor.appendStatus("FFmpeg found.");
+			processor.appendStatus(pkg+" found.");
 			return mightHaveInternet;
 		}
 		
 		if (needDL && !mightHaveInternet) {
-			throw new ResourceNotFoundException("FFmpeg", "Need to FFmpeg dependencies from the internet, but it appears you have no internet access.");
+			throw new ResourceNotFoundException(pkg, "Need "+pkg+" dependencies from the internet, but it appears you have no internet access.");
 		}
 		
-		processor.appendStatus("Downloading FFmpeg from the internet...");
-		String ffProgName = getFFprogName();
-		if (ffProgName.isEmpty()){
-			processor.appendStatus("No prebuilt FFmpeg binaries for your platform found.");
-			processor.appendStatus("Please install ffmpeg, ffprobe, and ffplay into your PATH.");
-			throw new ResourceNotFoundException("FFmpeg");
+		processor.appendStatus("Downloading "+pkg+" from the internet...");
+		String execName = getExeDLPkg(pkg);
+		if (execName.isEmpty()){
+			processor.appendStatus("No prebuilt "+pkg+" binaries for your platform found.");
+			processor.appendStatus("Please install "+Arrays.toString(resources).replaceAll("[\\[\\]]", "")+" into your PATH.");
+			throw new ResourceNotFoundException(pkg);
 		}
-		File tempFile = getLocalFile(ffProgName);
-		URL website = IOHelper.wrapSafeURL(getFFprogDownloadLocation());
+		File tempFile = getLocalFile(execName);
+		URL website = IOHelper.wrapSafeURL(getExeDownloadLocation(pkg));
 		try {
 			IOHelper.downloadFromInternet(website, tempFile);
 		} catch (RuntimeIOException ioe) {
-			processor.appendStatus("Error downloading FFmpeg: ");
+			processor.appendStatus("Error downloading "+pkg+": ");
 			processor.processException(ioe);
-			throw new ResourceNotFoundException("FFmpeg", ioe);
+			throw new ResourceNotFoundException(pkg, ioe);
 		}
-		try {
-			IOHelper.downloadFromInternet(versions, localVersionsFile);
-		} catch (RuntimeIOException ioe){
-			ioe.printStackTrace();
-			// we don't actually care, but logging it is nice
+		if (!remoteVersionURL.isEmpty()){
+			try {
+				IOHelper.downloadFromInternet(versions, localVersionsFile);
+			} catch (RuntimeIOException ioe){
+				ioe.printStackTrace();
+				// we don't actually care, but logging it is nice
+			}
 		}
 		ZipInputStream zin = null;
 		try {
@@ -317,23 +329,17 @@ public class ResourcesManager {
 				processor.replaceStatus("Extracting " + name + "... extracted.");
 			}
 		} catch (IOException|RuntimeIOException e) {
-			throw new ResourceNotFoundException("FFmpeg", "Error downloading", e);
+			throw new ResourceNotFoundException(pkg, "Error downloading", e);
 		} finally {
 			IOHelper.closeQuietly(zin);
 			IOHelper.deleteTempFile(tempFile);
 		}
 		processor.appendStatus("Done downloading.");
 		return mightHaveInternet;
+		
 	}
 	
-	private boolean initializeSingletonPackage(String pkg, String fullname, String localfilename, String dlLocation, boolean isExe, boolean mightHaveInternet, StatusProcessor processor){
-		if (isExe){
-			Resource res = getXLocation(pkg, localfilename);
-			if (res.isInPath){
-				processor.appendStatus("Checking for "+fullname+"... found in PATH.");
-				return mightHaveInternet;
-			}
-		}
+	private boolean initializeSingletonPackage(String pkg, String fullname, String localfilename, String dlLocation, boolean mightHaveInternet, StatusProcessor processor){
 		boolean needDL = false;
 		File localfile = getLocalFile(localfilename);
 		processor.appendStatus("Checking for " + fullname + " ...");
@@ -382,7 +388,7 @@ public class ResourcesManager {
 		
 		boolean mightHaveInternet = true;
 		try {
-			mightHaveInternet = initializeFFmpeg(mightHaveInternet, processor);
+			mightHaveInternet = initializeMultiExePackage("FFmpeg", new String[]{"ffmpeg", "ffprobe", "ffplay"}, getFFmpegVersionsLocation(), "FFmpeg-versions.txt", mightHaveInternet, processor);
 			pkgs.add("FFmpeg");
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
@@ -392,7 +398,7 @@ public class ResourcesManager {
 		}
 		
 		try {
-			mightHaveInternet = initializeSingletonPackage("OpenSans", "Open Sans Semibold", "OpenSans-Semibold.ttf", getOpenSansDownloadLocation(), false, mightHaveInternet, processor);
+			mightHaveInternet = initializeSingletonPackage("OpenSans", "Open Sans Semibold", "OpenSans-Semibold.ttf", getOpenSansDownloadLocation(), mightHaveInternet, processor);
 			pkgs.add("OpenSans");
 			openSans = new Resource("OpenSans", "OpenSans-Semibold", getLocalFile("OpenSans-Semibold.ttf").getAbsolutePath(), false);
 		} catch (ResourceNotFoundException rnfe){
@@ -403,7 +409,7 @@ public class ResourcesManager {
 		}
 		
 		try {
-			mightHaveInternet = initializeSingletonPackage("gifsicle", "gifsicle", "gifsicle", "", true, mightHaveInternet, processor);
+			mightHaveInternet = initializeMultiExePackage("gifsicle", new String[]{"gifsicle"}, "", "", mightHaveInternet, processor);
 			pkgs.add("gifsicle");
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
