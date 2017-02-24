@@ -10,6 +10,7 @@ package thebombzen.tumblgififier.util;
 public class Tuple<E, F> {
 	private E e;
 	private F f;
+	
 	/**
 	 * Construct an ordered pair of two elements.
 	 * @param e the first component of the ordered pair
@@ -22,7 +23,6 @@ public class Tuple<E, F> {
 	
 	/**
 	 * This is the getter for the first component.
-	 * @return
 	 */
 	public E getFirst() {
 		return e;
@@ -30,7 +30,6 @@ public class Tuple<E, F> {
 	
 	/**
 	 * This is the setter for the first component.
-	 * @param e
 	 */
 	public void setFirst(E e) {
 		this.e = e;
@@ -38,7 +37,6 @@ public class Tuple<E, F> {
 	
 	/**
 	 * This is the getter for the second component.
-	 * @return
 	 */
 	public F getSecond() {
 		return f;
@@ -46,7 +44,6 @@ public class Tuple<E, F> {
 	
 	/**
 	 * This is the setter for the second component.
-	 * @param f
 	 */
 	public void setSecond(F f) {
 		this.f = f;
@@ -90,11 +87,11 @@ public class Tuple<E, F> {
 	}
 
 	/**
-	 * This method returns a string of the form "Tuple [e=E, f=F]" where E and F are the first and second components, respectively.
+	 * This method returns a string of the form "(e, f)" where E and F are the first and second components, respectively.
 	 */
 	@Override
 	public String toString() {
-		return "Tuple [e=" + e + ", f=" + f + "]";
+		return "(" + e + ", " + f + ")";
 	}
 	
 }
