@@ -482,33 +482,43 @@ public class MainPanel extends JPanel {
 		overlayTextField.setHorizontalAlignment(SwingConstants.RIGHT);
 		overlayTextField.setPreferredSize(new Dimension(200, 25));
 		overlayTextField.setMaximumSize(new Dimension(200, 25));
-		onDisable.add(overlayTextField);
+		if (ResourcesManager.loadedPkgs.contains("OpenSans")){
+			onDisable.add(overlayTextField);
+		} else {
+			overlayTextField.setText("No Open Sans. Disabled.");
+			overlayTextField.setEnabled(false);
+		}
+		
 		overlayTextSizeField = new JTextField();
 		overlayTextSizeField.setHorizontalAlignment(SwingConstants.RIGHT);
 		overlayTextSizeField.setPreferredSize(new Dimension(200, 25));
 		overlayTextSizeField.setMaximumSize(new Dimension(200, 25));
-		overlayTextSizeField.setText("96");
-		onDisable.add(overlayTextSizeField);
 		
-		overlayTextSizeField.addFocusListener(new FocusAdapter(){
-			
-			@Override
-			public void focusLost(FocusEvent e) {
-				try {
-					int size = Integer.parseInt(overlayTextSizeField.getText());
-					if (size >= 1) {
-						textSize = size;
-						updateStartScreenshot();
-						updateEndScreenshot();
-					} else {
+		if (ResourcesManager.loadedPkgs.contains("OpenSans")){
+			overlayTextSizeField.setText("96");
+			onDisable.add(overlayTextSizeField);
+			overlayTextSizeField.addFocusListener(new FocusAdapter(){
+				@Override
+				public void focusLost(FocusEvent e) {
+					try {
+						int size = Integer.parseInt(overlayTextSizeField.getText());
+						if (size >= 1) {
+							textSize = size;
+							updateStartScreenshot();
+							updateEndScreenshot();
+						} else {
+							overlayTextSizeField.setText(Integer.toString(textSize));
+						}
+					} catch (NumberFormatException nfe) {
 						overlayTextSizeField.setText(Integer.toString(textSize));
 					}
-				} catch (NumberFormatException nfe) {
-					overlayTextSizeField.setText(Integer.toString(textSize));
 				}
-			}
-		});
-		
+			});
+		} else {
+			overlayTextSizeField.setText("No Open Sans. Disabled.");
+			overlayTextSizeField.setEnabled(false);
+		}
+
 		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Overlay text:"), overlayTextField));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Overlay text size:"), overlayTextSizeField));
