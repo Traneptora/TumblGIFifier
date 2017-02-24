@@ -1,5 +1,8 @@
 package thebombzen.tumblgififier.util.io.resources;
 
+/**
+ * This class represents a resource provided by an external resource package.
+ */
 public class Resource {
 	
 	/**

@@ -174,7 +174,7 @@ public class MainFrame extends JFrame {
 		});
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
-		File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
+		File recentOpenFile = ResourcesManager.getResourcesManager().getLocalFile("recent_open.txt");
 		if (recentOpenFile.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {
 				mostRecentOpenDirectory = br.readLine();
@@ -267,7 +267,7 @@ public class MainFrame extends JFrame {
 				ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 					@Override
 					public void run() {
-						File recentOpenFile = ResourcesManager.getResourcesManager().getLocalResource("recent_open.txt");
+						File recentOpenFile = ResourcesManager.getResourcesManager().getLocalFile("recent_open.txt");
 						try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
 							recentOpenWriter.write(mostRecentOpenDirectory);
 							recentOpenWriter.close();

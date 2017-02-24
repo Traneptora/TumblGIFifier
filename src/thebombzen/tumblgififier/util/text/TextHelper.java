@@ -39,7 +39,7 @@ public final class TextHelper {
 	/**
 	 * This is the escaped filename of the Open Sans font file location.
 	 */
-	private String fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansFontFileLocation());
+	private String fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansResource().location);
 	
 	
 	private TextHelper() {

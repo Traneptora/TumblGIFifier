@@ -312,7 +312,7 @@ public class MainPanel extends JPanel {
 			if (!filename.toLowerCase().endsWith(".gif")) {
 				filename += ".gif";
 			}
-			File recentGIFFile = ResourcesManager.getResourcesManager().getLocalResource("recent_gif.txt");
+			File recentGIFFile = ResourcesManager.getResourcesManager().getLocalFile("recent_gif.txt");
 			mostRecentGIFDirectory = fileDialog.getDirectory();
 			try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)) {
 				recentGIFWriter.write(mostRecentGIFDirectory);
@@ -543,7 +543,7 @@ public class MainPanel extends JPanel {
 		scrollPane.setViewportView(statusArea);
 		scrollPanePanel.add(scrollPane, BorderLayout.CENTER);
 		leftPanel.add(scrollPanePanel);
-		File recentGIFFile = ResourcesManager.getResourcesManager().getLocalResource("recent_gif.txt");
+		File recentGIFFile = ResourcesManager.getResourcesManager().getLocalFile("recent_gif.txt");
 		if (recentGIFFile.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(recentGIFFile))) {
 				mostRecentGIFDirectory = br.readLine();

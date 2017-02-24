@@ -62,7 +62,7 @@ public final class TumblGIFifier {
 	 */
 	public static void main(final String[] args) throws IOException {
 		
-		File bothLogFile = ResourcesManager.getResourcesManager().getLocalResource("full_log.log");
+		File bothLogFile = ResourcesManager.getResourcesManager().getLocalFile("full_log.log");
 		
 		logFileOutputStream = new PrintStream(new SynchronizedOutputStream(new FileOutputStream(bothLogFile)), true, "UTF-8");
 		
@@ -119,7 +119,7 @@ public final class TumblGIFifier {
 		StatusProcessor processor = MainFrame.getMainFrame().getStatusProcessor();
 		int version;
 		try {
-			String versionString = IOHelper.getFirstLineOfFile(ResourcesManager.getResourcesManager().getLocalResource("version_identifier.txt"));
+			String versionString = IOHelper.getFirstLineOfFile(ResourcesManager.getResourcesManager().getLocalFile("version_identifier.txt"));
 			version = Integer.parseInt(versionString);
 			if (version <= 0){
 				throw new NumberFormatException();
@@ -152,8 +152,8 @@ public final class TumblGIFifier {
 			if (did){
 				processor.replaceStatus("Cleaning old temporary files... Done.");
 			}
-			File profileMedium = ResourcesManager.getResourcesManager().getLocalResource("Profile-Medium.otf");
-			File profileMediumXZ = ResourcesManager.getResourcesManager().getLocalResource("Profile-Medium.otf.xz");
+			File profileMedium = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf");
+			File profileMediumXZ = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf.xz");
 			if (profileMedium.exists() || profileMediumXZ.exists()){
 				processor.appendStatus("Cleaning old font files... ");
 				IOHelper.deleteTempFile(profileMedium);
@@ -164,8 +164,8 @@ public final class TumblGIFifier {
 		}
 		if (version < 2){
 			//processor.appendStatus("Executing Cleanup Routine: 2.");
-			File error = ResourcesManager.getResourcesManager().getLocalResource("error.log");
-			File output = ResourcesManager.getResourcesManager().getLocalResource("output.log");
+			File error = ResourcesManager.getResourcesManager().getLocalFile("error.log");
+			File output = ResourcesManager.getResourcesManager().getLocalFile("output.log");
 			
 			if (error.exists() || output.exists()){
 				processor.appendStatus("Cleaning output/error split...");
@@ -206,7 +206,7 @@ public final class TumblGIFifier {
 				}
 			}
 		}
-		try (Writer w = new OutputStreamWriter(new FileOutputStream(ResourcesManager.getResourcesManager().getLocalResource("version_identifier.txt")), Charset.forName("UTF-8"))){
+		try (Writer w = new OutputStreamWriter(new FileOutputStream(ResourcesManager.getResourcesManager().getLocalFile("version_identifier.txt")), Charset.forName("UTF-8"))){
 			w.write(Integer.toString(TumblGIFifier.VERSION_IDENTIFIER));
 		} catch (IOException ex) {
 			ex.printStackTrace();

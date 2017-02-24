@@ -25,6 +25,9 @@ import thebombzen.tumblgififier.util.io.RuntimeFNFException;
 import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 
+/**
+ * Framework for managing global external resources.
+ */
 public class ResourcesManager {
 	
 	private static ResourcesManager manager = new ResourcesManager();
@@ -53,10 +56,17 @@ public class ResourcesManager {
 		}
 	}
 	
+	/**
+	 * This is for the purpose of cleaning up the old application data location.
+	 * It should not be used outside of cleanup. 
+	 */
 	public static String getLegacyLocalResourceLocation() {
 		return new File(getLegacyApplicationDataLocation(), ".tumblgififier").getAbsolutePath();
 	}
 	
+	/**
+	 * Returns the singleton instance of this framework.
+	 */
 	public static ResourcesManager getResourcesManager() {
 		return manager;
 	}
@@ -81,9 +91,18 @@ public class ResourcesManager {
 	private Resource ffmpeg = null;
 	private Resource ffplay = null;
 	private Resource ffprobe = null;
+	private Resource openSans = null;
 	
-	public String getOpenSansFontFileLocation() {
-		return getLocalResource("OpenSans-Semibold.ttf").getAbsolutePath();
+	/**
+	 * Returns the Open Sans font file resource.
+	 * @return
+	 */
+	public Resource getOpenSansResource() {
+		return openSans;
+	}
+	
+	public File getLocalFile(String name){
+		return new File(this.getLocalResourceLocation(), name);
 	}
 	
 	private static String getFFprogName() {
@@ -100,8 +119,19 @@ public class ResourcesManager {
 	
 	private String localAppDataLocation = null;
 	
+	/**
+	 * This is a set of optional package names.
+	 */
 	public static final Set<String> optionalPkgs = new HashSet<>();
+	
+	/**
+	 * This is a set of required package names.
+	 */
 	public static final Set<String> requiredPkgs = new HashSet<>();
+	
+	/**
+	 * This is a set of all loaded package names, populated by the resource manager.
+	 */
 	public static final Set<String> loadedPkgs = new HashSet<>();
 	
 	static {
@@ -111,10 +141,6 @@ public class ResourcesManager {
 	
 	private ResourcesManager() {
 		
-	}
-	
-	public File getLocalResource(String name){
-		return new File(this.getLocalResourceLocation(), name);
 	}
 	
 	public Resource getFFmpegLocation() {
@@ -179,14 +205,14 @@ public class ResourcesManager {
 				return new Resource(pkg, x, new File(el, name).getPath(), true);
 			}
 		}
-		return new Resource(pkg, x, getLocalResource(name).getPath(), false);
+		return new Resource(pkg, x, new File(this.getLocalResourceLocation(), name).getAbsolutePath(), false);
 	}
 	
 	private boolean initializeFFmpeg(boolean mightHaveInternet, StatusProcessor processor) {
 		String[] names = {"ffmpeg", "ffprobe", "ffplay"};
 		boolean needDL = false;
 		URL versions = IOHelper.wrapSafeURL(getFFprogVersionsLocation());
-		File localVersionsFile = getLocalResource("ffprog-versions.txt");
+		File localVersionsFile = getLocalFile("ffprog-versions.txt");
 		String localVersion = "";
 		try {
 			localVersion = IOHelper.getFirstLineOfFile(localVersionsFile);
@@ -259,7 +285,7 @@ public class ResourcesManager {
 			processor.appendStatus("Please install ffmpeg, ffprobe, and ffplay into your PATH.");
 			throw new ResourceNotFoundException("FFmpeg");
 		}
-		File tempFile = new File(getLocalResourceLocation(), ffProgName);
+		File tempFile = getLocalFile(ffProgName);
 		URL website = IOHelper.wrapSafeURL(getFFprogDownloadLocation());
 		try {
 			IOHelper.downloadFromInternet(website, tempFile);
@@ -281,7 +307,7 @@ public class ResourcesManager {
 			while (null != (entry = zin.getNextEntry())) {
 				String name = entry.getName();
 				processor.appendStatus("Extracting " + name + "...");
-				File path = new File(getLocalResourceLocation(), name);
+				File path = getLocalFile(name);
 				if (path.exists()) {
 					path.delete();
 				}
@@ -301,7 +327,7 @@ public class ResourcesManager {
 	
 	private boolean initializeOpenSans(boolean mightHaveInternet, StatusProcessor processor){
 		boolean needDL = false;
-		File fontFile = new File(getOpenSansFontFileLocation());
+		File fontFile = getLocalFile("OpenSans-Semibold.ttf");
 		processor.appendStatus("Checking for Open Sans Semibold ...");
 		if (fontFile.exists() && !fontFile.isFile()) {
 			boolean did = fontFile.delete();
@@ -328,10 +354,9 @@ public class ResourcesManager {
 		}
 		
 		processor.appendStatus("Downloading Open Sans Semibold from the internet...");
-		File openSansFile = new File(getOpenSansFontFileLocation());
 		URL website = IOHelper.wrapSafeURL(getOpenSansDownloadLocation());
 		try {
-			IOHelper.downloadFromInternet(website, openSansFile);
+			IOHelper.downloadFromInternet(website, fontFile);
 		} catch (RuntimeIOException ioe) {
 			throw new ResourceNotFoundException("OpenSans", "Error downloading", ioe);
 		}
@@ -361,6 +386,7 @@ public class ResourcesManager {
 		try {
 			mightHaveInternet = initializeOpenSans(mightHaveInternet, processor);
 			pkgs.add("OpenSans");
+			openSans = new Resource("OpenSans", "OpenSans-Semibold", getLocalFile("OpenSans-Semibold.ttf").getAbsolutePath(), false);
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null){
