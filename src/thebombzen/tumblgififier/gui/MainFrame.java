@@ -16,7 +16,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -188,15 +189,17 @@ public class MainFrame extends JFrame {
 				TumblGIFifier.executeOldVersionCleanup();
 				try {
 					ResourcesManager.loadedPkgs.addAll(ResourcesManager.getResourcesManager().initializeResources(getStatusProcessor()));
-					ResourcesManager.requiredPkgs.removeAll(ResourcesManager.loadedPkgs);
-					if (!ResourcesManager.requiredPkgs.isEmpty()){
+					List<String> rpkgs = new ArrayList<>(ResourcesManager.requiredPkgs);
+					rpkgs.removeAll(ResourcesManager.loadedPkgs);
+					if (!rpkgs.isEmpty()){
 						getStatusProcessor().appendStatus("Unable to load all required resources.");
-						for (String pkg : ResourcesManager.requiredPkgs){
+						for (String pkg : rpkgs){
 							getStatusProcessor().appendStatus("Missing: " + pkg);
 						}
 					} else {
-						ResourcesManager.optionalPkgs.removeAll(ResourcesManager.loadedPkgs);
-						for (String pkg : ResourcesManager.optionalPkgs){
+						List<String> opkgs = new ArrayList<>(ResourcesManager.optionalPkgs);
+						opkgs.removeAll(ResourcesManager.loadedPkgs);
+						for (String pkg : opkgs){
 							switch (pkg){
 							case "OpenSans":
 								getStatusProcessor().appendStatus("Missing Open Sans. Text overlay is disabled.");
