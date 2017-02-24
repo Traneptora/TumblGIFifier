@@ -263,8 +263,7 @@ public class ResourcesManager {
 			if (resFile.exists() && (resFile.isDirectory() || !resFile.canExecute())) {
 				boolean did = resFile.delete();
 				if (!did) {
-					processor.appendStatus("Error: Bad " + name + ": " + resFile.getPath());
-					throw new ResourceNotFoundException(pkg);
+					throw new ResourceNotFoundException(pkg, "Error: Bad " + name + ": " + resFile.getPath());
 				} else {
 					processor.appendStatus("Found Bad " + name + ". Deleted.");
 					processor.appendStatus(" ");
@@ -292,18 +291,15 @@ public class ResourcesManager {
 		processor.appendStatus("Downloading "+pkg+" from the internet...");
 		String execName = getExeDLPkg(pkg);
 		if (execName.isEmpty()){
-			processor.appendStatus("No prebuilt "+pkg+" binaries for your platform found.");
-			processor.appendStatus("Please install "+Arrays.toString(resources).replaceAll("[\\[\\]]", "")+" into your PATH.");
-			throw new ResourceNotFoundException(pkg);
+			throw new ResourceNotFoundException(pkg, "No prebuilt "+pkg+" binaries for your platform found.\nPlease install "+Arrays.toString(resources).replaceAll("[\\[\\]]", "")+" into your PATH.");
 		}
 		File tempFile = getLocalFile(execName);
 		URL website = IOHelper.wrapSafeURL(getExeDownloadLocation(pkg));
 		try {
 			IOHelper.downloadFromInternet(website, tempFile);
 		} catch (RuntimeIOException ioe) {
-			processor.appendStatus("Error downloading "+pkg+": ");
-			processor.processException(ioe);
-			throw new ResourceNotFoundException(pkg, ioe);
+			ioe.printStackTrace();
+			throw new ResourceNotFoundException(pkg, "Error downloading "+pkg+": ", ioe);
 		}
 		if (!remoteVersionURL.isEmpty()){
 			try {
