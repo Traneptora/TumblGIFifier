@@ -270,7 +270,7 @@ public class ResourcesManager {
 		}
 		
 		if (!needDL){
-			processor.appendStatus("FFmpeg found");
+			processor.appendStatus("FFmpeg found.");
 			return mightHaveInternet;
 		}
 		
