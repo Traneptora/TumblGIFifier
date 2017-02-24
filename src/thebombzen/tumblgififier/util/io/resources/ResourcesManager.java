@@ -136,7 +136,7 @@ public class ResourcesManager {
 	
 	static {
 		ResourcesManager.requiredPkgs.add("FFmpeg");
-		ResourcesManager.requiredPkgs.add("OpenSans");
+		ResourcesManager.optionalPkgs.add("OpenSans");
 	}
 	
 	private ResourcesManager() {
