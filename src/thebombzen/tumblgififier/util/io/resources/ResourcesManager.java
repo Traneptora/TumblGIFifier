@@ -85,7 +85,7 @@ public class ResourcesManager {
 	}
 	
 	private static String getOpenSansDownloadLocation() {
-		return "https://thebombzen.github.io/TumblGIFifier/resources/ffprog/OpenSans-Semibold.ttf.xz";
+		return "https://thebombzen.github.io/TumblGIFifier/resources/OpenSans-Semibold.ttf.xz";
 	}
 	
 	
