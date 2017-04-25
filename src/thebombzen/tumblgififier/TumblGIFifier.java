@@ -35,7 +35,7 @@ public final class TumblGIFifier {
 	 * For example, version identifiers earlier than 1 littered the temp directory with temporary files. Major changes:
 	 * 
 	 * 0 - Initial
-	 * 1 - No longer littler the temp directory with persistent temp files
+	 * 1 - No longer litter the temp directory with persistent temp files
 	 * 2 - No longer split the output/error stream.
 	 * 3 - Moved the local directory from ~/.tumblgififier to ~/.config/tumblgififier
 	 * 
