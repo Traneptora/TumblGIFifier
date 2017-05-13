@@ -208,7 +208,7 @@ public class VideoProcessor {
 			scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-i",
 							this.mkvFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi",
-							"paletteuse=dither=bayer:bayer_scale=4", "-c", "gif", "-f", "gif", this.gifFile.getAbsolutePath()));
+							"paletteuse=dither=bayer:bayer_scale=3", "-c", "gif", "-f", "gif", this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating GIF... Error.");
