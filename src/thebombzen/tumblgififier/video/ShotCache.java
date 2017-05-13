@@ -5,15 +5,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import javax.imageio.ImageIO;
-
+import thebombzen.tumblgififier.gui.ImagePanel;
+import thebombzen.tumblgififier.util.Callback;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.io.IOHelper;
+import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
@@ -40,104 +37,60 @@ public class ShotCache {
 	private Map<Integer, File> shotFiles = new HashMap<>();
 	private Map<Integer, File> endShotFiles = new HashMap<>();
 	
-	public Future<BufferedImage> screenShot(StatusProcessor processor, String overlay, int frameNumber, int overlaySize, final boolean end) {
-		return screenShot(processor, overlay, frameNumber, scan.getWidth(), scan.getHeight(), overlaySize, end);
+	public void screenShot(Callback<BufferedImage> callback, ImagePanel parentPanel, StatusProcessor processor, String overlay, int frameNumber, int overlaySize, final boolean end) {
+		screenShot(callback, parentPanel, processor, overlay, frameNumber, scan.getWidth(), scan.getHeight(), overlaySize, end);
 	}
 	
-	public Future<BufferedImage> screenShot(StatusProcessor processor, String overlay, int frameNumber, double scale, int overlaySize, final boolean end) {
-		return screenShot(processor, overlay, frameNumber, (int) (scan.getWidth() * scale), (int) (scan.getHeight() * scale), overlaySize, end);
+	public void screenShot(Callback<BufferedImage> callback, ImagePanel parentPanel, StatusProcessor processor, String overlay, int frameNumber, double scale, int overlaySize, final boolean end) {
+		screenShot(callback, parentPanel, processor, overlay, frameNumber, (int) (scan.getWidth() * scale), (int) (scan.getHeight() * scale), overlaySize, end);
 	}
 	
-	public Future<BufferedImage> screenShot(final StatusProcessor processor, final String overlay, int frameNumber,
+	public void screenShot(final Callback<BufferedImage> callback, final ImagePanel parentPanel, final StatusProcessor processor, final String overlay, int frameNumber,
 			final int shotWidth, final int shotHeight, final int overlaySize, final boolean end) {
 		final Map<Integer, File> shotFiles = end ? this.endShotFiles : this.shotFiles;
-		double time = frameNumber * 0.25D;
+		double time = frameNumber * scan.getShotDuration();
 		if (time < 0 || time > scan.getDuration()) {
 			throw new IllegalArgumentException("Time out of bounds!");
 		}
-		if (time + 0.25D > scan.getDuration()){
-			frameNumber--;
-			time -= 0.25D;
-		}
-		final int frameNumberF = frameNumber;
-		Future<BufferedImage> future = new Future<BufferedImage>(){
-			
-			BufferedImage image = null;
-			
-			@Override
-			public boolean cancel(boolean cancel) {
-				return false;
+		final int frameNumberF = time + scan.getShotDuration() > scan.getDuration() ? frameNumber - 1 : frameNumber;
+		if (shotFiles.get(frameNumberF) == null) {
+			final boolean playing = parentPanel.isPlaying();
+			if (playing){
+				parentPanel.stop();
 			}
-			
-			@Override
-			public BufferedImage get() throws InterruptedException, ExecutionException {
-				if (image == null) {
-					while (!isDone()) {
-						Thread.sleep(10);
-					}
-					try {
-						image = ImageIO.read(shotFiles.get(frameNumberF));
-					} catch (IOException ioe) {
-						return null;
-					}
-				}
-				return image;
-			}
-			
-			@Override
-			public BufferedImage get(long timeout, TimeUnit unit)
-					throws InterruptedException, ExecutionException, TimeoutException {
-				long milis = 0;
-				if (image == null) {
-					while (!isDone()) {
-						Thread.sleep(10);
-						milis += 10;
-						if (milis > unit.toMillis(timeout)) {
-							throw new TimeoutException();
-						}
-					}
-					try {
-						image = ImageIO.read(shotFiles.get(frameNumberF));
-					} catch (IOException ioe) {
-						return null;
-					}
-				}
-				return image;
-			}
-			
-			@Override
-			public boolean isCancelled() {
-				return false;
-			}
-			
-			@Override
-			public boolean isDone() {
-				return shotFiles.get(frameNumberF) != null;
-			}
-			
-		};
-		if (shotFiles.get(frameNumber) == null) {
 			ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-				
 				@Override
 				public void run() {
 					try {
 						screenShot0(overlay, frameNumberF - 8, shotWidth, shotHeight, overlaySize, 17, end);
+						callback.call(ImageIO.read(shotFiles.get(frameNumberF)));
+						if (playing){
+							if (parentPanel.isPlaying()){
+								parentPanel.stop();
+							} else {
+								parentPanel.play();
+							}
+						}
 					} catch (IOException ex) {
 						processor.processException(ex);
 					}
 				}
 			});
+		} else {
+			try {
+				callback.call(ImageIO.read(shotFiles.get(frameNumberF)));
+			} catch (IOException ioe){
+				throw new RuntimeIOException(ioe);
+			}
 		}
-		return future;
 	}
 
 	private void screenShot0(String overlay, int frameNumber, int shotWidth, int shotHeight, int overlaySize, int frames, boolean end) throws IOException {
 		if (frameNumber < 0) {
 			frameNumber = 0;
 		}
-		if (frameNumber + frames > scan.getDuration() * 4D) {
-			frames = (int)(scan.getDuration() * 4D - frameNumber); 
+		if (frameNumber + frames > scan.getDuration() * scan.getCachePrecision()) {
+			frames = (int)(scan.getDuration() * scan.getCachePrecision() - frameNumber); 
 		}
 		final Map<Integer, File> shotFiles = end ? this.endShotFiles : this.shotFiles;
 		File shotFile = IOHelper.createTempFile();
@@ -145,8 +98,8 @@ public class ShotCache {
 		IOHelper.deleteTempFile(shotFile);
 		Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
-		double ffmpegStartTime = frameNumber / 4D - ( end ? scan.getFrameDuration() : 0);
-		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=fps=4:round=up" + ":start_time=" + ffmpegStartTime, "format=rgb24", shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
+		double ffmpegStartTime = frameNumber * scan.getShotDuration() - ( end ? scan.getFrameDuration() : 0);
+		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=fps=" + scan.getCachePrecision() + ":start_time=" + ffmpegStartTime, "format=rgb24", shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		
 		ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(ffmpegStartTime),
 				"-copyts", "-i", scan.getLocation(), "-map", "0:v", "-vf",

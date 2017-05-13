@@ -162,6 +162,15 @@ public class VideoScan {
 		return scanFramerate;
 	}
 	
+	public int getCachePrecision(){
+		int precision = (int)(Math.round(getFramerate() / 6D));
+		return precision < 4 ? 4 : precision;
+	}
+	
+	public double getShotDuration(){
+		return 1D / getCachePrecision(); 
+	}
+	
 	public int getHeight() {
 		return scanHeight;
 	}

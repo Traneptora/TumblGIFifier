@@ -37,7 +37,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
+import thebombzen.tumblgififier.util.Callback;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.Tuple;
 import thebombzen.tumblgififier.util.io.IOHelper;
@@ -97,13 +97,8 @@ public class MainPanel extends JPanel {
 		this.startCacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
 		this.endCacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
 		setupLayout();
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			@Override
-			public void run(){
-				updateStartScreenshot();
-				updateEndScreenshot();
-			}
-		});
+		updateStartScreenshot();
+		updateEndScreenshot();
 
 		if (ResourcesManager.loadedPkgs.contains("OpenSans")){
 			ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
@@ -152,8 +147,8 @@ public class MainPanel extends JPanel {
 			minSizeBytes = 0;
 		}
 		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
-		final double clipStart = startSlider.getValue() * 0.25D;
-		final double clipEnd = endSlider.getValue() * 0.25D;
+		final double clipStart = startSlider.getValue() * scan.getShotDuration();
+		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
 			@Override
@@ -189,8 +184,8 @@ public class MainPanel extends JPanel {
 		
 		final boolean shouldHalfFramerate = this.cutFramerateInHalfCheckBox.isSelected();
 		
-		final double clipStart = startSlider.getValue() * 0.25D;
-		final double clipEnd = endSlider.getValue() * 0.25D;
+		final double clipStart = startSlider.getValue() * scan.getShotDuration();
+		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
 		final Resource ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
@@ -221,8 +216,8 @@ public class MainPanel extends JPanel {
 		
 		MainFrame.getMainFrame().setBusy(true);
 		
-		final double clipStart = startSlider.getValue() * 0.25D;
-		final double clipEnd = endSlider.getValue() * 0.25D;
+		final double clipStart = startSlider.getValue() * scan.getShotDuration();
+		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
 		final boolean shouldHalfFramerate = this.cutFramerateInHalfCheckBox.isSelected();
 		
 		final Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
@@ -275,8 +270,8 @@ public class MainPanel extends JPanel {
 		if (maxSizeCheckBox.isSelected()) {
 			final int maxSizeBytes = 1000 * maxSize;
 			final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
-			final double clipStart = startSlider.getValue() * 0.25D;
-			final double clipEnd = endSlider.getValue() * 0.25D;
+			final double clipStart = startSlider.getValue() * scan.getShotDuration();
+			final double clipEnd = endSlider.getValue() * scan.getShotDuration();
 			double newWidth = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate()
 					* (halveFramerate ? 0.5D : 1D) * (clipEnd - clipStart) / (2D * maxSizeBytes));
 			if (newWidth < 300D) {
@@ -338,13 +333,23 @@ public class MainPanel extends JPanel {
 		horizontalBox.add(leftPanel);
 		horizontalBox.add(Box.createHorizontalStrut(10));
 		Box rightBox = Box.createVerticalBox();
-		previewImageStartPanel = new ImagePanel(null);
+		previewImageStartPanel = new ImagePanel(null, new Callback<Object>(){
+			@Override
+			public void call(Object t) {
+				int value = startSlider.getValue();
+				if (value < endSlider.getValue()) {
+					startSlider.setValue(value + 1);
+				} else {
+					previewImageStartPanel.stop();
+				}
+			}
+		});
 		previewImageStartPanel.setPreferredSize(new Dimension(480, 270));
 		rightBox.add(previewImageStartPanel);
 		rightBox.add(Box.createVerticalStrut(10));
 		startSlider = new JSlider();
 		startSlider.setMinimum(0);
-		startSlider.setMaximum((int) (scan.getDuration() * 4D));
+		startSlider.setMaximum((int) (scan.getDuration() * scan.getCachePrecision()));
 		startSlider.setValue(startSlider.getMaximum() / 3);
 		rightBox.add(startSlider);
 		
@@ -382,7 +387,7 @@ public class MainPanel extends JPanel {
 		
 		endSlider = new JSlider();
 		endSlider.setMinimum(0);
-		endSlider.setMaximum((int) (scan.getDuration() * 4D));
+		endSlider.setMaximum((int) (scan.getDuration() * scan.getCachePrecision()));
 		endSlider.setValue(endSlider.getMaximum() * 2 / 3);
 		rightBox.add(endSlider);
 		
@@ -395,8 +400,12 @@ public class MainPanel extends JPanel {
 				if (startSlider.getValue() > endSlider.getValue()) {
 					startSlider.setValue(endSlider.getValue());
 				}
-				if (!startSlider.getValueIsAdjusting() && videoProcessor != null) {
-					updateStartScreenshot();
+				if (!startSlider.getValueIsAdjusting()) {
+					if (videoProcessor != null){
+						updateStartScreenshot();
+					}
+				} else {
+					previewImageStartPanel.stop();
 				}
 				
 			}
@@ -409,14 +418,28 @@ public class MainPanel extends JPanel {
 				if (endSlider.getValue() < startSlider.getValue()) {
 					endSlider.setValue(startSlider.getValue());
 				}
-				if (!endSlider.getValueIsAdjusting() && videoProcessor != null) {
-					updateEndScreenshot();
+				if (!endSlider.getValueIsAdjusting()) {
+					if (videoProcessor != null){
+						updateEndScreenshot();
+					}
+				} else {
+					previewImageEndPanel.stop();
 				}
 			}
 		});
 		
 		rightBox.add(Box.createVerticalStrut(10));
-		previewImageEndPanel = new ImagePanel(null);
+		previewImageEndPanel = new ImagePanel(null, new Callback<Object>(){
+			@Override
+			public void call(Object t) {
+				int value = endSlider.getValue();
+				if (value < endSlider.getMaximum()) {
+					endSlider.setValue(value + 1);
+				} else {
+					previewImageEndPanel.stop();
+				}
+			}
+		});
 		previewImageEndPanel.setPreferredSize(new Dimension(480, 270));
 		rightBox.add(previewImageEndPanel);
 		horizontalBox.add(rightBox);
@@ -564,64 +587,58 @@ public class MainPanel extends JPanel {
 		}
 	}
 	
+	/**
+	 * This method may be executed from any thread asynchronously.
+	 */
 	private void updateEndScreenshot() {
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			@Override
-			public void run() {
-				try {
-					Future<BufferedImage> future = endCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize, true);
-					while (!future.isDone()){
-						EventQueue.invokeLater(new Runnable(){
-							@Override
-							public void run(){
-								endSlider.setEnabled(false);
-							}
-						});
-						previewImageEndPanel.setImage(null);
-						Thread.sleep(10);
+		final Callback<BufferedImage> callback = new Callback<BufferedImage>(){
+			public void call(BufferedImage image){
+				previewImageEndPanel.setImage(image);
+				EventQueue.invokeLater(new Runnable(){
+					@Override
+					public void run(){
+						endSlider.requestFocusInWindow();
 					}
-					previewImageEndPanel.setImage(future.get());
-					EventQueue.invokeLater(new Runnable(){
-						@Override
-						public void run(){
-							endSlider.setEnabled(true);
-							endSlider.requestFocusInWindow();
-						}
-					});
-				} catch (InterruptedException | ExecutionException ex) {
-					getStatusProcessor().processException(ex);
-				}
+				});
+			}
+		};
+		EventQueue.invokeLater(new Runnable(){
+			@Override
+			public void run(){
+				endSlider.requestFocusInWindow();
+			}
+		});
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+			public void run(){
+				endCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageEndPanel, getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize, true);
 			}
 		});
 	}
 	
+	/**
+	 * This method may be executed from any thread asynchronously.
+	 */
 	private void updateStartScreenshot() {
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			@Override
-			public void run() {
-				try {
-					Future<BufferedImage> future = startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, false);
-					while (!future.isDone()){
-						EventQueue.invokeLater(new Runnable(){
-							@Override
-							public void run(){
-								startSlider.setEnabled(false);
-							}
-						});
-						previewImageStartPanel.setImage(null);
-						Thread.sleep(10);
+		final Callback<BufferedImage> callback = new Callback<BufferedImage>(){
+			public void call(BufferedImage image){
+				previewImageStartPanel.setImage(image);
+				EventQueue.invokeLater(new Runnable(){
+					@Override
+					public void run(){
+						startSlider.requestFocusInWindow();
 					}
-					previewImageStartPanel.setImage(future.get());
-					EventQueue.invokeLater(new Runnable(){
-						@Override
-						public void run(){
-							startSlider.setEnabled(true);
-							startSlider.requestFocusInWindow();
-						}
-					});
-				} catch (InterruptedException | ExecutionException ex) {
-					getStatusProcessor().processException(ex);
-				}
+				});
+			}
+		};
+		EventQueue.invokeLater(new Runnable(){
+			@Override
+			public void run(){
+				startSlider.requestFocusInWindow();
+			}
+		});
+		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+			public void run(){
+				startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageStartPanel, getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, true);
 			}
 		});
 	}

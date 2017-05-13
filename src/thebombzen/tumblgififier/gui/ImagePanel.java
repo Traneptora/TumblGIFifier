@@ -2,8 +2,15 @@ package thebombzen.tumblgififier.gui;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.swing.JPanel;
+import thebombzen.tumblgififier.util.Callback;
+import thebombzen.tumblgififier.util.ConcurrenceManager;
 
 public class ImagePanel extends JPanel {
 	
@@ -11,8 +18,51 @@ public class ImagePanel extends JPanel {
 	
 	private BufferedImage image;
 	
-	public ImagePanel(BufferedImage image) {
+	private volatile boolean playing = false;
+	private volatile Future<?> playClock = null;
+	private final Callback<?> playCallback;
+	
+	public ImagePanel(BufferedImage image, final Callback<?> playCallback) {
 		this.image = image;
+		this.playCallback = playCallback;
+		if (playCallback != null){
+			this.addMouseListener(new MouseAdapter(){
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					if (e.getClickCount() == 2){
+						if (!playing){
+							play();
+						} else {
+							stop();
+						}
+					}
+				}
+			});
+		}
+	}
+	
+	public boolean isPlaying() {
+		return playing;
+	}
+	
+	public void play(){
+		playing = true;
+		if (playClock != null && !playClock.isCancelled()){
+			playClock.cancel(false);
+		}
+		playClock = ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
+			public void run(){
+				playCallback.call(null);
+			}
+		}, 100, TimeUnit.MILLISECONDS);
+	}
+	
+	public void stop(){
+		playing = false;
+		if (playClock != null){
+			playClock.cancel(false);
+			playClock = null;
+		}
 	}
 	
 	public BufferedImage getImage() {
