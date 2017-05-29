@@ -17,9 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
 import org.tukaani.xz.XZInputStream;
-
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.RuntimeFNFException;

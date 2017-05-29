@@ -12,7 +12,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.util.io.IOHelper;
