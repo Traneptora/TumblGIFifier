@@ -25,6 +25,7 @@ public class ImagePanel extends JPanel {
 	public ImagePanel(BufferedImage image, final Callback<?> playCallback) {
 		this.image = image;
 		this.playCallback = playCallback;
+		/* Disabled for 0.7.2 release
 		if (playCallback != null){
 			this.addMouseListener(new MouseAdapter(){
 				@Override
@@ -39,6 +40,7 @@ public class ImagePanel extends JPanel {
 				}
 			});
 		}
+		*/
 	}
 	
 	public boolean isPlaying() {
