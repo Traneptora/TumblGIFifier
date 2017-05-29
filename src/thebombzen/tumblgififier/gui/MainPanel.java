@@ -598,6 +598,7 @@ public class MainPanel extends JPanel {
 					@Override
 					public void run(){
 						endSlider.requestFocusInWindow();
+						endSlider.setEnabled(true);
 					}
 				});
 			}
@@ -606,6 +607,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run(){
 				endSlider.requestFocusInWindow();
+				endSlider.setEnabled(false);
 			}
 		});
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
@@ -626,6 +628,7 @@ public class MainPanel extends JPanel {
 					@Override
 					public void run(){
 						startSlider.requestFocusInWindow();
+						startSlider.setEnabled(true);
 					}
 				});
 			}
@@ -634,6 +637,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run(){
 				startSlider.requestFocusInWindow();
+				startSlider.setEnabled(false);
 			}
 		});
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
