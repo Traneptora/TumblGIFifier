@@ -190,7 +190,7 @@ public class VideoProcessor {
 		
 		try {
 			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-i",
-					this.mkvFile.getAbsolutePath(), "-vf", "palettegen=max_colors=96", "-c", "png", "-f", "image2",
+					this.mkvFile.getAbsolutePath(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
 					this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
