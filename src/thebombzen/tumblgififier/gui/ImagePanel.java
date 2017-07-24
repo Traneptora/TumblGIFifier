@@ -2,6 +2,8 @@ package thebombzen.tumblgififier.gui;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
