@@ -31,18 +31,6 @@ public class ResourcesManager {
 	
 	private static ResourcesManager manager = new ResourcesManager();
 	
-	private static String getApplicationDataLocation() {
-		String name = System.getProperty("os.name");
-		if (name.toLowerCase().contains("windows")) {
-			return System.getenv("appdata");
-		} else if (name.toLowerCase().contains("mac") || name.toLowerCase().contains("osx")
-				|| name.toLowerCase().contains("os x")) {
-			return System.getProperty("user.home") + "/Library/Application Support";
-		} else {
-			return System.getProperty("user.home") + "/.config";
-		}
-	}
-	
 	private static String getLegacyApplicationDataLocation(){
 		String name = System.getProperty("os.name");
 		if (name.toLowerCase().contains("windows")) {
@@ -187,7 +175,7 @@ public class ResourcesManager {
 			return localAppDataLocation;
 		}
 		try {
-			String appData = getApplicationDataLocation();
+			String appData = LibraryLoader.getApplicationDataLocation();
 			File localAppDataFile = new File(appData, "tumblgififier").getCanonicalFile();
 			if (localAppDataFile.exists() && !localAppDataFile.isDirectory()) {
 				localAppDataFile.delete();

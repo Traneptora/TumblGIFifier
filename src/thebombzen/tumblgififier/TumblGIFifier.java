@@ -20,6 +20,7 @@ import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.SynchronizedOutputStream;
 import thebombzen.tumblgififier.util.io.TeeOutputStream;
+import thebombzen.tumblgififier.util.io.resources.LibraryLoader;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 
@@ -61,6 +62,8 @@ public final class TumblGIFifier {
 	 * Run our program.
 	 */
 	public static void main(final String[] args) throws IOException {
+		
+		LibraryLoader.getLibraryLoader().extractExternalLibraries();
 		
 		File bothLogFile = ResourcesManager.getResourcesManager().getLocalFile("full_log.log");
 		
