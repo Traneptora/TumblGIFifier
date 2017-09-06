@@ -71,19 +71,19 @@ public class ResourcesManager {
 	}
 	
 	private static String getLatestDownloadLocation() {
-		return "https://thebombzen.github.io/TumblGIFifier/resources/latest.txt";
+		return "https://thebombzen.com/TumblGIFifier/resources/latest.txt";
 	}
 	
 	private static String getFFmpegVersionsLocation() {
-		return "https://thebombzen.github.io/TumblGIFifier/resources/FFmpeg/FFmpeg-versions.txt";
+		return "https://thebombzen.com/TumblGIFifier/resources/FFmpeg/FFmpeg-versions.txt";
 	}
 	
 	private static String getExeDownloadLocation(String pkg) {
-		return "https://thebombzen.github.io/TumblGIFifier/resources/" + pkg + "/" + getExeDLPkg(pkg);
+		return "https://thebombzen.com/TumblGIFifier/resources/" + pkg + "/" + getExeDLPkg(pkg);
 	}
 	
 	private static String getOpenSansDownloadLocation() {
-		return "https://thebombzen.github.io/TumblGIFifier/resources/OpenSans-Semibold.ttf.xz";
+		return "https://thebombzen.com/TumblGIFifier/resources/OpenSans-Semibold.ttf.xz";
 	}
 	
 	
