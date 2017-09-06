@@ -1,3 +1,12 @@
 [submodule "xz-java"]
 	path = xz-java
 	url = http://git.tukaani.org/xz-java.git
+[submodule "commons-compress"]
+	path = commons-compress
+	url = https://git-wip-us.apache.org/repos/asf/commons-compress.git
+[submodule "objenesis"]
+	path = objenesis
+	url = https://github.com/easymock/objenesis
+[submodule "brotli"]
+	path = brotli
+	url = https://github.com/google/brotli
