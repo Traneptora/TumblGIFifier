@@ -105,6 +105,7 @@ public final class LibraryLoader {
 							addToClasspath(lib);
 							continue;
 						}
+						System.out.println("Extracting " + fname + ".");
 						fout = new FileOutputStream(new File(libs, fname));
 						FileChannel channel = fout.getChannel();
 						in = zipFile.getInputStream(entry);
