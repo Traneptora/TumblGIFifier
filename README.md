@@ -2,14 +2,14 @@
 Automatically Creates GIFs from Videos sized to Tumblr's liking.
 Tumblr has a maximum GIF size of 2.0 MB, and TumblGIFifier will automatically resize it as close as it can to that threshold.
 
-The main website and description for TumblGIFifier is at the Github Pages page: [https://thebombzen.github.io/TumblGIFifier/](https://thebombzen.github.io/TumblGIFifier/)
+The main website and description for TumblGIFifier is at the Github Pages page: [https://thebombzen.com/TumblGIFifier/](https://thebombzen.com/TumblGIFifier/)
 
 **Warning:**
 TumblGIFifier is still in its early stages of development. The UI is a bit clunky and there *WILL* be undiscovered bugs.
 
 ## Instructions
 
-See [https://thebombzen.github.io/TumblGIFifier/](https://thebombzen.github.io/TumblGIFifier/) for details.
+See [https://thebombzen.com/TumblGIFifier/](https://thebombzen.com/TumblGIFifier/) for details.
 
 ## Issues
 
@@ -23,7 +23,7 @@ Submit a bug report or pull request here to submit bugs/patches. Alternatively, 
 
 ## Compilation From Source
 
-See [https://thebombzen.github.io/TumblGIFifier/](https://thebombzen.github.io/TumblGIFifier/) for details.
+See [https://thebombzen.com/TumblGIFifier/](https://thebombzen.com/TumblGIFifier/) for details.
 
 ## Contributing
 
