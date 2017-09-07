@@ -36,7 +36,7 @@ public class AboutDialog extends JDialog {
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("with included public domain XZ Utils")));
 		box.add(Box.createVerticalStrut(10));
 		box.add(GUIHelper
-				.wrapLeftAligned(new JLabel("See https://thebombzen.github.io/TumblGIFifier/ for details.")));
+				.wrapLeftAligned(new JLabel("See https://thebombzen.com/TumblGIFifier/ for details.")));
 		box.add(Box.createVerticalStrut(10));
 		final JButton checkForUpdates = new JButton("Check for updates");
 		final JButton close = new JButton("Close");
