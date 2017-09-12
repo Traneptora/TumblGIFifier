@@ -36,8 +36,6 @@ name="TumblGIFifier" default="main" basedir=".">
 
 	<!-- jar it, and declares the ext libraries in manifest.mf file -->
 	<target name="jar" depends="compile, copy-dependencies" description="package, output to JAR">
-		<echo message="classpath.name : ${classpath.name} " />
-
 		<mkdir dir="${dist.dir}" />
 
 		<jar jarfile="${dist.dir}/${projectName}.jar" zip64Mode="as-needed" basedir="${build.dir}">
