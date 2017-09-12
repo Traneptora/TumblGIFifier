@@ -16,7 +16,6 @@ import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
-import thebombzen.tumblgififier.util.text.StatusProcessorArea;
 import thebombzen.tumblgififier.util.text.StatusProcessorWriter;
 import thebombzen.tumblgififier.util.text.TextHelper;
 
@@ -79,7 +78,7 @@ public class VideoProcessor {
 		this.statusProcessor.appendStatus(sb.toString());
 	}
 	
-	public boolean convert(String overlay, StatusProcessorArea outputProcessor, String path, double startTime,
+	public boolean convert(String overlay, StatusProcessor outputProcessor, String path, double startTime,
 			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		MainFrame.getMainFrame().setBusy(true);
 		boolean success = true;
@@ -96,7 +95,7 @@ public class VideoProcessor {
 		return success;
 	}
 	
-	private void convert0(String overlay, StatusProcessorArea outputProcessor, String path, double startTime,
+	private void convert0(String overlay, StatusProcessor outputProcessor, String path, double startTime,
 			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		this.statusProcessor = outputProcessor;
 		this.clipStartTime = startTime;
