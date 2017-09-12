@@ -39,7 +39,6 @@ name="TumblGIFifier" default="main" basedir=".">
 		<echo message="classpath.name : ${classpath.name} " />
 
 		<mkdir dir="${dist.dir}" />
-		<mkdir dir="${dist.lib.dir}" />
 
 		<jar jarfile="${dist.dir}/${projectName}.jar" zip64Mode="as-needed" basedir="${build.dir}">
 			<manifest>
