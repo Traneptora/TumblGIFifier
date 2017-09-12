@@ -52,7 +52,7 @@ name="TumblGIFifier" default="main" basedir=".">
 		<mkdir dir="${dist.dir}" />
 		<mkdir dir="${dist.lib.dir}" />
 
-		<jar jarfile="${dist.dir}/${projectName}.jar" basedir="${build.dir}">
+		<jar jarfile="${dist.dir}/${projectName}.jar" zip64Mode="as-needed" basedir="${build.dir}">
 			<manifest>
 				<attribute name="Main-Class" value="${main-class}" />
 				<attribute name="Class-Path" value="${classpath.name}" />
