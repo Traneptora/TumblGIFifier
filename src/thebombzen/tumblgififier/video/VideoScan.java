@@ -162,7 +162,7 @@ public class VideoScan {
 	}
 	
 	public int getCachePrecision(){
-		int precision = (int)(Math.round(getFramerate() / 6D));
+		int precision = (int)(Math.ceil(getFramerate() / 6D));
 		return precision < 4 ? 4 : precision;
 	}
 	
