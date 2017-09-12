@@ -40,7 +40,7 @@ name="TumblGIFifier" default="main" basedir=".">
 	</pathconvert>
 
 	<target name="copy-dependencies">
-		<copy todir="${build.dir}/lib">
+		<copy preservelastmodified="true" verbose="true" todir="${build.dir}/lib">
 			<fileset dir="${lib.dir}" includes="**/*.jar" excludes="**/*sources.jar, **/*javadoc.jar" />
 		</copy>
 	</target>
