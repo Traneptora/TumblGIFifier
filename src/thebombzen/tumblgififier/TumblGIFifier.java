@@ -54,8 +54,14 @@ public final class TumblGIFifier {
 	 */
 	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
 	
+	/**
+	 * This output stream prints to the log file.
+	 */
 	private static PrintStream logFileOutputStream;
 	
+	/**
+	 * Set this to true once old version cleanup has happened.
+	 */
 	private static volatile boolean initializedCleanup = false;
 	
 	/**
@@ -67,6 +73,7 @@ public final class TumblGIFifier {
 		
 		File bothLogFile = ResourcesManager.getResourcesManager().getLocalFile("full_log.log");
 		
+		// We use UTF-8 even if it's not the platform's default
 		logFileOutputStream = new PrintStream(new SynchronizedOutputStream(new FileOutputStream(bothLogFile)), true, "UTF-8");
 		
 		System.setErr(
@@ -105,16 +112,26 @@ public final class TumblGIFifier {
 
 	}
 	
+	/**
+	 * Returns the Log File OutputStream, a PrintStream that prints to the log file (rather than to System.out)
+	 */
 	public static PrintStream getLogFileOutputStream(){
 		return logFileOutputStream;
 	}
 	
+	/**
+	 * Print help and exit, useful if tumblgififier was invoked from the command line.
+	 * @param good Exit with success if set to true, otherwise exit with status 1.
+	 */
 	private static void printHelpAndExit(boolean good){
 		System.out.println("tumblgififier\t--help");
 		System.out.println("tumblgififier\t[filename]");
 		System.exit(good ? 0 : 1);
 	}
 	
+	/**
+	 * Clean up the mess left behind by old versions of TumblGIFifier.
+	 */
 	public static synchronized void executeOldVersionCleanup(){
 		if (initializedCleanup){
 			return;
