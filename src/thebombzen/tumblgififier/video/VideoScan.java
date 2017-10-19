@@ -3,6 +3,7 @@ package thebombzen.tumblgififier.video;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.regex.Pattern;
@@ -33,7 +34,7 @@ public class VideoScan {
 		double durationTime = -1;
 		try (BufferedReader br = new BufferedReader(
 				new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(),
-						"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename)))) {
+						"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename), Charset.forName("UTF-8")))) {
 			while (null != (line = br.readLine())) {
 				if (Pattern.compile("streams\\.stream\\.\\d+\\.width=").matcher(line).find()) {
 					try {

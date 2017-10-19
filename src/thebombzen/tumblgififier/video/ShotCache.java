@@ -99,11 +99,11 @@ public class ShotCache {
 		Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
 		double ffmpegStartTime = frameNumber * scan.getShotDuration() - ( end ? scan.getFrameDuration() : 0);
-		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=fps=" + scan.getCachePrecision() + ":start_time=" + ffmpegStartTime, "format=rgb24", shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
+		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=fps=" + scan.getCachePrecision(), "format=rgb24", shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		
 		ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(ffmpegStartTime),
-				"-copyts", "-i", scan.getLocation(), "-map", "0:v", "-vf",
-				 videoFilter, "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
+				"-copyts", "-start_at_zero", "-i", scan.getLocation(), "-map", "0:v:0", "-vf",
+				 videoFilter, "-sws_flags", "lanczos", "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
 				shotFilename + "_%06d.png");
 		for (int i = 0; i < frames; i++) {
 			String name = String.format("%s_%06d.png", shotFilename, i + 1);

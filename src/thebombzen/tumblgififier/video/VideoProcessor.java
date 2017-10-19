@@ -171,10 +171,9 @@ public class VideoProcessor {
 		try {
 			scanPercentDone("Scaling Video... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-ss",
-							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "v", "-vf", videoFilter,
-							"-t", Double.toString(this.clipEndTime - this.clipStartTime),
+							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "0:v:0", "-vf", videoFilter,
+							"-sws_flags", "lanczos", "-t", Double.toString(this.clipEndTime - this.clipStartTime),
 							"-c", "ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
-			
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Scaling Video... Error.");
