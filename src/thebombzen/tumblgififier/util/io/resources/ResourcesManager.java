@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -188,6 +189,15 @@ public class ResourcesManager {
 		}
 	}
 	
+	public Path getTemporaryDirectory() {
+		File dir = new File (getLocalResourceLocation(), "temp");
+		if (dir.exists() && !dir.isDirectory()) {
+			dir.delete();
+		}
+		dir.mkdirs();
+		return dir.toPath().toAbsolutePath();
+	}
+
 	public Resource getXLocation(String pkg, String x) {
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
 		String name = x + TumblGIFifier.EXE_EXTENSION;

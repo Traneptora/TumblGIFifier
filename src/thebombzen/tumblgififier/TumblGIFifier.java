@@ -147,41 +147,34 @@ public final class TumblGIFifier {
 		} catch (RuntimeIOException | NumberFormatException e){
 			version = 0;
 		}
-		if (version < 1){
-			boolean did = false;
 
-			try {
-				File tempFile = IOHelper.createTempFile();
-				File tempFileDirectory = tempFile.getParentFile();
-				IOHelper.deleteTempFile(tempFile);
-				for (File f : tempFileDirectory.listFiles()){
-					if (f.getName().matches("^tumblgififier(.*)\\.tmp$")){
-						if (!did){
-							//processor.appendStatus("Executing Cleanup Routine: 1.");
-							processor.appendStatus("Cleaning old temporary files... ");
-						}
-						did = true;
-						processor.replaceStatus("Cleaning old temporary files... " + f.getName());
-						IOHelper.deleteTempFile(f);
-					}
+		boolean did = false;
+		try {
+			File tempFileDirectory = ResourcesManager.getResourcesManager().getTemporaryDirectory().toFile();
+			for (File f : tempFileDirectory.listFiles()){
+				if (!did){
+					processor.appendStatus("Cleaning old temporary files... ");
 				}
-			} catch (RuntimeIOException ioe){
-				processor.appendStatus("Error cleaning old temporary files.");
-				processor.processException(ioe);
+				did = true;
+				processor.replaceStatus("Cleaning old temporary files... " + f.getName());
+				IOHelper.deleteTempFile(f);
 			}
-			if (did){
-				processor.replaceStatus("Cleaning old temporary files... Done.");
-			}
-			File profileMedium = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf");
-			File profileMediumXZ = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf.xz");
-			if (profileMedium.exists() || profileMediumXZ.exists()){
-				processor.appendStatus("Cleaning old font files... ");
-				IOHelper.deleteTempFile(profileMedium);
-				IOHelper.deleteTempFile(profileMediumXZ);
-				processor.replaceStatus("Cleaning old font files... Done.");
-			}
-			
+		} catch (RuntimeIOException ioe){
+			processor.appendStatus("Error cleaning old temporary files.");
+			processor.processException(ioe);
 		}
+		if (did){
+			processor.replaceStatus("Cleaning old temporary files... Done.");
+		}
+		File profileMedium = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf");
+		File profileMediumXZ = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf.xz");
+		if (profileMedium.exists() || profileMediumXZ.exists()){
+			processor.appendStatus("Cleaning old font files... ");
+			IOHelper.deleteTempFile(profileMedium);
+			IOHelper.deleteTempFile(profileMediumXZ);
+			processor.replaceStatus("Cleaning old font files... Done.");
+		}
+
 		if (version < 2){
 			//processor.appendStatus("Executing Cleanup Routine: 2.");
 			File error = ResourcesManager.getResourcesManager().getLocalFile("error.log");

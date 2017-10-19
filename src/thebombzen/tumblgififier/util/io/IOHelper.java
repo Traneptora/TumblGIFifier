@@ -14,12 +14,15 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.Task;
+import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 
 /**
  * Java's I/O libraries are nice but not perfect. This class contains a (sigh) framework and some helper routines to make everything easier.
@@ -33,7 +36,7 @@ public final class IOHelper {
 	/**
 	 * We manage our own temp files. This is a list of the file names of temp files we've created. It's synchronized so we don't have to worry about anything like a ConcurrentModificationException.
 	 */
-	private static List<String> tempFiles = Collections.synchronizedList(new ArrayList<String>());
+	private static List<Path> tempFiles = Collections.synchronizedList(new ArrayList<Path>());
 	
 	/*
 	 * In general, temp files should be deleted, but this is a backup just to be safe. 
@@ -42,8 +45,8 @@ public final class IOHelper {
 		ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Task(){
 			@Override
 			public void run(){
-				for (String f : tempFiles){
-					new File(f).delete();
+				for (Path path : tempFiles){
+					path.toFile().delete();
 				}
 			}
 		});
@@ -55,11 +58,15 @@ public final class IOHelper {
 	 * This will usually not throw an I/O exception, but could in some corner cases, like if the temp filesystem is mounted as read-only.
 	 */
 	public static File createTempFile() {
+		return createTempFile(ResourcesManager.getResourcesManager().getTemporaryDirectory());
+	}
+
+	public static File createTempFile(Path parentDirectory) {
 		try {
-			File f = File.createTempFile("tumblgififier", ".tmp");
-			f.deleteOnExit();
-			tempFiles.add(f.getCanonicalPath());
-			return f;
+			Path path = Files.createTempFile(parentDirectory, "tumblgififier", ".tmp").toAbsolutePath();
+			path.toFile().deleteOnExit();
+			tempFiles.add(path);
+			return path.toFile();
 		} catch (IOException ioe){
 			throw new RuntimeIOException(ioe);
 		}
@@ -68,9 +75,10 @@ public final class IOHelper {
 	/**
 	 * This marks a file as a temporary file, so it will be deleted on exit.
 	 */
-	public static void markTempFile(String file) {
-		tempFiles.add(file);
-		new File(file).deleteOnExit();
+	public static void markTempFile(Path filepath) {
+		Path absolutePath = filepath.toAbsolutePath();
+		absolutePath.toFile().deleteOnExit();
+		tempFiles.add(absolutePath);
 	}
 
 	/**
@@ -101,9 +109,9 @@ public final class IOHelper {
 			return false;
 		} else {
 			try {
-				tempFiles.remove(f.getCanonicalPath());
+				tempFiles.remove(f.toPath().toRealPath());
 			} catch (IOException ioe){
-				tempFiles.remove(f.getAbsolutePath());
+				tempFiles.remove(f.toPath().toAbsolutePath());
 			}
 			return true;
 		}

@@ -108,7 +108,7 @@ public class ShotCache {
 		for (int i = 0; i < frames; i++) {
 			String name = String.format("%s_%06d.png", shotFilename, i + 1);
 			File tempShotFile = new File(name);
-			IOHelper.markTempFile(tempShotFile.getAbsolutePath());
+			IOHelper.markTempFile(tempShotFile.toPath().toAbsolutePath());
 			if (shotFiles.get(frameNumber + i) != null) {
 				IOHelper.deleteTempFile(tempShotFile);
 			} else {
