@@ -172,7 +172,7 @@ public final class TextHelper {
 			filters.add(preprocess);
 		}
 		if (decimator > 0){
-			filters.add("framestep=" + (1 << decimator));
+			filters.add("framestep=" + (1 + decimator));
 		}
 		if (!overlayText.isEmpty() && ResourcesManager.loadedPkgs.contains("OpenSans")){
 			filters.add(createDrawTextString(originalWidth, originalHeight, overlaySize, overlayText));
