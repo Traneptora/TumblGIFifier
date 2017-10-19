@@ -38,7 +38,7 @@ public class VideoProcessor {
 	}
 
 	private File gifFile;
-	private File mkvFile;
+	private File nutFile;
 	private File paletteFile;
 	
 	private boolean halveFramerate;
@@ -89,7 +89,7 @@ public class VideoProcessor {
 			success = false;
 		}
 		IOHelper.deleteTempFile(gifFile);
-		IOHelper.deleteTempFile(mkvFile);
+		IOHelper.deleteTempFile(nutFile);
 		IOHelper.deleteTempFile(paletteFile);
 		MainFrame.getMainFrame().setBusy(false);
 		return success;
@@ -114,7 +114,7 @@ public class VideoProcessor {
 		highscale = 1D;
 		
 		this.gifFile = IOHelper.createTempFile();
-		this.mkvFile = IOHelper.createTempFile();
+		this.nutFile = IOHelper.createTempFile();
 		this.paletteFile = IOHelper.createTempFile();
 		
 		prevWidth = -1;
@@ -173,7 +173,7 @@ public class VideoProcessor {
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-ss",
 							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "0:v:0", "-vf", videoFilter,
 							"-sws_flags", "lanczos", "-t", Double.toString(this.clipEndTime - this.clipStartTime),
-							"-c", "ffv1", "-f", "matroska", this.mkvFile.getAbsolutePath()));
+							"-c", "ffv1", "-f", "nut", this.nutFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Scaling Video... Error.");
@@ -188,7 +188,7 @@ public class VideoProcessor {
 		
 		try {
 			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-i",
-					this.mkvFile.getAbsolutePath(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
+					this.nutFile.getAbsolutePath(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
 					this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
@@ -204,7 +204,7 @@ public class VideoProcessor {
 		try {
 			scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-i",
-							this.mkvFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi",
+							this.nutFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi",
 							"paletteuse=dither=bayer:bayer_scale=3", "-c", "gif", "-f", "gif", this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
