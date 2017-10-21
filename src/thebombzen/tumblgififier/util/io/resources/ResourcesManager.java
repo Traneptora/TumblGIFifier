@@ -74,30 +74,12 @@ public class ResourcesManager {
 		return "https://thebombzen.com/TumblGIFifier/resources/FFmpeg/FFmpeg-versions.txt";
 	}
 	
-	private static String getExeDownloadLocation(String pkg) {
-		switch (pkg) {
-			case "FFmpeg":
-				switch (OperatingSystem.getLocalOS()) {
-					case WINDOWS_64:
-						return "https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-3.4-win64-static.zip";
-					case WINDOWS_32:
-						return "https://ffmpeg.zeranoe.com/builds/win32/static/ffmpeg-3.4-win32-static.zip";
-					case MACOS_64:
-						return "https://ffmpeg.zeranoe.com/builds/macos64/static/ffmpeg-3.4-macos64-static.zip";
-					default:
-						return "";
-				}
-			case "gifsicle":
-				switch (OperatingSystem.getLocalOS()) {
-					case WINDOWS_64:
-						return "https://eternallybored.org/misc/gifsicle/releases/gifsicle-1.89-win64.zip";
-					case WINDOWS_32:
-						return "https://eternallybored.org/misc/gifsicle/releases/gifsicle-1.89-win32.zip";
-					default:
-						return "";
-				}
-			default:
-				return "";
+	private static String getExeDownloadLocation(String pkg, String version) {
+		String name = getExeDLPkg(pkg, version);
+		if (name.isEmpty()) {
+			return "";
+		} else {
+			return "https://thebombzen.com/TumblGIFifier/resources/" + name;
 		}
 	}
 	
@@ -123,25 +105,23 @@ public class ResourcesManager {
 		return LibraryLoader.getLocalResourceLocation().resolve(name);
 	}
 	
-	private static String getExeDLPkg(String pkg) {
+	private static String getExeDLPkg(String pkg, String version) {
+		OperatingSystem local = OperatingSystem.getLocalOS();
 		switch (pkg) {
 			case "FFmpeg":
-				switch (OperatingSystem.getLocalOS()) {
+				switch (local) {
 					case WINDOWS_64:
-						return "ffmpeg-3.4-win64-static.zip";
 					case WINDOWS_32:
-						return "ffmpeg-3.4-win32-static.zip";
 					case MACOS_64:
-						return "ffmpeg-3.4-macos64-static.zip";
+						return String.format("FFmpeg-%s-%s.tar.xz", version, local.name());
 					default:
 						return "";
 				}
 			case "gifsicle":
 				switch (OperatingSystem.getLocalOS()) {
 					case WINDOWS_64:
-						return "gifsicle-1.89-win64.zip";
 					case WINDOWS_32:
-						return "gifsicle-1.89-win32.zip";
+						return String.format("gifsicle-%s-%s.tar.xz", version, local.name());
 					default:
 						return "";
 				}
@@ -313,12 +293,12 @@ public class ResourcesManager {
 		}
 
 		processor.appendStatus("Downloading " + pkg + " from the internet...");
-		String execName = getExeDLPkg(pkg);
+		String execName = getExeDLPkg(pkg, remoteVersion);
 		if (execName.isEmpty()){
 			throw new ResourceNotFoundException(pkg, "No prebuilt " + pkg + " binaries for your platform found.\nPlease install " + Arrays.toString(resources).replaceAll("[\\[\\]]", "") + " into your PATH.");
 		}
 		Path tempFile = getLocalFile(execName);
-		URL website = IOHelper.wrapSafeURL(getExeDownloadLocation(pkg));
+		URL website = IOHelper.wrapSafeURL(getExeDownloadLocation(pkg, remoteVersion));
 		try {
 			IOHelper.downloadFromInternet(website, tempFile);
 		} catch (RuntimeIOException ioe) {
