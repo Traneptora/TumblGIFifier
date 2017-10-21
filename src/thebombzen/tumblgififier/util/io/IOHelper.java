@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -173,43 +174,12 @@ public final class IOHelper {
 			return Files.lines(path).findFirst().orElse("");
 		} catch (FileNotFoundException fnfe){
 			throw new RuntimeFNFException(fnfe);
+		} catch (NoSuchFileException nsfe) {
+			throw new RuntimeFNFException(nsfe);
 		} catch (IOException ioe) {
 			throw new RuntimeIOException(ioe);
 		}
 	}
-
-	/*
-	 * This method reads from the given File and decodes it into text, assuming its contents are encoded in UTF-8. Then it returns the first line of that text.
-	 * If an I/O error occurs then an empty string will be returned, unless it's a FileNotFoundException. That will be passed on to the caller.
-	 */
-	/*public static String getFirstLineOfFileQuietly(File file) throws FileNotFoundException {
-		try {
-			return getFirstLineOfInputStream(new FileInputStream(file));
-		} catch (FileNotFoundException fnfe) {
-			throw fnfe;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			return "";
-		}
-	}*/
-
-	/**
-	 * Download the first line of a text file from the given URL and return it as a string.
-	 * This is mostly useful for checking versions and things of that sort.
-	 * If an error occurs an empty string will be returned.
-	 * The file is assumed to be in UTF-8.
-	 */
-	/*public static String downloadFirstLineFromInternetQuietly(URL url) {
-		BufferedReader reader = null;
-		try {
-			reader = new BufferedReader(new InputStreamReader(url.openStream(), Charset.forName("UTF-8")));
-			return reader.readLine();
-		} catch (IOException ioe) {
-			return "";
-		} finally {
-			closeQuietly(reader);
-		}
-	}*/
 
 	/**
 	 * Java checks if a String represents a valid URL before it allows you to construct a URL, via the checked exception MalformedURLException.
