@@ -237,7 +237,16 @@ public final class IOHelper {
 		}
 	}
 
+	/**
+	 * Deletes the file quietly, suppressing annoying errors about it already not existing or being null.
+	 * This method essentially ensures that the file doesn't exist.
+	 * @param The path to delete.
+	 * @return True if the file does not exist, False if it exists or it can't be determined.
+	 */
 	public static boolean deleteQuietly(Path path) {
+		if (path == null) {
+			return true;
+		}
 		try {
 			Files.deleteIfExists(path);
 		} catch (DirectoryNotEmptyException dnee) {
@@ -245,7 +254,7 @@ public final class IOHelper {
 		} catch (IOException ex) {
 
 		}
-		return Files.exists(path);
+		return Files.notExists(path);
 	}
 
 }
