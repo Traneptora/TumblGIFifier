@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -275,10 +276,12 @@ public class ResourcesManager {
 				break;
 			} else {
 				processor.replaceStatus("Checking for " + resourceName + "... found.");
-				try {
-					Files.setPosixFilePermissions(resPath, PosixFilePermissions.fromString("rwxr-xr-x"));
-				} catch (IOException ioe) {
-					throw new ResourceNotFoundException(pkg, "Could not set executable on " + pkg);
+				if (EnumSet.of(OperatingSystem.MACOS_64, OperatingSystem.POSIX).contains(OperatingSystem.getLocalOS())){
+					try {
+						Files.setPosixFilePermissions(resPath, PosixFilePermissions.fromString("rwxr--r--"));
+					} catch (IOException ioe) {
+						throw new ResourceNotFoundException(pkg, "Could not set executable on " + pkg);
+					}
 				}
 			}
 		}
