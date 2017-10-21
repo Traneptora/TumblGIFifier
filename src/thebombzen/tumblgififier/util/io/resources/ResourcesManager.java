@@ -71,8 +71,8 @@ public class ResourcesManager {
 		return "https://thebombzen.com/TumblGIFifier/resources/latest.txt";
 	}
 	
-	private static String getFFmpegVersionsLocation() {
-		return "https://thebombzen.com/TumblGIFifier/resources/FFmpeg/FFmpeg-versions.txt";
+	private static String getPkgVersionsLocation(String pkg) {
+		return "https://thebombzen.com/TumblGIFifier/resources/" + pkg + "/" + pkg + "-versions.txt";
 	}
 	
 	private static String getExeDownloadLocation(String pkg, String version) {
@@ -418,7 +418,7 @@ public class ResourcesManager {
 		
 		boolean mightHaveInternet = true;
 		try {
-			mightHaveInternet = initializeMultiExePackage("FFmpeg", new String[]{"ffmpeg", "ffprobe", "ffplay"}, getFFmpegVersionsLocation(), "FFmpeg-versions.txt", mightHaveInternet, processor);
+			mightHaveInternet = initializeMultiExePackage("FFmpeg", new String[]{"ffmpeg", "ffprobe", "ffplay"}, getPkgVersionsLocation("FFmpeg"), "FFmpeg-versions.txt", mightHaveInternet, processor);
 			pkgs.add("FFmpeg");
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
@@ -439,7 +439,7 @@ public class ResourcesManager {
 		}
 		
 		try {
-			mightHaveInternet = initializeMultiExePackage("gifsicle", new String[]{"gifsicle"}, "", "", mightHaveInternet, processor);
+			mightHaveInternet = initializeMultiExePackage("gifsicle", new String[]{"gifsicle"}, getPkgVersionsLocation("gifsicle"), "gifsicle-versions.txt", mightHaveInternet, processor);
 			pkgs.add("gifsicle");
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
