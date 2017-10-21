@@ -89,7 +89,9 @@ public class ResourcesManager {
 			case "gifsicle":
 				switch (OperatingSystem.getLocalOS()) {
 					case WINDOWS_64:
-						return "https://thebombzen.com/TumblGIFifier/resources/gifsicle.windows.zip.xz";
+						return "https://eternallybored.org/misc/gifsicle/releases/gifsicle-1.89-win64.zip";
+					case WINDOWS_32:
+						return "https://eternallybored.org/misc/gifsicle/releases/gifsicle-1.89-win32.zip";
 					default:
 						return "";
 				}
@@ -136,7 +138,9 @@ public class ResourcesManager {
 			case "gifsicle":
 				switch (OperatingSystem.getLocalOS()) {
 					case WINDOWS_64:
-						return "gifsicle.windows.zip.xz";
+						return "gifsicle-1.89-win64.zip";
+					case WINDOWS_32:
+						return "gifsicle-1.89-win32.zip";
 					default:
 						return "";
 				}
