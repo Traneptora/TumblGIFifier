@@ -8,7 +8,7 @@ name="TumblGIFifier" default="main" basedir=".">
 	<property name="dist.dir" location="dist" />
 	<property name="dist.lib.dir" location="dist/lib" />
 	<property name="lib.dir" value="lib" />
-	<property name="main-class" value="thebombzen.tumblgififier.TumblGIFifier" />
+	<property name="main-class" value="thebombzen.tumblgififier.LibraryLoader" />
 
 	<target name="init">
 		<mkdir dir="${build.dir}" />
@@ -25,7 +25,7 @@ name="TumblGIFifier" default="main" basedir=".">
 
 	<!-- To work with external libraries, need classpath to compile -->
 	<target name="compile" depends="init" description="compile the source">
-		<javac includeantruntime="false" srcdir="${src.dir}" destdir="${build.dir}" target="1.8" source="1.8" classpathref="classpath" />
+		<javac includeantruntime="false" srcdir="${src.dir}" destdir="${build.dir}" target="1.8" source="1.8" debug="true" classpathref="classpath" />
 	</target>
 
 	<target name="copy-dependencies">

@@ -1,8 +1,9 @@
-package thebombzen.tumblgififier.util;
+package thebombzen.tumblgififier;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+@PreLoadable
 public enum OperatingSystem {
 
 	WINDOWS_64(),

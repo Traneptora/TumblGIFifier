@@ -1,11 +1,13 @@
 package thebombzen.tumblgififier.util.io;
 
 import java.io.IOException;
+import thebombzen.tumblgififier.PreLoadable;
 
 /**
  * This represents a runtime version of IOException. It fixes many of the issues with checked exceptions,
  * such as the inability to be thrown by Runnable, Iterator, or similar interfaces.
  */
+@PreLoadable
 public class RuntimeIOException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 	/**

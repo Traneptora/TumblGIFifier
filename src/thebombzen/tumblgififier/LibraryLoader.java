@@ -1,8 +1,8 @@
-package thebombzen.tumblgififier.util.io.resources;
+package thebombzen.tumblgififier;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -11,23 +11,30 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import thebombzen.tumblgififier.TumblGIFifier;
-import thebombzen.tumblgififier.util.OperatingSystem;
-import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.RuntimeIOException;
+import thebombzen.tumblgififier.util.io.resources.ResourceNotFoundException;
 
+@PreLoadable
 public final class LibraryLoader {
 	
 	private LibraryLoader() {
 		
 	}
 	
+	public static void main(String[] args) throws Exception {
+		extractExternalLibraries();
+		Class<?> clazz = Class.forName("thebombzen.tumblgififier.TumblGIFifier", false, ClassLoader.getSystemClassLoader());
+		Method method = clazz.getMethod("main", String[].class);
+		method.invoke(null, (Object)args);
+	}
+	
 	private static Path localResourceLocation = null;
-
+	
 	/**
 	 * Add a Jar file to the class path.
 	 * 
@@ -35,24 +42,19 @@ public final class LibraryLoader {
 	 * @param file
 	 */
 	private static void addToClasspath(Path path) {
-		URL url;
-		try {
+		URL url = null;
+		try {	
 			url = path.toUri().toURL();
 		} catch (MalformedURLException ex) {
 			throw new ResourceNotFoundException("Malformed URL? " + path, ex);
 		}
-		URLClassLoader classLoader = (URLClassLoader)ClassLoader.getSystemClassLoader();
-		Method method;
+		ClassLoader loader = LibraryLoader.class.getClassLoader();
 		try {
-			method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-		} catch (NoSuchMethodException ex) {
-			throw new ResourceNotFoundException("Cannot find addURL", ex);
-		}
-		method.setAccessible(true);
-		try {
-			method.invoke(classLoader, url);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
-			throw new ResourceNotFoundException("Cannot call addURL", ex);
+			Method addUrl = URLClassLoader.class.getDeclaredMethod("addURL", new Class<?>[]{URL.class});
+			addUrl.setAccessible(true);
+			addUrl.invoke(loader, url);
+		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+			throw new Error(ex);
 		}
 	}
 
@@ -74,20 +76,20 @@ public final class LibraryLoader {
 	}
 
 	public static void extractExternalLibraries() {
-		File thisJarFile = null;
+		Path thisJarFile = null;
 		try {
-			thisJarFile = new File(TumblGIFifier.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+			thisJarFile = Paths.get(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 		} catch (URISyntaxException ex) {
 			throw new ResourceNotFoundException("Error in URI syntax?", ex);
 		}
-		if (!thisJarFile.isFile()) {
+		if (!Files.isRegularFile(thisJarFile)) {
 			return;
 		}
 		Path libs = getLocalResourceLocation().resolve("lib");
 		ZipFile zipFile = null;
 		try {
 			Files.createDirectories(libs);
-			zipFile = new ZipFile(thisJarFile);
+			zipFile = new ZipFile(thisJarFile.toString());
 			Enumeration<? extends ZipEntry> entries = zipFile.entries();
 			while (entries.hasMoreElements()) {
 				ZipEntry entry = entries.nextElement();
@@ -110,14 +112,26 @@ public final class LibraryLoader {
 						Files.setLastModifiedTime(lib, entry.getLastModifiedTime());
 						addToClasspath(lib);
 					} finally {
-						IOHelper.closeQuietly(in);
+						if (in != null) {
+							try {
+								in.close();
+							} catch (IOException ioe) {
+								// don't care
+							}
+						}
 					}
 				}
 			}
 		} catch (IOException ex) {
 			throw new RuntimeIOException(ex);
 		} finally {
-			IOHelper.closeQuietly(zipFile);
+			if (zipFile != null) {
+				try {
+					zipFile.close();
+				} catch (IOException ioe) {
+					// don't care
+				}
+			}
 		}
 	}
 	

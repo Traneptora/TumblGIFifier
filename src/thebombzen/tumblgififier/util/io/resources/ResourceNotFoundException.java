@@ -1,9 +1,12 @@
 package thebombzen.tumblgififier.util.io.resources;
 
+import thebombzen.tumblgififier.PreLoadable;
+
 /**
  * Represents the lack of existence of a resource.
  * Sometimes this is fatal, and sometimes it's not, depending on the resource.
  */
+@PreLoadable
 public class ResourceNotFoundException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
