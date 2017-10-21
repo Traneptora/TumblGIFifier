@@ -2,6 +2,8 @@ package thebombzen.tumblgififier.gui;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +24,6 @@ public class ImagePanel extends JPanel {
 	public ImagePanel(BufferedImage image, final Consumer<?> playCallback) {
 		this.image = image;
 		this.playCallback = playCallback;
-		/* Disabled for 0.7.2 release
 		if (playCallback != null){
 			this.addMouseListener(new MouseAdapter(){
 				@Override
@@ -37,7 +38,6 @@ public class ImagePanel extends JPanel {
 				}
 			});
 		}
-		*/
 	}
 	
 	public boolean isPlaying() {
