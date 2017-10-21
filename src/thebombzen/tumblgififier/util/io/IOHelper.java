@@ -2,20 +2,17 @@ package thebombzen.tumblgififier.util.io;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,16 +54,16 @@ public final class IOHelper {
 	 * Files created by this are also automatically deleted when the program exits.
 	 * This will usually not throw an I/O exception, but could in some corner cases, like if the temp filesystem is mounted as read-only.
 	 */
-	public static File createTempFile() {
+	public static Path createTempFile() {
 		return createTempFile(ResourcesManager.getResourcesManager().getTemporaryDirectory());
 	}
 
-	public static File createTempFile(Path parentDirectory) {
+	public static Path createTempFile(Path parentDirectory) {
 		try {
 			Path path = Files.createTempFile(parentDirectory, "tumblgififier", ".tmp").toAbsolutePath();
 			path.toFile().deleteOnExit();
 			tempFiles.add(path);
-			return path.toFile();
+			return path;
 		} catch (IOException ioe){
 			throw new RuntimeIOException(ioe);
 		}
@@ -99,19 +96,25 @@ public final class IOHelper {
 	 * Safely delete a temporary file. We don't care if it actually is "marked as temporary" but it will be deleted anyway.
 	 * @return true if the file was deleted successfully, false if it still exists.
 	 */
-	public static boolean deleteTempFile(File f) {
-		if (f == null) {
+	public static boolean deleteTempFile(Path path) {
+		if (path == null) {
 			return false;
 		}
-		f.deleteOnExit();
-		f.delete();
-		if (f.exists()){
+		path.toFile().deleteOnExit();
+		try {
+			Files.deleteIfExists(path);
+		} catch (IOException ioe) {
+			// probably still open on windows
+			// but logging is nice
+			ioe.printStackTrace();
+		}
+		if (Files.exists(path)){
 			return false;
 		} else {
 			try {
-				tempFiles.remove(f.toPath().toRealPath());
+				tempFiles.remove(path.toRealPath());
 			} catch (IOException ioe){
-				tempFiles.remove(f.toPath().toAbsolutePath());
+				tempFiles.remove(path.toAbsolutePath());
 			}
 			return true;
 		}
@@ -121,36 +124,17 @@ public final class IOHelper {
 	 * Download a file from the given URL, and save it to the given File. This should only be used for small files, because it blocks while the file is downloading and doesn't provide a progress indicator.
 	 * If an error occurs, an exception will be thrown.
 	 */
-	public static void downloadFromInternet(URL url, File downloadTo) throws RuntimeIOException {
-		ReadableByteChannel rbc = null;
-		FileOutputStream fos = null;
+	public static void downloadFromInternet(URL url, Path target) throws RuntimeIOException {
+		InputStream in = null;
 		try {
-			rbc = Channels.newChannel(url.openStream());
-			fos = new FileOutputStream(downloadTo);
-			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+			in = url.openStream();
+			Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException ioe){
 			throw new RuntimeIOException(ioe);
 		} finally {
-			closeQuietly(rbc);
-			closeQuietly(fos);
+			closeQuietly(in);
 		}
 	}
-
-	/*
-	 * Download a file from the given URL, and save it to the given File. This should only be used for small files, because it blocks while the file is downloading and doesn't provide a progress indicator.
-	 * If an error occurs, this method will return false, and upon success, return true. This is mostly useful for un-important downloads whom are non-critical errors if they fail.
-	 */
-	/*
-	public static boolean downloadFromInternetQuietly(URL url, File downloadTo) {
-		try {
-			downloadFromInternet(url, downloadTo);
-			return true;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			return false;
-		}
-	}
-	*/
 
 	/**
 	 * Download the first line of a text file from the given URL and return it as a string.
@@ -173,10 +157,8 @@ public final class IOHelper {
 	public static String getFirstLineOfInputStream(InputStream in) throws RuntimeIOException {
 		BufferedReader reader = null;
 		try {
-			reader = new BufferedReader(new InputStreamReader(in, Charset.forName("UTF-8")));
-			return reader.readLine();
-		} catch (IOException ioe){
-			throw new RuntimeIOException(ioe);
+			reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+			return reader.lines().findFirst().orElse("");
 		} finally {
 			closeQuietly(reader);
 		}
@@ -186,11 +168,13 @@ public final class IOHelper {
 	 * This method reads from the given File and decodes it into text, assuming its contents are encoded in UTF-8. Then it returns the first line of that text.
 	 * If an I/O error occurs an exception will be thrown, but the stream will still be closed.
 	 */
-	public static String getFirstLineOfFile(File file) throws RuntimeFNFException, RuntimeIOException {
+	public static String getFirstLineOfFile(Path path) throws RuntimeFNFException, RuntimeIOException {
 		try {
-			return getFirstLineOfInputStream(new FileInputStream(file));
+			return Files.lines(path).findFirst().orElse("");
 		} catch (FileNotFoundException fnfe){
 			throw new RuntimeFNFException(fnfe);
+		} catch (IOException ioe) {
+			throw new RuntimeIOException(ioe);
 		}
 	}
 
@@ -245,18 +229,23 @@ public final class IOHelper {
 	 * The URL is assumed to point to an XZ-compressed file. It will decompress the file in realtime as it saves it, so the version downloaded will be uncompressed.
 	 * If an error occurs, an exception will be thrown.
 	 */
-	public static void downloadFromInternetXZ(URL url, File downloadTo) throws RuntimeIOException {
-		ReadableByteChannel rbc = null;
-		FileOutputStream fos = null;
-		try {
-			rbc = Channels.newChannel(new XZInputStream(url.openStream()));
-			fos = new FileOutputStream(downloadTo);
-			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+	public static void downloadFromInternetXZ(URL url, Path target) throws RuntimeIOException {
+		try (InputStream in = new XZInputStream(url.openStream())) {
+			Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException ioe){
 			throw new RuntimeIOException(ioe);
-		} finally {
-			closeQuietly(rbc);
-			closeQuietly(fos);
 		}
 	}
+
+	public static boolean deleteQuietly(Path path) {
+		try {
+			Files.deleteIfExists(path);
+		} catch (DirectoryNotEmptyException dnee) {
+
+		} catch (IOException ex) {
+
+		}
+		return Files.exists(path);
+	}
+
 }

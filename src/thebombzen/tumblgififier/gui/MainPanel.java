@@ -10,17 +10,19 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -35,7 +37,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import thebombzen.tumblgififier.util.Callback;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.Tuple;
 import thebombzen.tumblgififier.util.io.IOHelper;
@@ -134,7 +135,7 @@ public class MainPanel extends JPanel {
 		}
 	}
 	
-	private void createGIF(final String path) {
+	private void createGIF(final Path path) {
 		final int maxSizeBytes;
 		final int minSizeBytes;
 		if (maxSizeCheckBox.isSelected()) {
@@ -193,7 +194,7 @@ public class MainPanel extends JPanel {
 				try {
 					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.getLocation().toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v:0",
-							"-i", scan.getLocation(), "-ss", Double.toString(clipStart),
+							"-i", scan.getLocation().toString(), "-ss", Double.toString(clipStart),
 							"-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter);
 				} catch (ProcessTerminatedException ex) {
 					return;
@@ -226,7 +227,7 @@ public class MainPanel extends JPanel {
 			
 			@Override
 			public void run() {
-				File tempFile = null;
+				Path tempFile = null;
 				try {
 					statusArea.appendStatus("Rendering Clip... ");
 					try {
@@ -238,9 +239,9 @@ public class MainPanel extends JPanel {
 					}
 					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-ss", Double.toString(clipStart), "-i",
-							scan.getLocation(), "-map", "0:v:0", "-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter,
-							"-sws_flags", "lanczos", "-c", "ffv1", "-f", "nut", tempFile.getAbsolutePath());
-					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.getLocation().toString(), "-loop", "0", tempFile.getAbsolutePath());
+							scan.getLocation().toString(), "-map", "0:v:0", "-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter,
+							"-sws_flags", "lanczos", "-c", "ffv1", "-f", "nut", tempFile.toString());
+					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.getLocation().toString(), "-loop", "0", tempFile.toString());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
 					ConcurrenceManager.getConcurrenceManager().stopAll();
@@ -306,16 +307,16 @@ public class MainPanel extends JPanel {
 			if (!filename.toLowerCase().endsWith(".gif")) {
 				filename += ".gif";
 			}
-			File recentGIFFile = ResourcesManager.getResourcesManager().getLocalFile("recent_gif.txt");
+			Path recentGIFFile = ResourcesManager.getResourcesManager().getLocalFile("recent_gif.txt");
 			mostRecentGIFDirectory = fileDialog.getDirectory();
-			try (FileWriter recentGIFWriter = new FileWriter(recentGIFFile)) {
+			try (Writer recentGIFWriter = Files.newBufferedWriter(recentGIFFile)) {
 				recentGIFWriter.write(mostRecentGIFDirectory);
 			} catch (IOException ioe) {
 				// we don't care much if this fails
 				// but knowing on standard error is nice
 				ioe.printStackTrace();
 			}
-			createGIF(new File(mostRecentGIFDirectory, filename).getAbsolutePath());
+			createGIF(Paths.get(mostRecentGIFDirectory, filename).toAbsolutePath());
 		}
 	}
 	
@@ -331,9 +332,9 @@ public class MainPanel extends JPanel {
 		horizontalBox.add(leftPanel);
 		horizontalBox.add(Box.createHorizontalStrut(10));
 		Box rightBox = Box.createVerticalBox();
-		previewImageStartPanel = new ImagePanel(null, new Callback<Object>(){
+		previewImageStartPanel = new ImagePanel(null, new Consumer<Void>(){
 			@Override
-			public void call(Object t) {
+			public void accept(Void t) {
 				int value = startSlider.getValue();
 				if (value < endSlider.getValue()) {
 					startSlider.setValue(value + 1);
@@ -427,9 +428,9 @@ public class MainPanel extends JPanel {
 		});
 		
 		rightBox.add(Box.createVerticalStrut(10));
-		previewImageEndPanel = new ImagePanel(null, new Callback<Object>(){
+		previewImageEndPanel = new ImagePanel(null, new Consumer<Void>(){
 			@Override
-			public void call(Object t) {
+			public void accept(Void t) {
 				int value = endSlider.getValue();
 				if (value < endSlider.getMaximum()) {
 					endSlider.setValue(value + 1);
@@ -575,11 +576,11 @@ public class MainPanel extends JPanel {
 		scrollPane.setViewportView(statusArea);
 		scrollPanePanel.add(scrollPane, BorderLayout.CENTER);
 		leftPanel.add(scrollPanePanel);
-		File recentGIFFile = ResourcesManager.getResourcesManager().getLocalFile("recent_gif.txt");
-		if (recentGIFFile.exists()) {
-			try (BufferedReader br = new BufferedReader(new FileReader(recentGIFFile))) {
-				mostRecentGIFDirectory = br.readLine();
-			} catch (IOException ioe) {
+		Path recentGIFFile = ResourcesManager.getResourcesManager().getLocalFile("recent_gif.txt");
+		if (Files.exists(recentGIFFile)) {
+			try {
+				mostRecentGIFDirectory = IOHelper.getFirstLineOfFile(recentGIFFile);
+			} catch (RuntimeIOException ioe) {
 				mostRecentGIFDirectory = null;
 			}
 		}
@@ -589,8 +590,8 @@ public class MainPanel extends JPanel {
 	 * This method may be executed from any thread asynchronously.
 	 */
 	private void updateEndScreenshot() {
-		final Callback<BufferedImage> callback = new Callback<BufferedImage>(){
-			public void call(BufferedImage image){
+		final Consumer<BufferedImage> callback = new Consumer<BufferedImage>(){
+			public void accept(BufferedImage image){
 				previewImageEndPanel.setImage(image);
 				EventQueue.invokeLater(new Runnable(){
 					@Override
@@ -619,8 +620,8 @@ public class MainPanel extends JPanel {
 	 * This method may be executed from any thread asynchronously.
 	 */
 	private void updateStartScreenshot() {
-		final Callback<BufferedImage> callback = new Callback<BufferedImage>(){
-			public void call(BufferedImage image){
+		final Consumer<BufferedImage> callback = new Consumer<BufferedImage>(){
+			public void accept(BufferedImage image){
 				previewImageStartPanel.setImage(image);
 				EventQueue.invokeLater(new Runnable(){
 					@Override

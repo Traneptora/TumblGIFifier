@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.regex.Pattern;
@@ -17,10 +18,10 @@ public class VideoScan {
 	private final double scanFramerate;
 	private final double scanPacketDuration;
 	private final int scanWidth;
-	private final String scanLocation;
+	private final Path scanLocation;
 	private final int scanHeight;
 	
-	public static VideoScan scanFile(StatusProcessor processor, String filename) {
+	public static VideoScan scanFile(StatusProcessor processor, Path pathname) {
 		
 		processor.appendStatus("Scanning File... ");
 		
@@ -34,7 +35,7 @@ public class VideoScan {
 		double durationTime = -1;
 		try (BufferedReader br = new BufferedReader(
 				new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.getLocation().toString(),
-						"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename), Charset.forName("UTF-8")))) {
+						"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", pathname.toString()), Charset.forName("UTF-8")))) {
 			while (null != (line = br.readLine())) {
 				if (Pattern.compile("streams\\.stream\\.\\d+\\.width=").matcher(line).find()) {
 					try {
@@ -94,7 +95,7 @@ public class VideoScan {
 			Queue<String> lineQueue = new ArrayDeque<>();
 			try (BufferedReader br = new BufferedReader(new InputStreamReader(
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.getLocation().toString(), "-select_streams", "v",
-							"-of", "flat", "-show_entries", "packet=pts_time,duration_time", filename)))) {
+							"-of", "flat", "-show_entries", "packet=pts_time,duration_time", pathname.toString())))) {
 				while (null != (line = br.readLine())) {
 					if (lineQueue.size() >= 2) {
 						lineQueue.poll();
@@ -132,10 +133,10 @@ public class VideoScan {
 			return null;
 		}
 		
-		return new VideoScan(width, height, duration, filename, framerate, durationTime);
+		return new VideoScan(width, height, duration, pathname, framerate, durationTime);
 	}
 	
-	public VideoScan(int width, int height, double duration, String location, double framerate,
+	public VideoScan(int width, int height, double duration, Path location, double framerate,
 			double durationTime) {
 		this.scanWidth = width;
 		this.scanHeight = height;
@@ -175,7 +176,7 @@ public class VideoScan {
 		return scanHeight;
 	}
 	
-	public String getLocation() {
+	public Path getLocation() {
 		return scanLocation;
 	}
 	

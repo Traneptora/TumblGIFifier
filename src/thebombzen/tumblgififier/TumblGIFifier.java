@@ -1,18 +1,13 @@
 package thebombzen.tumblgififier;
 
 import java.awt.EventQueue;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
-import java.nio.charset.Charset;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.Paths;
+import java.util.Comparator;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.Task;
@@ -44,17 +39,6 @@ public final class TumblGIFifier {
 	public static final int VERSION_IDENTIFIER = 3;
 	
 	/**
-	 * True if the system is detected as a windows system, false otherwise.
-	 */
-	public static final boolean IS_ON_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
-	
-	/**
-	 * File extension for executable files, with the period included. On
-	 * windows, it's ".exe" and on other platforms it's the empty string.
-	 */
-	public static final String EXE_EXTENSION = IS_ON_WINDOWS ? ".exe" : "";
-	
-	/**
 	 * This output stream prints to the log file.
 	 */
 	private static PrintStream logFileOutputStream;
@@ -69,12 +53,12 @@ public final class TumblGIFifier {
 	 */
 	public static void main(final String[] args) throws IOException {
 		
-		LibraryLoader.getLibraryLoader().extractExternalLibraries();
+		LibraryLoader.extractExternalLibraries();
 		
-		File bothLogFile = ResourcesManager.getResourcesManager().getLocalFile("full_log.log");
+		Path bothLogFile = ResourcesManager.getResourcesManager().getLocalFile("full_log.log");
 		
 		// We use UTF-8 even if it's not the platform's default
-		logFileOutputStream = new PrintStream(new SynchronizedOutputStream(new FileOutputStream(bothLogFile)), true, "UTF-8");
+		logFileOutputStream = new PrintStream(new SynchronizedOutputStream(Files.newOutputStream(bothLogFile)), true, "UTF-8");
 		
 		System.setErr(
 				new PrintStream(new TeeOutputStream(System.err, logFileOutputStream), true, "UTF-8"));
@@ -90,7 +74,7 @@ public final class TumblGIFifier {
 				ConcurrenceManager.getConcurrenceManager().addPostInitTask(new Task(80){
 					@Override
 					public void run(){
-						MainFrame.getMainFrame().open(args[0]);
+						MainFrame.getMainFrame().open(Paths.get(args[0]));
 					}
 				});
 			}
@@ -148,27 +132,19 @@ public final class TumblGIFifier {
 			version = 0;
 		}
 
-		boolean did = false;
 		try {
-			File tempFileDirectory = ResourcesManager.getResourcesManager().getTemporaryDirectory().toFile();
-			for (File f : tempFileDirectory.listFiles()){
-				if (!did){
-					processor.appendStatus("Cleaning old temporary files... ");
-				}
-				did = true;
-				processor.replaceStatus("Cleaning old temporary files... " + f.getName());
-				IOHelper.deleteTempFile(f);
-			}
-		} catch (RuntimeIOException ioe){
+			Path tempFileDirectory = ResourcesManager.getResourcesManager().getTemporaryDirectory();
+			Files.list(tempFileDirectory).forEach((path) -> {
+				processor.appendStatus("Cleaning old temporary files... " + path.getFileName());
+				IOHelper.deleteTempFile(path);
+			});
+		} catch (RuntimeIOException | IOException ioe){
 			processor.appendStatus("Error cleaning old temporary files.");
 			processor.processException(ioe);
 		}
-		if (did){
-			processor.replaceStatus("Cleaning old temporary files... Done.");
-		}
-		File profileMedium = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf");
-		File profileMediumXZ = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf.xz");
-		if (profileMedium.exists() || profileMediumXZ.exists()){
+		Path profileMedium = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf");
+		Path profileMediumXZ = ResourcesManager.getResourcesManager().getLocalFile("Profile-Medium.otf.xz");
+		if (Files.exists(profileMedium) || Files.exists(profileMediumXZ)){
 			processor.appendStatus("Cleaning old font files... ");
 			IOHelper.deleteTempFile(profileMedium);
 			IOHelper.deleteTempFile(profileMediumXZ);
@@ -177,10 +153,10 @@ public final class TumblGIFifier {
 
 		if (version < 2){
 			//processor.appendStatus("Executing Cleanup Routine: 2.");
-			File error = ResourcesManager.getResourcesManager().getLocalFile("error.log");
-			File output = ResourcesManager.getResourcesManager().getLocalFile("output.log");
+			Path error = ResourcesManager.getResourcesManager().getLocalFile("error.log");
+			Path output = ResourcesManager.getResourcesManager().getLocalFile("output.log");
 			
-			if (error.exists() || output.exists()){
+			if (Files.exists(error) || Files.exists(output)){
 				processor.appendStatus("Cleaning output/error split...");
 				IOHelper.deleteTempFile(error);
 				IOHelper.deleteTempFile(output);
@@ -188,30 +164,11 @@ public final class TumblGIFifier {
 			}
 		}
 		if (version < 3) {
-			File legacyLocation = new File(ResourcesManager.getLegacyLocalResourceLocation());
-			if (legacyLocation.exists()) {
+			Path legacyLocation = ResourcesManager.getLegacyLocalResourceLocation();
+			if (Files.exists(legacyLocation)) {
 				try {
 					processor.appendStatus("Cleaning legacy appdata location...");
-					Files.walkFileTree(legacyLocation.toPath(), new SimpleFileVisitor<Path>(){
-						
-						@Override
-						public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-							Files.delete(file);
-							return FileVisitResult.CONTINUE;
-						}
-						
-						@Override
-						public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
-							if (e == null) {
-								Files.delete(dir);
-								return FileVisitResult.CONTINUE;
-							} else {
-								// directory iteration failed
-								throw e;
-							}
-						}
-						
-					});
+					Files.walk(legacyLocation).sorted(Comparator.<Path>reverseOrder()).forEach(IOHelper::deleteQuietly);
 					processor.replaceStatus("Cleaning legacy appdata location... done.");
 				} catch (IOException ioe) {
 					processor.appendStatus("Error cleaning old temporary files.");
@@ -219,8 +176,8 @@ public final class TumblGIFifier {
 				}
 			}
 		}
-		try (Writer w = new OutputStreamWriter(new FileOutputStream(ResourcesManager.getResourcesManager().getLocalFile("version_identifier.txt")), Charset.forName("UTF-8"))){
-			w.write(Integer.toString(TumblGIFifier.VERSION_IDENTIFIER));
+		try (Writer w = Files.newBufferedWriter(ResourcesManager.getResourcesManager().getLocalFile("version_identifier.txt"))){
+			w.write(String.format("%d\n", TumblGIFifier.VERSION_IDENTIFIER));
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}

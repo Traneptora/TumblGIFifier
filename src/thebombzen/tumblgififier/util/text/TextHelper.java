@@ -1,18 +1,11 @@
 package thebombzen.tumblgififier.util.text;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import thebombzen.tumblgififier.util.ConcurrenceManager;
-import thebombzen.tumblgififier.util.Task;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 
@@ -30,12 +23,12 @@ public final class TextHelper {
 	/**
 	 * We dump the overlay text to a file so we don't have to escape it.
 	 */
-	private File tempOverlayFile;
+	private Path tempOverlayPath;
+
 	/**
 	 * This is the escaped filename of the tempOverlayFile.
 	 */
-	private String tempOverlayFilename;
-	
+	private String tempOverlayEscapedFilename;
 	private String fontFile = null;
 	
 	/**
@@ -51,71 +44,8 @@ public final class TextHelper {
 	
 	
 	private TextHelper() {
-		tempOverlayFile = IOHelper.createTempFile().getAbsoluteFile();
-		ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Task(){
-			
-			@Override
-			public void run() {
-				IOHelper.deleteTempFile(tempOverlayFile);
-			}
-		});
-		tempOverlayFilename = escapeForVideoFilter(tempOverlayFile.getAbsolutePath());
-	}
-
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard
-	 * library? >_>
-	 * 
-	 * @param conjunction
-	 *            The delimiter with which to conjoin the strings.
-	 * @param list
-	 *            The array of strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public String join(String conjunction, String[] list) {
-		return join(conjunction, Arrays.asList(list));
-	}
-
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard
-	 * library? >_>
-	 * 
-	 * @param conjunction
-	 *            The delimiter with which to conjoin the strings.
-	 * @param iterator
-	 *            An iterator of the strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public String join(String conjunction, Iterator<String> iterator) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		while (iterator.hasNext()) {
-			String item = iterator.next();
-			if (first) {
-				first = false;
-			} else {
-				sb.append(conjunction);
-			}
-			sb.append(item);
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Utility method to join an array of Strings based on a delimiter.
-	 * Seriously, why did it take until Java 8 to add this thing to the standard
-	 * library? >_>
-	 * 
-	 * @param conjunction
-	 *            The delimiter with which to conjoin the strings.
-	 * @param list
-	 *            The collection of strings to conjoin.
-	 * @return The conjoined string.
-	 */
-	public String join(String conjunction, Iterable<String> list) {
-		return join(conjunction, list.iterator());
+		tempOverlayPath = IOHelper.createTempFile();
+		tempOverlayEscapedFilename = escapeForVideoFilter(tempOverlayPath.toString());
 	}
 
 	/**
@@ -153,8 +83,7 @@ public final class TextHelper {
 	public String createDrawTextString(int width, int height, int fontSize, String message) {
 		int size = (int) Math.ceil(fontSize * height / 1080D);
 		int borderw = (int) Math.ceil(size * 7D / fontSize);
-		try (Writer writer = new BufferedWriter(
-				new OutputStreamWriter(new FileOutputStream(tempOverlayFile), Charset.forName("UTF-8")))) {
+		try (Writer writer = Files.newBufferedWriter(tempOverlayPath)) {
 			writer.write(message);
 		} catch (IOException ex) {
 			ex.printStackTrace();
@@ -162,7 +91,7 @@ public final class TextHelper {
 		}
 		String drawText = "drawtext=x=(w-tw)*0.5:y=0.935*(h-0.5*" + size
 				+ "):bordercolor=black:fontcolor=white:borderw=" + borderw + ":fontfile=" + getFontFile() + ":fontsize="
-				+ size + ":textfile=" + tempOverlayFilename;
+				+ size + ":textfile=" + tempOverlayEscapedFilename;
 		return drawText;
 	}
 	
@@ -181,7 +110,7 @@ public final class TextHelper {
 		if (postprocess != null && !postprocess.isEmpty()){
 			filters.add(postprocess);
 		}
-		return join(",", filters);
+		return String.join(",", filters);
 	}
 	
 }

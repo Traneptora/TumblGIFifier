@@ -11,11 +11,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
@@ -28,6 +28,7 @@ import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.Task;
+import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 import thebombzen.tumblgififier.util.text.StatusProcessorArea;
@@ -109,21 +110,18 @@ public class MainFrame extends JFrame {
 		menuBar.add(helpMenu);
 		this.add(menuBar, BorderLayout.NORTH);
 		quit.addActionListener(new ActionListener(){
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				TumblGIFifier.quit();
 			}
 		});
 		about.addActionListener(new ActionListener(){
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				new AboutDialog(MainFrame.this).setVisible(true);
 			}
 		});
 		ActionListener l = new ActionListener(){
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				openDialog();
@@ -174,14 +172,11 @@ public class MainFrame extends JFrame {
 		});
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
-		File recentOpenFile = ResourcesManager.getResourcesManager().getLocalFile("recent_open.txt");
-		if (recentOpenFile.exists()) {
-			try (BufferedReader br = new BufferedReader(new FileReader(recentOpenFile))) {
-				mostRecentOpenDirectory = br.readLine();
-			} catch (IOException ioe) {
-				mostRecentOpenDirectory = null;
-			}
+		Path recentOpenPath = ResourcesManager.getResourcesManager().getLocalFile("recent_open.txt");
+		if (Files.exists(recentOpenPath)) {
+			mostRecentOpenDirectory = IOHelper.getFirstLineOfFile(recentOpenPath);
 		}
+
 		ConcurrenceManager.getConcurrenceManager().addPostInitTask(new Task(-50){
 			@Override
 			public void run() {
@@ -227,7 +222,7 @@ public class MainFrame extends JFrame {
 		});
 	}
 	
-	public void open(String path){
+	public void open(Path path){
 		if (isBusy()) {
 			JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
 		} else {
@@ -269,20 +264,19 @@ public class MainFrame extends JFrame {
 			final String filename = fileDialog.getFile();
 			if (filename != null) {
 				mostRecentOpenDirectory = fileDialog.getDirectory();
-				final File file = new File(mostRecentOpenDirectory, filename);
+				final Path path = Paths.get(mostRecentOpenDirectory, filename);
 				ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 					@Override
 					public void run() {
-						File recentOpenFile = ResourcesManager.getResourcesManager().getLocalFile("recent_open.txt");
-						try (FileWriter recentOpenWriter = new FileWriter(recentOpenFile)) {
+						Path recentOpenPath = ResourcesManager.getResourcesManager().getLocalFile("recent_open.txt");
+						try (Writer recentOpenWriter = Files.newBufferedWriter(recentOpenPath)) {
 							recentOpenWriter.write(mostRecentOpenDirectory);
-							recentOpenWriter.close();
 						} catch (IOException ioe) {
 							// we don't really care if this fails, but
 							// we'd like to know on standard error
 							ioe.printStackTrace();
 						}
-						open(file.getAbsolutePath());
+						open(path.toAbsolutePath());
 					}
 				});
 			}

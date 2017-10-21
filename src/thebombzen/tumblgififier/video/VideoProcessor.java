@@ -1,12 +1,13 @@
 package thebombzen.tumblgififier.video;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Scanner;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
@@ -37,9 +38,9 @@ public class VideoProcessor {
 		this.scan = scan;
 	}
 
-	private File gifFile;
-	private File nutFile;
-	private File paletteFile;
+	private Path gifFile;
+	private Path nutFile;
+	private Path paletteFile;
 	
 	private boolean halveFramerate;
 	
@@ -62,7 +63,12 @@ public class VideoProcessor {
 	private void adjustScale() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Checking Filesize... ");
-		long currFileSize = gifFile.length();
+		long currFileSize;
+		try {
+			currFileSize = Files.size(gifFile);
+		} catch (IOException ex) {
+			throw new RuntimeIOException(ex);
+		}
 		if (currFileSize > maxSize) {
 			sb.append("Too Big: ");
 			highscale = scale;
@@ -78,7 +84,7 @@ public class VideoProcessor {
 		this.statusProcessor.appendStatus(sb.toString());
 	}
 	
-	public boolean convert(String overlay, StatusProcessor outputProcessor, String path, double startTime,
+	public boolean convert(String overlay, StatusProcessor outputProcessor, Path path, double startTime,
 			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		MainFrame.getMainFrame().setBusy(true);
 		boolean success = true;
@@ -95,7 +101,7 @@ public class VideoProcessor {
 		return success;
 	}
 	
-	private void convert0(String overlay, StatusProcessor outputProcessor, String path, double startTime,
+	private void convert0(String overlay, StatusProcessor outputProcessor, Path path, double startTime,
 			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
 		this.statusProcessor = outputProcessor;
 		this.clipStartTime = startTime;
@@ -122,7 +128,14 @@ public class VideoProcessor {
 		prevPrevWidth = -2;
 		prevPrevHeight = -2;
 		
-		while (gifFile.length() == 0 || (gifFile.length() < minSize && scale < 1) || gifFile.length() > maxSize) {
+		long gifLength;
+		try {
+			gifLength = Files.size(gifFile);
+		} catch (IOException ex) {
+			throw new RuntimeIOException(ex);
+		}
+
+		while (gifLength == 0 || (gifLength < minSize && scale < 1) || gifLength > maxSize) {
 			createGif(overlay, overlaySize);
 			adjustScale();
 			int newWidth = (int) (scan.getWidth() * scale);
@@ -138,14 +151,8 @@ public class VideoProcessor {
 			prevHeight = newHeight;
 		}
 		
-		File newFile = new File(path);
-		
-		if (newFile.exists()) {
-			newFile.delete();
-		}
-		
 		try {
-			Files.copy(gifFile.toPath(), newFile.toPath());
+			Files.copy(gifFile, path, StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException ioe) {
 			throw new RuntimeIOException(ioe);
 		}
@@ -171,9 +178,9 @@ public class VideoProcessor {
 		try {
 			scanPercentDone("Scaling Video... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(), "-y", "-ss",
-							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "0:v:0", "-vf", videoFilter,
+							Double.toString(this.clipStartTime), "-i", scan.getLocation().toString(), "-map", "0:v:0", "-vf", videoFilter,
 							"-sws_flags", "lanczos", "-t", Double.toString(this.clipEndTime - this.clipStartTime),
-							"-c", "ffv1", "-f", "nut", this.nutFile.getAbsolutePath()));
+							"-c", "ffv1", "-f", "nut", nutFile.toString()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Scaling Video... Error.");
@@ -188,8 +195,8 @@ public class VideoProcessor {
 		
 		try {
 			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-i",
-					this.nutFile.getAbsolutePath(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
-					this.paletteFile.getAbsolutePath());
+					this.nutFile.toString(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
+					this.paletteFile.toString());
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating Palette... Error.");
@@ -204,8 +211,8 @@ public class VideoProcessor {
 		try {
 			scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(), "-y", "-i",
-							this.nutFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi",
-							"paletteuse=dither=bayer:bayer_scale=3", "-c", "gif", "-f", "gif", this.gifFile.getAbsolutePath()));
+							this.nutFile.toString(), "-i", this.paletteFile.toString(), "-lavfi",
+							"paletteuse=dither=bayer:bayer_scale=3", "-c", "gif", "-f", "gif", this.gifFile.toString()));
 		} catch (ProcessTerminatedException ex) {
 			ex.printStackTrace();
 			writer.println("Generating GIF... Error.");
@@ -219,7 +226,7 @@ public class VideoProcessor {
 			try {
 				Resource gifsicle = ResourcesManager.getResourcesManager().getXLocation("gifsicle", "gifsicle");
 				writer.print("Crushing GIF... \r");
-				ConcurrenceManager.getConcurrenceManager().exec(true, gifsicle.getLocation().toString(), "--batch", "--unoptimize", "--optimize=3", this.gifFile.getAbsolutePath());
+				ConcurrenceManager.getConcurrenceManager().exec(true, gifsicle.getLocation().toString(), "--batch", "--unoptimize", "--optimize=3", this.gifFile.toString());
 				writer.println("Crushing GIF... Done.");
 			} catch (ProcessTerminatedException ex){
 				ex.printStackTrace();

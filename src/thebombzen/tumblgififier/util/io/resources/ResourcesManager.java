@@ -3,8 +3,8 @@ package thebombzen.tumblgififier.util.io.resources;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,15 +12,20 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import org.tukaani.xz.XZInputStream;
-import thebombzen.tumblgififier.TumblGIFifier;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import thebombzen.tumblgififier.util.OperatingSystem;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.RuntimeFNFException;
 import thebombzen.tumblgififier.util.io.RuntimeIOException;
@@ -49,8 +54,8 @@ public class ResourcesManager {
 	 * This is for the purpose of cleaning up the old application data location.
 	 * It should not be used outside of cleanup. 
 	 */
-	public static String getLegacyLocalResourceLocation() {
-		return new File(getLegacyApplicationDataLocation(), ".tumblgififier").getAbsolutePath();
+	public static Path getLegacyLocalResourceLocation() {
+		return Paths.get(getLegacyApplicationDataLocation(), ".tumblgififier").toAbsolutePath();
 	}
 	
 	/**
@@ -90,8 +95,8 @@ public class ResourcesManager {
 		return openSans;
 	}
 	
-	public File getLocalFile(String name){
-		return new File(this.getLocalResourceLocation(), name);
+	public Path getLocalFile(String name){
+		return LibraryLoader.getLocalResourceLocation().resolve(name);
 	}
 	
 	private static String getExeDLPkg(String pkg) {
@@ -108,8 +113,6 @@ public class ResourcesManager {
 			return "";
 		}
 	}
-	
-	private String localAppDataLocation = null;
 	
 	/**
 	 * This is a set of optional package names.
@@ -172,53 +175,39 @@ public class ResourcesManager {
 		}
 	}
 	
-	public String getLocalResourceLocation() {
-		if (localAppDataLocation != null) {
-			return localAppDataLocation;
-		}
+	public Path getTemporaryDirectory() {
+		Path dir = LibraryLoader.getLocalResourceLocation().resolve("temp");
 		try {
-			String appData = LibraryLoader.getApplicationDataLocation();
-			File localAppDataFile = new File(appData, "tumblgififier").getCanonicalFile();
-			if (localAppDataFile.exists() && !localAppDataFile.isDirectory()) {
-				localAppDataFile.delete();
+			if (Files.exists(dir) && !Files.isDirectory(dir)) {
+				Files.delete(dir);
 			}
-			localAppDataFile.mkdirs();
-			localAppDataLocation = localAppDataFile.getCanonicalPath();
-			return localAppDataLocation;
+			Files.createDirectories(dir);
 		} catch (IOException ioe) {
 			throw new RuntimeIOException(ioe);
 		}
-	}
-	
-	public Path getTemporaryDirectory() {
-		File dir = new File (getLocalResourceLocation(), "temp");
-		if (dir.exists() && !dir.isDirectory()) {
-			dir.delete();
-		}
-		dir.mkdirs();
-		return dir.toPath().toAbsolutePath();
+		return dir;
 	}
 
 	public Resource getXLocation(String pkg, String x) {
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
-		String name = x + TumblGIFifier.EXE_EXTENSION;
+		String name = x + OperatingSystem.getLocalOS().getExeExtension();
 		for (String el : pathElements) {
 			Path path = Paths.get(el, name);
 			if (path.toFile().exists()) {
 				return new Resource(pkg, x, path, false);
 			}
 		}
-		return new Resource(pkg, x, Paths.get(this.getLocalResourceLocation(), name), true);
+		return new Resource(pkg, x, LibraryLoader.getLocalResourceLocation().resolve(name), true);
 	}
 	
 	
 	private boolean initializeMultiExePackage(String pkg, String[] resources, String remoteVersionURL, String localVersionFilename, boolean mightHaveInternet, StatusProcessor processor){
-		
+
 		boolean needDL = false;
-		
+
 		String localVersion = "";
 		URL versions = null;
-		File localVersionsFile = null;
+		Path localVersionsFile = null;
 		if (!remoteVersionURL.isEmpty()){
 			versions = IOHelper.wrapSafeURL(remoteVersionURL);
 			localVersionsFile = getLocalFile(localVersionFilename);
@@ -235,15 +224,15 @@ public class ResourcesManager {
 				}
 			}
 		}
-		
+
 		String remoteVersion = "";
-		
-		for (String name : resources){
-			Resource res = getXLocation(pkg, name);
-			File resFile = res.getLocation().toFile();
-			processor.appendStatus("Checking for " + name + "...");
-			if (!res.isInHouse() && resFile.exists() && !resFile.isDirectory() && resFile.canExecute()) {
-				processor.replaceStatus("Checking for " + name + "... found in PATH.");
+
+		for (String resourceName : resources){
+			Resource res = getXLocation(pkg, resourceName);
+			Path resPath = res.getLocation();
+			processor.appendStatus("Checking for " + resourceName + "...");
+			if (!res.isInHouse() && Files.exists(resPath) && !Files.isDirectory(resPath) && Files.isExecutable(resPath)) {
+				processor.replaceStatus("Checking for " + resourceName + "... found in PATH.");
 				continue;
 			} else if (mightHaveInternet && !remoteVersionURL.isEmpty() && remoteVersion.equals("")) {
 				try {
@@ -254,50 +243,51 @@ public class ResourcesManager {
 				}
 			}
 			if (mightHaveInternet && !remoteVersionURL.isEmpty() && (localVersion.equals("") || !remoteVersion.equals(localVersion))) {
-				processor.appendStatus("New version of "+pkg+" found. Will re-download from the internet.");
+				processor.appendStatus("New version of " + pkg + " found. Will re-download from the internet.");
 				needDL = true;
 				break;
 			}
-			if (resFile.exists() && (resFile.isDirectory() || !resFile.canExecute())) {
-				boolean did = resFile.delete();
-				if (!did) {
-					throw new ResourceNotFoundException(pkg, "Error: Bad " + name + ": " + resFile.getPath());
-				} else {
-					processor.appendStatus("Found Bad " + name + ". Deleted.");
-					processor.appendStatus(" ");
-				}
+			if (Files.exists(resPath) && (Files.isDirectory(resPath) || !Files.isExecutable(resPath))) {
+				IOHelper.deleteQuietly(resPath);
+				processor.appendStatus("Found Bad " + resourceName + ". Deleted.");
+				processor.appendStatus(" ");
 			}
-			if (!resFile.exists()) {
-				processor.replaceStatus("Checking for " + name + "... not found.");
+
+			if (!Files.exists(resPath)) {
+				processor.replaceStatus("Checking for " + resourceName + "... not found.");
 				needDL = true;
 				break;
 			} else {
-				processor.replaceStatus("Checking for " + name + "... found.");
-				resFile.setExecutable(true);
+				processor.replaceStatus("Checking for " + resourceName + "... found.");
+				try {
+					Files.setPosixFilePermissions(resPath, PosixFilePermissions.fromString("rwxr-xr-x"));
+				} catch (IOException ioe) {
+					throw new RuntimeIOException(ioe);
+				}
 			}
 		}
-		
+
 		if (!needDL){
 			processor.appendStatus(pkg+" found.");
 			return mightHaveInternet;
 		}
-		
+
 		if (needDL && !mightHaveInternet) {
-			throw new ResourceNotFoundException(pkg, "Need "+pkg+" dependencies from the internet, but it appears you have no internet access.");
+			throw new ResourceNotFoundException(pkg, "Need " + pkg + " dependencies from the internet, but it appears you have no internet access.");
 		}
-		
-		processor.appendStatus("Downloading "+pkg+" from the internet...");
+
+		processor.appendStatus("Downloading " + pkg + " from the internet...");
 		String execName = getExeDLPkg(pkg);
 		if (execName.isEmpty()){
-			throw new ResourceNotFoundException(pkg, "No prebuilt "+pkg+" binaries for your platform found.\nPlease install "+Arrays.toString(resources).replaceAll("[\\[\\]]", "")+" into your PATH.");
+			throw new ResourceNotFoundException(pkg, "No prebuilt " + pkg + " binaries for your platform found.\nPlease install " + Arrays.toString(resources).replaceAll("[\\[\\]]", "") + " into your PATH.");
 		}
-		File tempFile = getLocalFile(execName);
+		Path tempFile = getLocalFile(execName);
 		URL website = IOHelper.wrapSafeURL(getExeDownloadLocation(pkg));
 		try {
 			IOHelper.downloadFromInternet(website, tempFile);
 		} catch (RuntimeIOException ioe) {
 			ioe.printStackTrace();
-			throw new ResourceNotFoundException(pkg, "Error downloading "+pkg+": ", ioe);
+			throw new ResourceNotFoundException(pkg, "Error downloading " + pkg + ": ", ioe);
 		}
 		if (!remoteVersionURL.isEmpty()){
 			try {
@@ -307,25 +297,34 @@ public class ResourcesManager {
 				// we don't actually care, but logging it is nice
 			}
 		}
-		ZipInputStream zin = null;
+		ArchiveInputStream ain = null;
+		InputStream cin = null;
 		try {
-			zin = new ZipInputStream(new XZInputStream(new BufferedInputStream(new FileInputStream(tempFile))));
-			ZipEntry entry;
-			while (null != (entry = zin.getNextEntry())) {
+			InputStream bin = new BufferedInputStream(Files.newInputStream(tempFile));
+			try {
+				cin = new CompressorStreamFactory(true).createCompressorInputStream(bin);
+			} catch (CompressorException ex) {
+				cin = bin;
+			}
+			try {
+				ain = new ArchiveStreamFactory("UTF-8").createArchiveInputStream(cin);
+			} catch (ArchiveException ex) {
+				throw new ResourceNotFoundException(pkg, "Unable to recognize archive format", ex);
+			}
+			ArchiveEntry entry;
+			while (null != (entry = ain.getNextEntry())) {
 				String name = entry.getName();
 				processor.appendStatus("Extracting " + name + "...");
-				File path = getLocalFile(name);
-				if (path.exists()) {
-					path.delete();
-				}
-				Files.copy(zin, path.toPath());
-				path.setExecutable(true);
+				Path path = getLocalFile(name);
+				Files.deleteIfExists(path);
+				Files.copy(ain, path, StandardCopyOption.REPLACE_EXISTING);
+				Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rwxr-xr-x"));
 				processor.replaceStatus("Extracting " + name + "... extracted.");
 			}
 		} catch (IOException|RuntimeIOException e) {
 			throw new ResourceNotFoundException(pkg, "Error downloading", e);
 		} finally {
-			IOHelper.closeQuietly(zin);
+			IOHelper.closeQuietly(ain);
 			IOHelper.deleteTempFile(tempFile);
 		}
 		processor.appendStatus("Done downloading.");
@@ -335,32 +334,32 @@ public class ResourcesManager {
 	
 	private boolean initializeSingletonPackage(String pkg, String fullname, String localfilename, String dlLocation, boolean mightHaveInternet, StatusProcessor processor){
 		boolean needDL = false;
-		File localfile = getLocalFile(localfilename);
+		Path localfile = getLocalFile(localfilename);
 		processor.appendStatus("Checking for " + fullname + " ...");
-		if (localfile.exists() && !localfile.isFile()) {
-			boolean did = localfile.delete();
+		if (Files.exists(localfile) && !Files.isRegularFile(localfile)) {
+			boolean did = IOHelper.deleteQuietly(localfile);
 			if (!did) {
-				throw new ResourceNotFoundException(pkg, "Error: Bad "+fullname+" in Path: " + localfile.getPath());
+				throw new ResourceNotFoundException(pkg, "Error: Bad "+fullname+" in Path: " + localfile.toString());
 			} else {
-				processor.appendStatus("Found Bad "+fullname+" in Path. Deleted.");
+				processor.appendStatus("Found Bad " + fullname + " in Path. Deleted.");
 			}
 		}
-		if (!localfile.exists()) {
-			processor.replaceStatus("Checking for "+fullname+"... not found.");
+		if (!Files.exists(localfile)) {
+			processor.replaceStatus("Checking for " + fullname + "... not found.");
 			needDL = true;
 		} else {
-			processor.replaceStatus("Checking for "+fullname+"... found.");
+			processor.replaceStatus("Checking for " + fullname + "... found.");
 		}
-		
+
 		if (!needDL){
 			processor.appendStatus(fullname+" found.");
 			return mightHaveInternet;
 		}
-		
+
 		if (needDL && !mightHaveInternet){
 			throw new ResourceNotFoundException(pkg, "Need " + pkg + " dependencies from the internet, but it appears you have no internet access.");
 		}
-		
+
 		processor.appendStatus("Downloading "+fullname+" from the internet...");
 		URL website = IOHelper.wrapSafeURL(dlLocation);
 		try {
@@ -394,7 +393,7 @@ public class ResourcesManager {
 		try {
 			mightHaveInternet = initializeSingletonPackage("OpenSans", "Open Sans Semibold", "OpenSans-Semibold.ttf", getOpenSansDownloadLocation(), mightHaveInternet, processor);
 			pkgs.add("OpenSans");
-			openSans = new Resource("OpenSans", "OpenSans-Semibold", getLocalFile("OpenSans-Semibold.ttf").getAbsolutePath(), false);
+			openSans = new Resource("OpenSans", "OpenSans-Semibold", getLocalFile("OpenSans-Semibold.ttf"), false);
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null){

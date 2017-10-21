@@ -55,7 +55,7 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 				String text = getText();
 				String[] lines = text.split(String.format("%n"));
 				lines[lines.length - 1] = status;
-				text = TextHelper.getTextHelper().join(String.format("%n"), lines);
+				text = String.join(String.format("%n"), lines);
 				setText(text);
 			}
 		});

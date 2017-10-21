@@ -1,7 +1,6 @@
 package thebombzen.tumblgififier.util.io.resources;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -10,13 +9,14 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import thebombzen.tumblgififier.TumblGIFifier;
+import thebombzen.tumblgififier.util.OperatingSystem;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.RuntimeIOException;
 
@@ -26,36 +26,20 @@ public final class LibraryLoader {
 		
 	}
 	
-	private static LibraryLoader loader = new LibraryLoader();
-	
-	public static LibraryLoader getLibraryLoader() {
-		return loader;
-	}
-	
-	static String getApplicationDataLocation() {
-		String name = System.getProperty("os.name");
-		if (name.toLowerCase().contains("windows")) {
-			return System.getenv("appdata");
-		} else if (name.toLowerCase().contains("mac") || name.toLowerCase().contains("osx")
-				|| name.toLowerCase().contains("os x")) {
-			return System.getProperty("user.home") + "/Library/Application Support";
-		} else {
-			return System.getProperty("user.home") + "/.config";
-		}
-	}
-	
+	private static Path localResourceLocation = null;
+
 	/**
 	 * Add a Jar file to the class path.
 	 * 
 	 * From StackOverflow: https://stackoverflow.com/a/60766/
 	 * @param file
 	 */
-	private void addToClasspath(File file) {
+	private static void addToClasspath(Path path) {
 		URL url;
 		try {
-			url = file.toURI().toURL();
+			url = path.toUri().toURL();
 		} catch (MalformedURLException ex) {
-			throw new ResourceNotFoundException("Malformed URL? " + file.toString(), ex);
+			throw new ResourceNotFoundException("Malformed URL? " + path, ex);
 		}
 		URLClassLoader classLoader = (URLClassLoader)ClassLoader.getSystemClassLoader();
 		Method method;
@@ -72,7 +56,24 @@ public final class LibraryLoader {
 		}
 	}
 
-	public void extractExternalLibraries() {
+	public static Path getLocalResourceLocation() {
+		if (localResourceLocation != null) {
+			return localResourceLocation;
+		}
+		try {
+			localResourceLocation = OperatingSystem.getLocalOS().getLocalResourceLocation().toAbsolutePath();
+			if (Files.exists(localResourceLocation) && !Files.isDirectory(localResourceLocation)) {
+				Files.delete(localResourceLocation);
+				System.err.println("Deleting existing tumblgififier non-directory.");
+			}
+			Files.createDirectories(localResourceLocation);
+			return localResourceLocation;
+		} catch (IOException ioe) {
+			throw new RuntimeIOException(ioe);
+		}
+	}
+
+	public static void extractExternalLibraries() {
 		File thisJarFile = null;
 		try {
 			thisJarFile = new File(TumblGIFifier.class.getProtectionDomain().getCodeSource().getLocation().toURI());
@@ -82,10 +83,10 @@ public final class LibraryLoader {
 		if (!thisJarFile.isFile()) {
 			return;
 		}
-		File libs = new File(getApplicationDataLocation() + File.separator + "tumblgififier" + File.separator + "lib");
-		libs.mkdirs();
+		Path libs = getLocalResourceLocation().resolve("lib");
 		ZipFile zipFile = null;
 		try {
+			Files.createDirectories(libs);
 			zipFile = new ZipFile(thisJarFile);
 			Enumeration<? extends ZipEntry> entries = zipFile.entries();
 			while (entries.hasMoreElements()) {
@@ -95,32 +96,21 @@ public final class LibraryLoader {
 					if (fname.equals("")) {
 						continue;
 					}
-					FileOutputStream fout = null;
 					InputStream in = null;
-					ReadableByteChannel rbc = null;
 					try {
-						File lib = new File(libs, fname);
-						if (lib.isFile() && lib.lastModified() == entry.getTime() && lib.length() == entry.getSize()) {
+						Path lib = libs.resolve(fname);
+						if (Files.exists(lib) && Files.getLastModifiedTime(lib).equals(entry.getLastModifiedTime()) && Files.size(lib) == entry.getSize()){
 							System.out.println("Found " + fname + ", not extracting.");
 							addToClasspath(lib);
 							continue;
 						}
 						System.out.println("Extracting " + fname + ".");
-						fout = new FileOutputStream(new File(libs, fname));
-						FileChannel channel = fout.getChannel();
 						in = zipFile.getInputStream(entry);
-						rbc = Channels.newChannel(in);
-						try {
-							channel.transferFrom(rbc, 0L, Long.MAX_VALUE);
-						} finally {
-							
-						}
-						lib.setLastModified(entry.getTime());
+						Files.copy(in, lib, StandardCopyOption.REPLACE_EXISTING);
+						Files.setLastModifiedTime(lib, entry.getLastModifiedTime());
 						addToClasspath(lib);
 					} finally {
-						IOHelper.closeQuietly(fout);
 						IOHelper.closeQuietly(in);
-						IOHelper.closeQuietly(rbc);
 					}
 				}
 			}
@@ -129,7 +119,6 @@ public final class LibraryLoader {
 		} finally {
 			IOHelper.closeQuietly(zipFile);
 		}
-		
 	}
 	
 }

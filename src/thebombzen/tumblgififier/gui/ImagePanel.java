@@ -5,8 +5,8 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import javax.swing.JPanel;
-import thebombzen.tumblgififier.util.Callback;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 
 public class ImagePanel extends JPanel {
@@ -17,9 +17,9 @@ public class ImagePanel extends JPanel {
 	
 	private volatile boolean playing = false;
 	private volatile Future<?> playClock = null;
-	private final Callback<?> playCallback;
+	private final Consumer<?> playCallback;
 	
-	public ImagePanel(BufferedImage image, final Callback<?> playCallback) {
+	public ImagePanel(BufferedImage image, final Consumer<?> playCallback) {
 		this.image = image;
 		this.playCallback = playCallback;
 		/* Disabled for 0.7.2 release
@@ -51,7 +51,7 @@ public class ImagePanel extends JPanel {
 		}
 		playClock = ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
 			public void run(){
-				playCallback.call(null);
+				playCallback.accept(null);
 			}
 		}, 100, TimeUnit.MILLISECONDS);
 	}
