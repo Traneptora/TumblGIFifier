@@ -349,7 +349,13 @@ public class ResourcesManager {
 				Path path = getLocalFile(name);
 				Files.deleteIfExists(path);
 				Files.copy(ain, path, StandardCopyOption.REPLACE_EXISTING);
-				Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rwxr-xr-x"));
+				if (EnumSet.of(OperatingSystem.MACOS_64, OperatingSystem.POSIX).contains(OperatingSystem.getLocalOS())){
+					try {
+						Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rwxr--r--"));
+					} catch (IOException ioe) {
+						throw new ResourceNotFoundException(pkg, "Could not set executable on " + pkg);
+					}
+				}
 				processor.replaceStatus("Extracting " + name + "... extracted.");
 			}
 		} catch (IOException|RuntimeIOException e) {
