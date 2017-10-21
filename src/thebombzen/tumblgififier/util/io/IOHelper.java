@@ -171,7 +171,7 @@ public final class IOHelper {
 	 */
 	public static String getFirstLineOfFile(Path path) throws RuntimeFNFException, RuntimeIOException {
 		try {
-			return Files.lines(path).findFirst().orElse("");
+			return getFirstLineOfInputStream(Files.newInputStream(path));
 		} catch (FileNotFoundException fnfe){
 			throw new RuntimeFNFException(fnfe);
 		} catch (NoSuchFileException nsfe) {
