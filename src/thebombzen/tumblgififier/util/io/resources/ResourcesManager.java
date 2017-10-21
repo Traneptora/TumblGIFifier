@@ -79,7 +79,7 @@ public class ResourcesManager {
 		if (name.isEmpty()) {
 			return "";
 		} else {
-			return "https://thebombzen.com/TumblGIFifier/resources/" + name;
+			return "https://thebombzen.com/TumblGIFifier/resources/" + pkg + "/" + name;
 		}
 	}
 	
@@ -332,9 +332,9 @@ public class ResourcesManager {
 				String name = null;
 				boolean found = false;
 				for (String resource : resources) {
-					if (entry.getName().endsWith(resource)) {
+					name = Paths.get(entry.getName()).getFileName().toString();
+					if (name.startsWith(resource)) {
 						found = true;
-						name = resource;
 						break;
 					}
 				}
