@@ -318,13 +318,14 @@ public class ResourcesManager {
 		try {
 			InputStream bin = new BufferedInputStream(Files.newInputStream(tempFile));
 			try {
-				cin = new CompressorStreamFactory(true).createCompressorInputStream(bin);
+				cin = new BufferedInputStream(new CompressorStreamFactory(true).createCompressorInputStream(bin));
 			} catch (CompressorException ex) {
 				cin = bin;
 			}
 			try {
 				ain = new ArchiveStreamFactory("UTF-8").createArchiveInputStream(cin);
 			} catch (ArchiveException ex) {
+				IOHelper.closeQuietly(cin);
 				throw new ResourceNotFoundException(pkg, "Unable to recognize archive format for " + pkg, ex);
 			}
 			ArchiveEntry entry;
