@@ -74,7 +74,28 @@ public class ResourcesManager {
 	}
 	
 	private static String getExeDownloadLocation(String pkg) {
-		return "https://thebombzen.com/TumblGIFifier/resources/" + pkg + "/" + getExeDLPkg(pkg);
+		switch (pkg) {
+			case "FFmpeg":
+				switch (OperatingSystem.getLocalOS()) {
+					case WINDOWS_64:
+						return "https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-3.4-win64-static.zip";
+					case WINDOWS_32:
+						return "https://ffmpeg.zeranoe.com/builds/win32/static/ffmpeg-3.4-win32-static.zip";
+					case MACOS_64:
+						return "https://ffmpeg.zeranoe.com/builds/macos64/static/ffmpeg-3.4-macos64-static.zip";
+					default:
+						return "";
+				}
+			case "gifsicle":
+				switch (OperatingSystem.getLocalOS()) {
+					case WINDOWS_64:
+						return "https://thebombzen.com/TumblGIFifier/resources/gifsicle.windows.zip.xz";
+					default:
+						return "";
+				}
+			default:
+				return "";
+		}
 	}
 	
 	private static String getOpenSansDownloadLocation() {
@@ -100,17 +121,27 @@ public class ResourcesManager {
 	}
 	
 	private static String getExeDLPkg(String pkg) {
-		String name = System.getProperty("os.name");
-		if (name.toLowerCase().contains("windows")) {
-			return pkg + ".windows.zip.xz";
-		} else if (name.toLowerCase().contains("mac") || name.toLowerCase().contains("osx")
-				|| name.toLowerCase().contains("os x")) {
-			if (pkg.equals("gifsicle")){
+		switch (pkg) {
+			case "FFmpeg":
+				switch (OperatingSystem.getLocalOS()) {
+					case WINDOWS_64:
+						return "ffmpeg-3.4-win64-static.zip";
+					case WINDOWS_32:
+						return "ffmpeg-3.4-win32-static.zip";
+					case MACOS_64:
+						return "ffmpeg-3.4-macos64-static.zip";
+					default:
+						return "";
+				}
+			case "gifsicle":
+				switch (OperatingSystem.getLocalOS()) {
+					case WINDOWS_64:
+						return "gifsicle.windows.zip.xz";
+					default:
+						return "";
+				}
+			default:
 				return "";
-			}
-			return pkg + ".osx.zip.xz";
-		} else {
-			return "";
 		}
 	}
 	
@@ -262,13 +293,13 @@ public class ResourcesManager {
 				try {
 					Files.setPosixFilePermissions(resPath, PosixFilePermissions.fromString("rwxr-xr-x"));
 				} catch (IOException ioe) {
-					throw new RuntimeIOException(ioe);
+					throw new ResourceNotFoundException(pkg, "Could not set executable on " + pkg);
 				}
 			}
 		}
 
 		if (!needDL){
-			processor.appendStatus(pkg+" found.");
+			processor.appendStatus(pkg + " found.");
 			return mightHaveInternet;
 		}
 
@@ -309,11 +340,22 @@ public class ResourcesManager {
 			try {
 				ain = new ArchiveStreamFactory("UTF-8").createArchiveInputStream(cin);
 			} catch (ArchiveException ex) {
-				throw new ResourceNotFoundException(pkg, "Unable to recognize archive format", ex);
+				throw new ResourceNotFoundException(pkg, "Unable to recognize archive format for " + pkg, ex);
 			}
 			ArchiveEntry entry;
 			while (null != (entry = ain.getNextEntry())) {
-				String name = entry.getName();
+				String name = null;
+				boolean found = false;
+				for (String resource : resources) {
+					if (entry.getName().endsWith(resource)) {
+						found = true;
+						name = resource;
+						break;
+					}
+				}
+				if (!found) {
+					continue;
+				}
 				processor.appendStatus("Extracting " + name + "...");
 				Path path = getLocalFile(name);
 				Files.deleteIfExists(path);
@@ -322,7 +364,7 @@ public class ResourcesManager {
 				processor.replaceStatus("Extracting " + name + "... extracted.");
 			}
 		} catch (IOException|RuntimeIOException e) {
-			throw new ResourceNotFoundException(pkg, "Error downloading", e);
+			throw new ResourceNotFoundException(pkg, "Error downloading " + pkg + ".", e);
 		} finally {
 			IOHelper.closeQuietly(ain);
 			IOHelper.deleteTempFile(tempFile);
@@ -337,9 +379,9 @@ public class ResourcesManager {
 		Path localfile = getLocalFile(localfilename);
 		processor.appendStatus("Checking for " + fullname + " ...");
 		if (Files.exists(localfile) && !Files.isRegularFile(localfile)) {
-			boolean did = IOHelper.deleteQuietly(localfile);
-			if (!did) {
-				throw new ResourceNotFoundException(pkg, "Error: Bad "+fullname+" in Path: " + localfile.toString());
+			boolean gone = IOHelper.deleteQuietly(localfile);
+			if (!gone) {
+				throw new ResourceNotFoundException(pkg, "Error: Bad " + fullname + " in Path: " + localfile.toString());
 			} else {
 				processor.appendStatus("Found Bad " + fullname + " in Path. Deleted.");
 			}
@@ -352,7 +394,7 @@ public class ResourcesManager {
 		}
 
 		if (!needDL){
-			processor.appendStatus(fullname+" found.");
+			processor.appendStatus(fullname + " found.");
 			return mightHaveInternet;
 		}
 
@@ -360,7 +402,7 @@ public class ResourcesManager {
 			throw new ResourceNotFoundException(pkg, "Need " + pkg + " dependencies from the internet, but it appears you have no internet access.");
 		}
 
-		processor.appendStatus("Downloading "+fullname+" from the internet...");
+		processor.appendStatus("Downloading " + fullname + " from the internet...");
 		URL website = IOHelper.wrapSafeURL(dlLocation);
 		try {
 			IOHelper.downloadFromInternetXZ(website, localfile);
