@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -202,11 +203,12 @@ public class ResourcesManager {
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
 		String name = x + TumblGIFifier.EXE_EXTENSION;
 		for (String el : pathElements) {
-			if (new File(el, name).exists()) {
-				return new Resource(pkg, x, new File(el, name).getPath(), true);
+			Path path = Paths.get(el, name);
+			if (path.toFile().exists()) {
+				return new Resource(pkg, x, path, false);
 			}
 		}
-		return new Resource(pkg, x, new File(this.getLocalResourceLocation(), name).getAbsolutePath(), false);
+		return new Resource(pkg, x, Paths.get(this.getLocalResourceLocation(), name), true);
 	}
 	
 	
@@ -238,9 +240,9 @@ public class ResourcesManager {
 		
 		for (String name : resources){
 			Resource res = getXLocation(pkg, name);
-			File resFile = new File(res.location).getAbsoluteFile();
+			File resFile = res.getLocation().toFile();
 			processor.appendStatus("Checking for " + name + "...");
-			if (res.isInPath && resFile.exists() && !resFile.isDirectory() && resFile.canExecute()) {
+			if (!res.isInHouse() && resFile.exists() && !resFile.isDirectory() && resFile.canExecute()) {
 				processor.replaceStatus("Checking for " + name + "... found in PATH.");
 				continue;
 			} else if (mightHaveInternet && !remoteVersionURL.isEmpty() && remoteVersion.equals("")) {

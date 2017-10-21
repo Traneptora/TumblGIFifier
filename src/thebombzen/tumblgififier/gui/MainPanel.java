@@ -192,7 +192,7 @@ public class MainPanel extends JPanel {
 			public void run() {
 				try {
 					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
-					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v:0",
+					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.getLocation().toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v:0",
 							"-i", scan.getLocation(), "-ss", Double.toString(clipStart),
 							"-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter);
 				} catch (ProcessTerminatedException ex) {
@@ -237,10 +237,10 @@ public class MainPanel extends JPanel {
 						return;
 					}
 					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
-					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-ss", Double.toString(clipStart), "-i",
+					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation(), "-map", "0:v:0", "-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter,
 							"-sws_flags", "lanczos", "-c", "ffv1", "-f", "nut", tempFile.getAbsolutePath());
-					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.toString(), "-loop", "0", tempFile.getAbsolutePath());
+					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.getLocation().toString(), "-loop", "0", tempFile.getAbsolutePath());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
 					ConcurrenceManager.getConcurrenceManager().stopAll();

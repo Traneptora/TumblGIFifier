@@ -170,7 +170,7 @@ public class VideoProcessor {
 		
 		try {
 			scanPercentDone("Scaling Video... ", clipEndTime - clipStartTime, writer,
-					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-ss",
+					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(), "-y", "-ss",
 							Double.toString(this.clipStartTime), "-i", scan.getLocation(), "-map", "0:v:0", "-vf", videoFilter,
 							"-sws_flags", "lanczos", "-t", Double.toString(this.clipEndTime - this.clipStartTime),
 							"-c", "ffv1", "-f", "nut", this.nutFile.getAbsolutePath()));
@@ -187,7 +187,7 @@ public class VideoProcessor {
 		writer.flush();
 		
 		try {
-			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.toString(), "-y", "-i",
+			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-i",
 					this.nutFile.getAbsolutePath(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
 					this.paletteFile.getAbsolutePath());
 		} catch (ProcessTerminatedException ex) {
@@ -203,7 +203,7 @@ public class VideoProcessor {
 		
 		try {
 			scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer,
-					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.toString(), "-y", "-i",
+					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(), "-y", "-i",
 							this.nutFile.getAbsolutePath(), "-i", this.paletteFile.getAbsolutePath(), "-lavfi",
 							"paletteuse=dither=bayer:bayer_scale=3", "-c", "gif", "-f", "gif", this.gifFile.getAbsolutePath()));
 		} catch (ProcessTerminatedException ex) {
@@ -219,7 +219,7 @@ public class VideoProcessor {
 			try {
 				Resource gifsicle = ResourcesManager.getResourcesManager().getXLocation("gifsicle", "gifsicle");
 				writer.print("Crushing GIF... \r");
-				ConcurrenceManager.getConcurrenceManager().exec(true, gifsicle.location, "--batch", "--unoptimize", "--optimize=3", this.gifFile.getAbsolutePath());
+				ConcurrenceManager.getConcurrenceManager().exec(true, gifsicle.getLocation().toString(), "--batch", "--unoptimize", "--optimize=3", this.gifFile.getAbsolutePath());
 				writer.println("Crushing GIF... Done.");
 			} catch (ProcessTerminatedException ex){
 				ex.printStackTrace();

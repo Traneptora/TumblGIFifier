@@ -33,7 +33,7 @@ public class VideoScan {
 		double framerate = -1;
 		double durationTime = -1;
 		try (BufferedReader br = new BufferedReader(
-				new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(),
+				new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.getLocation().toString(),
 						"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", filename), Charset.forName("UTF-8")))) {
 			while (null != (line = br.readLine())) {
 				if (Pattern.compile("streams\\.stream\\.\\d+\\.width=").matcher(line).find()) {
@@ -93,7 +93,7 @@ public class VideoScan {
 			processor.appendStatus("Did not find duration in metadata, checking packets...");
 			Queue<String> lineQueue = new ArrayDeque<>();
 			try (BufferedReader br = new BufferedReader(new InputStreamReader(
-					ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.toString(), "-select_streams", "v",
+					ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.getLocation().toString(), "-select_streams", "v",
 							"-of", "flat", "-show_entries", "packet=pts_time,duration_time", filename)))) {
 				while (null != (line = br.readLine())) {
 					if (lineQueue.size() >= 2) {

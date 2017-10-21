@@ -44,7 +44,7 @@ public final class TextHelper {
 	 */
 	private String getFontFile(){
 		if (fontFile == null){
-			fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansResource().location);
+			fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansResource().getLocation().toString());
 		}
 		return fontFile;
 	}

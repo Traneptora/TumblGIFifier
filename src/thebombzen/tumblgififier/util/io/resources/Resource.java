@@ -1,55 +1,69 @@
 package thebombzen.tumblgififier.util.io.resources;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * This class represents a resource provided by an external resource package.
  */
 public class Resource {
 	
+	protected String pkg;
+	protected String name;
+	protected Path location;
+	protected boolean inHouse;
+
+	public Resource(String resourcePackage, String resourceName, Path location, boolean inHouse) {
+		this.pkg = resourcePackage;
+		this.name = resourceName;
+		this.location = location.toAbsolutePath();
+		this.inHouse = inHouse;
+	}
+
+	public Resource(String resourcePackage, String resourceName, String location, boolean inHouse) {
+		this(resourcePackage, resourceName, Paths.get(location), inHouse);
+	}
+
 	/**
 	 * This is the global package containing the resource.
 	 * Example: "FFmpeg"
 	 */
-	public final String resourcePackage;
+	public String getPackage() {
+		return pkg;
+	}
+
 	/**
 	 * This is the local name of the resource.
 	 * Example: "ffplay"
 	 */
-	public final String resourceName;
-	
+	public String getName() {
+		return name;
+	}
+
 	/**
 	 * This is the filesystem location of the resource.
 	 * Example: "/usr/bin/ffprobe"
 	 */
-	public final String location;
-	
-	/**
-	 * Did this resource originate from the PATH?
-	 */
-	public final boolean isInPath;
-	
-	public Resource(String resourcePackage, String resourceName, String location, boolean isFromPATH) {
-		this.resourcePackage = resourcePackage;
-		this.resourceName = resourceName;
-		this.location = location;
-		this.isInPath = isFromPATH;
-	}
-	
-	/**
-	 * Calling toString() on a resource just returns its location.
-	 */
-	@Override
-	public String toString() {
+	public Path getLocation() {
 		return location;
+	}
+
+	/**
+	 * Is this resource provided by us?
+	 * @return true if the resource is provided with TumblGIFifier, false if found on the system.
+	 */
+	public boolean isInHouse() {
+		return inHouse;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (isInPath ? 1231 : 1237);
+		result = prime * result + (inHouse ? 1231 : 1237);
 		result = prime * result + ((location == null) ? 0 : location.hashCode());
-		result = prime * result + ((resourceName == null) ? 0 : resourceName.hashCode());
-		result = prime * result + ((resourcePackage == null) ? 0 : resourcePackage.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((pkg == null) ? 0 : pkg.hashCode());
 		return result;
 	}
 
@@ -62,23 +76,28 @@ public class Resource {
 		if (getClass() != obj.getClass())
 			return false;
 		Resource other = (Resource) obj;
-		if (isInPath != other.isInPath)
+		if (inHouse != other.inHouse)
 			return false;
 		if (location == null) {
 			if (other.location != null)
 				return false;
 		} else if (!location.equals(other.location))
 			return false;
-		if (resourceName == null) {
-			if (other.resourceName != null)
+		if (name == null) {
+			if (other.name != null)
 				return false;
-		} else if (!resourceName.equals(other.resourceName))
+		} else if (!name.equals(other.name))
 			return false;
-		if (resourcePackage == null) {
-			if (other.resourcePackage != null)
+		if (pkg == null) {
+			if (other.pkg != null)
 				return false;
-		} else if (!resourcePackage.equals(other.resourcePackage))
+		} else if (!pkg.equals(other.pkg))
 			return false;
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "Resource [pkg=" + pkg + ", name=" + name + ", location=" + location + ", inHouse=" + inHouse + "]";
 	}
 }
