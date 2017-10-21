@@ -25,7 +25,7 @@ name="TumblGIFifier" default="main" basedir=".">
 
 	<!-- To work with external libraries, need classpath to compile -->
 	<target name="compile" depends="init" description="compile the source">
-		<javac includeantruntime="false" srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath" />
+		<javac includeantruntime="false" srcdir="${src.dir}" destdir="${build.dir}" target="1.8" source="1.8" classpathref="classpath" />
 	</target>
 
 	<target name="copy-dependencies">
