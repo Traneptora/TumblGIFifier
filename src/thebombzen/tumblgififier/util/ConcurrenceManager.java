@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.util;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -189,7 +190,7 @@ public final class ConcurrenceManager {
 		//System.err.println(TextHelper.getTextHelper().join(" ", args));
 		try {
 			if (join) {
-				TumblGIFifier.getLogFileOutputStream().println(String.join(" ", args));
+				log(String.join(" ", args));
 				ByteArrayOutputStream bout = new ByteArrayOutputStream();
 				InputStream in = exec(bout, args);
 				TumblGIFifier.getLogFileOutputStream().write(bout.toByteArray());
@@ -203,7 +204,7 @@ public final class ConcurrenceManager {
 			if (ioe.getMessage().equals("Stream closed")) {
 				throw new ProcessTerminatedException(ioe);
 			} else {
-				ioe.printStackTrace();
+				log(ioe);
 				return new NullInputStream();
 			}
 		}

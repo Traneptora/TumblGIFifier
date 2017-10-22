@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.gui;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -233,7 +234,7 @@ public class MainPanel extends JPanel {
 					try {
 						tempFile = IOHelper.createTempFile();
 					} catch (RuntimeIOException ioe) {
-						ioe.printStackTrace();
+						log(ioe);
 						statusArea.appendStatus("Error rendering clip :(");
 						return;
 					}
@@ -314,7 +315,7 @@ public class MainPanel extends JPanel {
 			} catch (IOException ioe) {
 				// we don't care much if this fails
 				// but knowing on standard error is nice
-				ioe.printStackTrace();
+				log(ioe);
 			}
 			createGIF(Paths.get(mostRecentGIFDirectory, filename).toAbsolutePath());
 		}

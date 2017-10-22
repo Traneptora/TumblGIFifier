@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.util.io.resources;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -236,7 +237,7 @@ public class ResourcesManager {
 						IOHelper.downloadFromInternet(versions, localVersionsFile);
 					}
 				} catch (RuntimeIOException ioe) {
-					ioe.printStackTrace();
+					log(ioe);
 					mightHaveInternet = false;
 				}
 			}
@@ -255,7 +256,7 @@ public class ResourcesManager {
 				try {
 					remoteVersion = IOHelper.downloadFirstLineFromInternet(versions);
 				} catch (RuntimeIOException ioe) {
-					ioe.printStackTrace();
+					log(ioe);
 					mightHaveInternet = false;
 				}
 			}
@@ -305,14 +306,14 @@ public class ResourcesManager {
 		try {
 			IOHelper.downloadFromInternet(website, tempFile);
 		} catch (RuntimeIOException ioe) {
-			ioe.printStackTrace();
+			log(ioe);
 			throw new ResourceNotFoundException(pkg, "Error downloading " + pkg + ": ", ioe);
 		}
 		if (!remoteVersionURL.isEmpty()){
 			try {
 				IOHelper.downloadFromInternet(versions, localVersionsFile);
 			} catch (RuntimeIOException ioe){
-				ioe.printStackTrace();
+				log(ioe);
 				// we don't actually care, but logging it is nice
 			}
 		}
@@ -423,7 +424,7 @@ public class ResourcesManager {
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null){
-				rnfe.getCause().printStackTrace();
+				log(rnfe.getCause());
 			}
 		}
 		
@@ -434,7 +435,7 @@ public class ResourcesManager {
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null){
-				rnfe.getCause().printStackTrace();
+				log(rnfe.getCause());
 			}
 		}
 		
@@ -444,7 +445,7 @@ public class ResourcesManager {
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null){
-				rnfe.getCause().printStackTrace();
+				log(rnfe.getCause());
 			}
 		}
 		

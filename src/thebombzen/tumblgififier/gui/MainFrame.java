@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.gui;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.EventQueue;
@@ -215,7 +216,7 @@ public class MainFrame extends JFrame {
 						});
 					}
 				} catch (Throwable re){
-					re.printStackTrace();
+					log(re);
 					getStatusProcessor().appendStatus("Error initializing.");
 				}
 			}
@@ -274,7 +275,7 @@ public class MainFrame extends JFrame {
 						} catch (IOException ioe) {
 							// we don't really care if this fails, but
 							// we'd like to know on standard error
-							ioe.printStackTrace();
+							log(ioe);
 						}
 						open(path.toAbsolutePath());
 					}

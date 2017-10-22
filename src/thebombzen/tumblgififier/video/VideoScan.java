@@ -12,6 +12,7 @@ import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 import thebombzen.tumblgififier.util.text.TextHelper;
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 
 public class VideoScan {
 	private final double scanDuration;
@@ -84,17 +85,17 @@ public class VideoScan {
 				}
 			}
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			log(ioe);
 		}
 
 		if (duration < 0) {
-			processor.appendStatus("Did not find duration in metadata, checking packets...");
+			log("Did not find duration in metadata, checking packets...");
 			Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 			try {
 				duration = TextHelper.scanTotalTimeConverted(ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(),
 						"-i", pathname.toString(), "-map", "0:v:0", "-f", "null", "-"));
 			} catch (ProcessTerminatedException ex) {
-				ex.printStackTrace();
+				log(ex);
 			}
 		}
 

@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.util.io;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.FileNotFoundException;
@@ -107,7 +108,7 @@ public final class IOHelper {
 		} catch (IOException ioe) {
 			// probably still open on windows
 			// but logging is nice
-			ioe.printStackTrace();
+			log(ioe);
 		}
 		if (Files.exists(path)){
 			return false;

@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.gui;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.EventQueue;
@@ -96,7 +97,7 @@ public class AboutDialog extends JDialog {
 												} catch (RuntimeException ex) {
 													throw ex;
 												} catch (Exception e) {
-													e.printStackTrace();
+													log(e);
 													JOptionPane.showMessageDialog(AboutDialog.this,
 															"Error opening web browser.", "Error",
 															JOptionPane.ERROR_MESSAGE);

@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.video;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,7 +91,7 @@ public class VideoProcessor {
 		try {
 			convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate, overlaySize);
 		} catch (RuntimeIOException ioe){
-			ioe.printStackTrace();
+			log(ioe);
 			success = false;
 		}
 		IOHelper.deleteTempFile(gifFile);
@@ -181,7 +182,7 @@ public class VideoProcessor {
 							"-sws_flags", "lanczos", "-t", Double.toString(this.clipEndTime - this.clipStartTime),
 							"-c", "ffv1", "-f", "nut", nutFile.toString()));
 		} catch (ProcessTerminatedException ex) {
-			ex.printStackTrace();
+			log(ex);
 			writer.println("Scaling Video... Error.");
 			ConcurrenceManager.getConcurrenceManager().stopAll();
 			throw new RuntimeIOException(ex);
@@ -197,7 +198,7 @@ public class VideoProcessor {
 					this.nutFile.toString(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
 					this.paletteFile.toString());
 		} catch (ProcessTerminatedException ex) {
-			ex.printStackTrace();
+			log(ex);
 			writer.println("Generating Palette... Error.");
 			ConcurrenceManager.getConcurrenceManager().stopAll();
 			throw new RuntimeIOException(ex);
@@ -213,7 +214,7 @@ public class VideoProcessor {
 							this.nutFile.toString(), "-i", this.paletteFile.toString(), "-lavfi",
 							"paletteuse=dither=bayer:bayer_scale=3", "-c", "gif", "-f", "gif", this.gifFile.toString()));
 		} catch (ProcessTerminatedException ex) {
-			ex.printStackTrace();
+			log(ex);
 			writer.println("Generating GIF... Error.");
 			ConcurrenceManager.getConcurrenceManager().stopAll();
 			throw new RuntimeIOException(ex);
@@ -228,7 +229,7 @@ public class VideoProcessor {
 				ConcurrenceManager.getConcurrenceManager().exec(true, gifsicle.getLocation().toString(), "--batch", "--unoptimize", "--optimize=3", this.gifFile.toString());
 				writer.println("Crushing GIF... Done.");
 			} catch (ProcessTerminatedException ex){
-				ex.printStackTrace();
+				log(ex);
 				writer.println("Crushing GIF... Error.");
 				ConcurrenceManager.getConcurrenceManager().stopAll();
 				throw new RuntimeIOException(ex);

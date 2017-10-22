@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.util.text;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -91,7 +92,7 @@ public final class TextHelper {
 		try (Writer writer = Files.newBufferedWriter(tempOverlayPath)) {
 			writer.write(message);
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			log(ex);
 			return "";
 		}
 		String drawText = "drawtext=x=(w-tw)*0.5:y=0.935*(h-0.5*" + size
@@ -104,7 +105,7 @@ public final class TextHelper {
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			return br.lines().filter(s -> s.startsWith("frame=")).mapToDouble(TextHelper::getFFmpegStatusTimeInSeconds).max().orElse(-1D);
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			log(ioe);
 			return -1D;
 		}
 	}
@@ -114,26 +115,27 @@ public final class TextHelper {
 			throw new IllegalArgumentException("Must be an FFmpeg status Line!");
 		}
 		String time = "0";
-		Scanner sc2 = new Scanner(line);
-		sc2.useDelimiter("\\s");
-		while (sc2.hasNext()) {
-			String part = sc2.next();
-			if (part.startsWith("time=")) {
-				time = part.replaceAll("time=", "");
-				break;
+		try (Scanner sc2 = new Scanner(line)){
+			sc2.useDelimiter("\\s");
+			while (sc2.hasNext()) {
+				String part = sc2.next();
+				if (part.startsWith("time=")) {
+					time = part.replaceAll("time=", "");
+					break;
+				}
 			}
-		}
-		String[] times = time.split(":");
-		double realTime = 0D;
-		for (int i = 0; i < times.length; i++) {
-			try {
-				realTime += Math.pow(60, i) * Double.parseDouble(times[times.length - i - 1]);
-			} catch (NumberFormatException nfe) {
-				nfe.printStackTrace();
+			String[] times = time.split(":");
+			double realTime = 0D;
+			for (int i = 0; i < times.length; i++) {
+				try {
+					realTime += Math.pow(60, i) * Double.parseDouble(times[times.length - i - 1]);
+				} catch (NumberFormatException nfe) {
+					log(nfe);
+					return -1D;
+				}
 			}
+			return realTime;
 		}
-		sc2.close();
-		return realTime;
 	}
 
 	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale, int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText){

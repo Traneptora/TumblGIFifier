@@ -99,7 +99,15 @@ public final class TumblGIFifier {
 	public static PrintStream getLogFileOutputStream(){
 		return logFileOutputStream;
 	}
-	
+
+	public static void log(String line) {
+		logFileOutputStream.println(line);
+	}
+
+	public static void log(Throwable t) {
+		t.printStackTrace(logFileOutputStream);
+	}
+
 	/**
 	 * Print help and exit, useful if tumblgififier was invoked from the command line.
 	 * @param good Exit with success if set to true, otherwise exit with status 1.
@@ -176,7 +184,7 @@ public final class TumblGIFifier {
 		try (Writer w = Files.newBufferedWriter(ResourcesManager.getResourcesManager().getLocalFile("version_identifier.txt"))){
 			w.write(String.format("%d\n", TumblGIFifier.VERSION_IDENTIFIER));
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			log(ex);
 		}
 		initializedCleanup = true;
 	}

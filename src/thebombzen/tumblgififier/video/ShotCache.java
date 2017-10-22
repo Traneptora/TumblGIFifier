@@ -1,5 +1,6 @@
 package thebombzen.tumblgififier.video;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,11 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.imageio.ImageIO;
-import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.gui.ImagePanel;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.io.IOHelper;
-import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
@@ -74,8 +73,9 @@ public class ShotCache {
 								parentPanel.play();
 							}
 						}
-					} catch (IOException ex) {
-						processor.processException(ex);
+					} catch (IOException ioe) {
+						processor.appendStatus("Oh noes, it appears something went wrong.");
+						log(ioe);
 					}
 				}
 			});
@@ -83,7 +83,8 @@ public class ShotCache {
 			try {
 				callback.accept(ImageIO.read(Files.newInputStream(shotFiles.get(frameNumberF))));
 			} catch (IOException ioe){
-				throw new RuntimeIOException(ioe);
+				processor.appendStatus("Oh noes, it appears something went wrong.");
+				log(ioe);
 			}
 		}
 	}
@@ -108,7 +109,7 @@ public class ShotCache {
 				 videoFilter, "-sws_flags", "lanczos", "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
 				shotPath.toString() + "_%06d.png"));
 		if (totalTime <= 0) {
-			TumblGIFifier.getLogFileOutputStream().println("Video file has no index, using slow seeking.");
+			log("Video file has no index, using slow seeking.");
 			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-i", scan.getLocation().toString(), "-map", "0:v:0", "-ss", Double.toString(ffmpegStartTime), "-vf",
 					 videoFilter, "-sws_flags", "lanczos", "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
 					shotPath.toString() + "_%06d.png");
