@@ -72,7 +72,7 @@ public class ResourcesManager {
 	}
 	
 	private static String getPkgVersionsLocation(String pkg) {
-		return "https://thebombzen.com/TumblGIFifier/resources/" + pkg + "/" + pkg + "-versions.txt";
+		return String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, OperatingSystem.getLocalOS().name());
 	}
 	
 	private static String getExeDownloadLocation(String pkg, String version) {
