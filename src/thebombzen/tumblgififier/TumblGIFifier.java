@@ -77,6 +77,12 @@ public final class TumblGIFifier {
 			}
 		}
 		
+		log(String.format("System.getenv(\"appdata\"): %s", System.getenv("appdata")));
+		log(String.format("System.getenv(\"XDG_CONFIG_HOME\"): %s", System.getenv("XDG_CONFIG_HOME")));
+		log(String.format("System.getProperty(\"os.name\"): %s", System.getProperty("os.name")));
+		log(String.format("System.getProperty(\"os.arch\"): %s", System.getProperty("os.arch")));
+		log(String.format("System.getProperty(\"user.home\"): %s", System.getProperty("user.home")));
+		
 		EventQueue.invokeLater(new Runnable(){
 			
 			@Override
