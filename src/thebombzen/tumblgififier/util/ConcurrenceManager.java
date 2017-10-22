@@ -1,10 +1,12 @@
 package thebombzen.tumblgififier.util;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executors;
@@ -189,7 +191,11 @@ public final class ConcurrenceManager {
 		//System.err.println(TextHelper.getTextHelper().join(" ", args));
 		try {
 			if (join) {
-				return exec(new NullOutputStream(), args);
+				TumblGIFifier.getLogFileOutputStream().println(String.join(" ", args));
+				ByteArrayOutputStream bout = new ByteArrayOutputStream();
+				InputStream in = exec(bout, args);
+				TumblGIFifier.getLogFileOutputStream().write(bout.toByteArray());
+				return in;
 			} else {
 				return new BufferedInputStream(exec(null, args));
 			}
