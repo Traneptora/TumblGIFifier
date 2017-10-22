@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.Queue;
 import java.util.regex.Pattern;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
+import thebombzen.tumblgififier.util.text.TextHelper;
 
 public class VideoScan {
 	private final double scanDuration;
@@ -20,19 +20,16 @@ public class VideoScan {
 	private final int scanWidth;
 	private final Path scanLocation;
 	private final int scanHeight;
-	
+
 	public static VideoScan scanFile(StatusProcessor processor, Path pathname) {
-		
-		processor.appendStatus("Scanning File... ");
-		
-		Resource ffprobe = ResourcesManager.getResourcesManager().getFFprobeLocation();
-		
 		String line = null;
 		int width = -1;
 		int height = -1;
 		double duration = -1;
 		double framerate = -1;
 		double durationTime = -1;
+		processor.appendStatus("Scanning File... ");
+		Resource ffprobe = ResourcesManager.getResourcesManager().getFFprobeLocation();
 		try (BufferedReader br = new BufferedReader(
 				new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.getLocation().toString(),
 						"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", pathname.toString()), Charset.forName("UTF-8")))) {
@@ -89,50 +86,30 @@ public class VideoScan {
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
-		
+
 		if (duration < 0) {
 			processor.appendStatus("Did not find duration in metadata, checking packets...");
-			Queue<String> lineQueue = new ArrayDeque<>();
-			try (BufferedReader br = new BufferedReader(new InputStreamReader(
-					ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.getLocation().toString(), "-select_streams", "v",
-							"-of", "flat", "-show_entries", "packet=pts_time,duration_time", pathname.toString())))) {
-				while (null != (line = br.readLine())) {
-					if (lineQueue.size() >= 2) {
-						lineQueue.poll();
-					}
-					lineQueue.offer(line);
-				}
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-				processor.appendStatus("Error finding duration.");
+			Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
+			try {
+				duration = TextHelper.scanTotalTimeConverted(ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(),
+						"-i", pathname.toString(), "-map", "0:v:0", "-f", "null", "-"));
+			} catch (ProcessTerminatedException ex) {
+				ex.printStackTrace();
 			}
-			String line1 = lineQueue.poll();
-			String line2 = lineQueue.poll();
-			if (line1 != null && line2 != null) {
-				if (line1.startsWith("packets.packet.0.") || line2.startsWith("packets.packet.0.")) {
-					processor.appendStatus("You just opened a still image. Don't do that.");
-				} else {
-					String pts_time = line1.replaceAll(".*?pts_time=", "").replace("\"", "");
-					String duration_time = line2.replaceAll(".*?duration_time=", "").replace("\"", "");
-					try {
-						double ptsTime = Double.parseDouble(pts_time);
-						durationTime = Double.parseDouble(duration_time);
-						duration = durationTime + ptsTime;
-					} catch (NumberFormatException nfe) {
-						nfe.printStackTrace();
-						processor.appendStatus("Error finding duration.");
-					}
-				}
-			}
-		} else {
-			durationTime = 1D / framerate;
 		}
-		
+
+		durationTime = 1D / framerate;
+
 		if (duration < 0 || height < 0 || width < 0 || framerate < 0 || durationTime < 0) {
 			processor.appendStatus("File Format Error.");
 			return null;
 		}
-		
+
+		if (Math.abs(duration - durationTime) < 0.001D) {
+			processor.appendStatus("Did you really just open a still image or a text file?");
+			return null;
+		}
+
 		return new VideoScan(width, height, duration, pathname, framerate, durationTime);
 	}
 	

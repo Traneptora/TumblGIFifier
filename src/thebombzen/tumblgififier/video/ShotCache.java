@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.imageio.ImageIO;
+import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.gui.ImagePanel;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.io.IOHelper;
@@ -102,10 +103,16 @@ public class ShotCache {
 		double ffmpegStartTime = frameNumber * scan.getShotDuration() - ( end ? scan.getFrameDuration() : 0);
 		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=fps=" + scan.getCachePrecision(), "format=rgb24", shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		
-		ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-ss", Double.toString(ffmpegStartTime),
-				"-copyts", "-start_at_zero", "-i", scan.getLocation().toString(), "-map", "0:v:0", "-vf",
+		double totalTime = TextHelper.scanTotalTimeConverted(ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(), "-y", "-ss", Double.toString(ffmpegStartTime),
+				"-i", scan.getLocation().toString(), "-map", "0:v:0", "-vf",
 				 videoFilter, "-sws_flags", "lanczos", "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
-				shotPath.toString() + "_%06d.png");
+				shotPath.toString() + "_%06d.png"));
+		if (totalTime <= 0) {
+			TumblGIFifier.getLogFileOutputStream().println("Video file has no index, using slow seeking.");
+			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-i", scan.getLocation().toString(), "-map", "0:v:0", "-ss", Double.toString(ffmpegStartTime), "-vf",
+					 videoFilter, "-sws_flags", "lanczos", "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
+					shotPath.toString() + "_%06d.png");
+		}
 		for (int i = 0; i < frames; i++) {
 			String name = String.format("%s_%06d.png", shotPath.toString(), i + 1);
 			Path tempShotPath = Paths.get(name);

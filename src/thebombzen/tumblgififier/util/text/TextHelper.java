@@ -1,11 +1,16 @@
 package thebombzen.tumblgififier.util.text;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 
@@ -94,7 +99,43 @@ public final class TextHelper {
 				+ size + ":textfile=" + tempOverlayEscapedFilename;
 		return drawText;
 	}
-	
+
+	public static double scanTotalTimeConverted(InputStream in) {
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+			return br.lines().filter(s -> s.startsWith("frame=")).mapToDouble(TextHelper::getFFmpegStatusTimeInSeconds).max().orElse(-1D);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			return -1D;
+		}
+	}
+
+	public static double getFFmpegStatusTimeInSeconds(String line) {
+		if (!line.startsWith("frame=")) {
+			throw new IllegalArgumentException("Must be an FFmpeg status Line!");
+		}
+		String time = "0";
+		Scanner sc2 = new Scanner(line);
+		sc2.useDelimiter("\\s");
+		while (sc2.hasNext()) {
+			String part = sc2.next();
+			if (part.startsWith("time=")) {
+				time = part.replaceAll("time=", "");
+				break;
+			}
+		}
+		String[] times = time.split(":");
+		double realTime = 0D;
+		for (int i = 0; i < times.length; i++) {
+			try {
+				realTime += Math.pow(60, i) * Double.parseDouble(times[times.length - i - 1]);
+			} catch (NumberFormatException nfe) {
+				nfe.printStackTrace();
+			}
+		}
+		sc2.close();
+		return realTime;
+	}
+
 	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale, int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText){
 		List<String> filters = new ArrayList<String>();
 		if (preprocess != null && !preprocess.isEmpty()){

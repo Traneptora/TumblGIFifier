@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executors;
@@ -18,7 +17,6 @@ import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.NullInputStream;
-import thebombzen.tumblgififier.util.io.NullOutputStream;
 import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
 
 /**

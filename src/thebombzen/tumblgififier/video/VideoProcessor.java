@@ -8,7 +8,6 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Scanner;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.io.IOHelper;
@@ -235,9 +234,8 @@ public class VideoProcessor {
 				throw new RuntimeIOException(ex);
 			}
 		}
-		
-		writer.flush();
 
+		writer.flush();
 	}
 
 	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in)
@@ -247,26 +245,7 @@ public class VideoProcessor {
 		try {
 			while (null != (line = br.readLine())) {
 				if (line.startsWith("frame=")) {
-					String time = "0";
-					Scanner sc2 = new Scanner(line);
-					sc2.useDelimiter("\\s");
-					while (sc2.hasNext()) {
-						String part = sc2.next();
-						if (part.startsWith("time=")) {
-							time = part.replaceAll("time=", "");
-							break;
-						}
-					}
-					String[] times = time.split(":");
-					double realTime = 0D;
-					for (int i = 0; i < times.length; i++) {
-						try {
-							realTime += Math.pow(60, i) * Double.parseDouble(times[times.length - i - 1]);
-						} catch (NumberFormatException nfe) {
-							nfe.printStackTrace();
-						}
-					}
-					sc2.close();
+					double realTime = TextHelper.getFFmpegStatusTimeInSeconds(line);
 					double percent = realTime * 100D / length;
 					writer.format("%s%.2f%%\r", prefix, percent);
 				}
