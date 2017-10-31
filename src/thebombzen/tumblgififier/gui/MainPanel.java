@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -64,9 +66,11 @@ public class MainPanel extends JPanel {
 	
 	private JComboBox<FramerateDecimator> framerateDecimatorComboBox;
 	private JPanel leftPanel;
-	private int maxSize = 2000;
-	private JCheckBox maxSizeCheckBox;
-	private JTextField maxSizeTextField;
+	private int targetSize = 2000;
+	private int targetWidth = 540;
+	private int targetHeight = 300;
+	private JComboBox<TargetSize> targetSizeComboBox;
+	private JTextField targetSizeTextField;
 	private String mostRecentGIFDirectory = null;
 	
 	private JButton playButtonFast;
@@ -148,14 +152,27 @@ public class MainPanel extends JPanel {
 	private void createGIF(final Path path) {
 		final int maxSizeBytes;
 		final int minSizeBytes;
-		if (maxSizeCheckBox.isSelected()) {
+		final int targetWidth;
+		final int targetHeight;
+
+		if (TargetSize.FILESIZE.equals(targetSizeComboBox.getSelectedItem())) {
 			// Intentionally not 1024
-			maxSizeBytes = 1000 * maxSize;
-			minSizeBytes = 1000 * (maxSize * 19 / 20);
-		} else {
+			maxSizeBytes = 1000 * targetSize;
+			minSizeBytes = 1000 * (targetSize * 19 / 20);
+			targetWidth = -1;
+			targetHeight = -1;
+		} else if (TargetSize.SCALE_W.equals(targetSizeComboBox.getSelectedItem())) {
+			targetWidth = this.targetWidth;
+			targetHeight = -1;
+			maxSizeBytes = Integer.MAX_VALUE;
+			minSizeBytes = 0;
+		} else { // SCALE_H
+			targetWidth = -1;
+			targetHeight = this.targetHeight;
 			maxSizeBytes = Integer.MAX_VALUE;
 			minSizeBytes = 0;
 		}
+
 		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
 		final double clipStart = startSlider.getValue() * scan.getShotDuration();
 		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
@@ -164,7 +181,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				boolean success = videoProcessor.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd,
-						minSizeBytes, maxSizeBytes, decimator, textSize);
+						minSizeBytes, maxSizeBytes, targetWidth, targetHeight, decimator, textSize);
 				MainFrame.getMainFrame().setBusy(false);
 				if (success) {
 					statusArea.appendStatus("Done!");
@@ -277,8 +294,8 @@ public class MainPanel extends JPanel {
 	 */
 	private void fire() {
 		
-		if (maxSizeCheckBox.isSelected()) {
-			final int maxSizeBytes = 1000 * maxSize;
+		if (TargetSize.FILESIZE.equals(targetSizeComboBox.getSelectedItem())) {
+			final int maxSizeBytes = 1000 * targetSize;
 			final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
 			final double clipStart = startSlider.getValue() * scan.getShotDuration();
 			final double clipEnd = endSlider.getValue() * scan.getShotDuration();
@@ -470,37 +487,85 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
-		maxSizeTextField = new JTextField("2000");
-		maxSizeTextField.setHorizontalAlignment(SwingConstants.RIGHT);
-		maxSizeTextField.setMaximumSize(new Dimension(200, 25));
-		maxSizeTextField.setPreferredSize(new Dimension(200, 25));
-		maxSizeTextField.addFocusListener(new FocusAdapter(){
-			
+		targetSizeTextField = new JTextField("2000");
+		targetSizeTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+		targetSizeTextField.setMaximumSize(new Dimension(200, 25));
+		targetSizeTextField.setPreferredSize(new Dimension(200, 25));
+		targetSizeTextField.addFocusListener(new FocusAdapter(){
 			@Override
 			public void focusLost(FocusEvent e) {
 				try {
-					int size = Integer.parseInt(maxSizeTextField.getText());
-					if (size >= 1) {
-						maxSize = size;
-					} else {
-						maxSizeTextField.setText(Integer.toString(maxSize));
+					int size = Integer.parseInt(targetSizeTextField.getText());
+					switch ((TargetSize)targetSizeComboBox.getSelectedItem()) {
+					case FILESIZE:
+						if (size >= 1) {
+							targetSize = size;
+						} else {
+							targetSizeTextField.setText(Integer.toString(targetSize));
+						}
+						break;
+					case SCALE_W:
+						if (size >= 1) {
+							targetWidth = size;
+						} else {
+							targetSizeTextField.setText(Integer.toString(targetWidth));
+						}
+						break;
+					case SCALE_H:
+						if (size >= 1) {
+							targetHeight = size;
+						} else {
+							targetSizeTextField.setText(Integer.toString(targetHeight));
+						}
+						break;
 					}
 				} catch (NumberFormatException nfe) {
-					maxSizeTextField.setText(Integer.toString(maxSize));
+					switch ((TargetSize)targetSizeComboBox.getSelectedItem()) {
+					case FILESIZE:
+						targetSizeTextField.setText(Integer.toString(targetSize));
+						break;
+					case SCALE_W:
+						targetSizeTextField.setText(Integer.toString(targetWidth));
+						break;
+					case SCALE_H:
+						targetSizeTextField.setText(Integer.toString(targetHeight));
+						break;
+					}
 				}
 			}
 		});
-		
-		onDisable.add(maxSizeTextField);
-		
-		maxSizeCheckBox = new JCheckBox("Maximum GIF Size in Kilobytes: ");
-		maxSizeCheckBox.setSelected(true);
-		
-		onDisable.add(maxSizeCheckBox);
-		
-		leftPanel.add(GUIHelper.wrapLeftRightAligned(maxSizeCheckBox, maxSizeTextField));
+
+		onDisable.add(targetSizeTextField);
+
+		targetSizeComboBox = new JComboBox<TargetSize>();
+		DefaultComboBoxModel<TargetSize> targetSizeComboBoxModel = new DefaultComboBoxModel<>();
+		EnumSet.allOf(TargetSize.class).stream().forEach(targetSizeComboBoxModel::addElement);
+		targetSizeComboBox.setModel(targetSizeComboBoxModel);
+		targetSizeComboBox.setSelectedItem(TargetSize.FILESIZE);
+
+		targetSizeComboBox.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				switch ((TargetSize)targetSizeComboBox.getSelectedItem()) {
+				case FILESIZE:
+					targetSizeTextField.setText(Integer.toString(targetSize));
+					break;
+				case SCALE_W:
+					targetSizeTextField.setText(Integer.toString(targetWidth));
+					break;
+				case SCALE_H:
+					targetSizeTextField.setText(Integer.toString(targetHeight));
+					break;
+				}
+			}
+		});
+
+		onDisable.add(targetSizeComboBox);
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Choose size control method:")));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("The maximum size on Tumblr is 2000 Kilobytes.")));
+		leftPanel.add(GUIHelper.wrapLeftRightAligned(targetSizeComboBox, targetSizeTextField));
+		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("The maximum GIF filesize on Tumblr is 2000 Kilobytes.")));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));

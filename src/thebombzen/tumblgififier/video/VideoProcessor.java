@@ -48,6 +48,8 @@ public class VideoProcessor {
 	private double lowscale = 0D;
 	private long maxSize;
 	private long minSize;
+	private int targetWidth;
+	private int targetHeight;
 	private double scale = 1D;	
 
 	private double clipStartTime;
@@ -85,11 +87,11 @@ public class VideoProcessor {
 	}
 	
 	public boolean convert(String overlay, StatusProcessor outputProcessor, Path path, double startTime,
-			double endTime, long minSize, long maxSize, int decimator, int overlaySize) {
+			double endTime, long minSize, long maxSize, int targetWidth, int targetHeight, int decimator, int overlaySize) {
 		MainFrame.getMainFrame().setBusy(true);
 		boolean success = true;
 		try {
-			convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, decimator, overlaySize);
+			convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, targetWidth, targetHeight, decimator, overlaySize);
 		} catch (RuntimeIOException ioe){
 			log(ioe);
 			success = false;
@@ -102,13 +104,15 @@ public class VideoProcessor {
 	}
 	
 	private void convert0(String overlay, StatusProcessor outputProcessor, Path path, double startTime,
-			double endTime, long minSize, long maxSize, int decimator, int overlaySize) {
+			double endTime, long minSize, long maxSize, int targetWidth, int targetHeight, int decimator, int overlaySize) {
 		this.statusProcessor = outputProcessor;
 		this.clipStartTime = startTime;
 		this.clipEndTime = endTime;
 		this.minSize = minSize;
 		this.maxSize = maxSize;
 		this.decimator = decimator;
+		this.targetWidth = targetWidth;
+		this.targetHeight = targetHeight;
 		
 		lowscale = 0D;
 		scale = minSize <= 0 ? 1D
@@ -165,8 +169,20 @@ public class VideoProcessor {
 	}
 	
 	private void createGif(String overlay, int overlaySize) {
-		int newWidth = (int) (scan.getWidth() * scale);
-		int newHeight = (int) (scan.getHeight() * scale);
+		int newWidth, newHeight;
+
+		if (targetWidth > 0) {
+			newWidth = targetWidth;
+			scale = (double)newWidth / (double)scan.getWidth();
+			newHeight = (int)Math.ceil(scan.getHeight() * scale);
+		} else if (targetHeight > 0) {
+			newHeight = targetHeight;
+			scale = (double)newHeight / (double)scan.getHeight();
+			newWidth = (int) Math.ceil(scan.getWidth() * scale);
+		} else {
+			newWidth = (int) Math.ceil(scan.getWidth() * scale);
+			newHeight = (int) Math.ceil(scan.getHeight() * scale);
+		}
 		
 		PrintWriter writer = new PrintWriter(new StatusProcessorWriter(statusProcessor));
 		
