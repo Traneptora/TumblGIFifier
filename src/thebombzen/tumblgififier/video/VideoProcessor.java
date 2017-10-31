@@ -42,7 +42,7 @@ public class VideoProcessor {
 	private Path nutFile;
 	private Path paletteFile;
 	
-	private boolean halveFramerate;
+	private int decimator;
 	
 	private double highscale = 1D;
 	private double lowscale = 0D;
@@ -85,11 +85,11 @@ public class VideoProcessor {
 	}
 	
 	public boolean convert(String overlay, StatusProcessor outputProcessor, Path path, double startTime,
-			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
+			double endTime, long minSize, long maxSize, int decimator, int overlaySize) {
 		MainFrame.getMainFrame().setBusy(true);
 		boolean success = true;
 		try {
-			convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, halveFramerate, overlaySize);
+			convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, decimator, overlaySize);
 		} catch (RuntimeIOException ioe){
 			log(ioe);
 			success = false;
@@ -102,17 +102,17 @@ public class VideoProcessor {
 	}
 	
 	private void convert0(String overlay, StatusProcessor outputProcessor, Path path, double startTime,
-			double endTime, long minSize, long maxSize, boolean halveFramerate, int overlaySize) {
+			double endTime, long minSize, long maxSize, int decimator, int overlaySize) {
 		this.statusProcessor = outputProcessor;
 		this.clipStartTime = startTime;
 		this.clipEndTime = endTime;
 		this.minSize = minSize;
 		this.maxSize = maxSize;
-		this.halveFramerate = halveFramerate;
+		this.decimator = decimator;
 		
 		lowscale = 0D;
 		scale = minSize <= 0 ? 1D
-				: 1D / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate() * (halveFramerate ? 0.5D : 1D) * (endTime - startTime)
+				: 1D / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate() / (1D + decimator) * (endTime - startTime)
 						/ (3D * maxSize));
 		if (scale > 1D) {
 			scale = 1D;
@@ -137,6 +137,11 @@ public class VideoProcessor {
 
 		while (gifLength == 0 || (gifLength < minSize && scale < 1) || gifLength > maxSize) {
 			createGif(overlay, overlaySize);
+			try {
+				gifLength = Files.size(gifFile);
+			} catch (IOException ex) {
+				throw new RuntimeIOException(ex);
+			}
 			adjustScale();
 			int newWidth = (int) (scan.getWidth() * scale);
 			int newHeight = (int) (scan.getHeight() * scale);
@@ -173,7 +178,7 @@ public class VideoProcessor {
 		
 		Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		
-		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", newWidth, newHeight, false, halveFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
+		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", newWidth, newHeight, false, decimator, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		
 		try {
 			scanPercentDone("Scaling Video... ", clipEndTime - clipStartTime, writer,

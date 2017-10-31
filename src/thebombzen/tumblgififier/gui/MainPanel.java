@@ -1,6 +1,7 @@
 package thebombzen.tumblgififier.gui;
 
 import static thebombzen.tumblgififier.TumblGIFifier.log;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -19,15 +20,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -38,6 +43,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.Tuple;
 import thebombzen.tumblgififier.util.io.IOHelper;
@@ -56,22 +62,25 @@ public class MainPanel extends JPanel {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private JCheckBox cutFramerateInHalfCheckBox;
-	private JSlider endSlider;
+	private JComboBox<FramerateDecimator> framerateDecimatorComboBox;
 	private JPanel leftPanel;
 	private int maxSize = 2000;
 	private JCheckBox maxSizeCheckBox;
 	private JTextField maxSizeTextField;
 	private String mostRecentGIFDirectory = null;
-	private JButton playButtonFast;
 	
+	private JButton playButtonFast;
 	private JButton playButtonSlow;
 	
 	private ImagePanel previewImageEndPanel;
 	private ImagePanel previewImageStartPanel;
+
 	private VideoProcessor videoProcessor;
 	private VideoScan scan;
+
 	private JSlider startSlider;
+	private JSlider endSlider;
+
 	private StatusProcessorArea statusArea;
 	private JButton fireButton = new JButton("Create GIF");
 	
@@ -140,13 +149,14 @@ public class MainPanel extends JPanel {
 		final int maxSizeBytes;
 		final int minSizeBytes;
 		if (maxSizeCheckBox.isSelected()) {
+			// Intentionally not 1024
 			maxSizeBytes = 1000 * maxSize;
 			minSizeBytes = 1000 * (maxSize * 19 / 20);
 		} else {
 			maxSizeBytes = Integer.MAX_VALUE;
 			minSizeBytes = 0;
 		}
-		final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
+		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
 		final double clipStart = startSlider.getValue() * scan.getShotDuration();
 		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
@@ -154,7 +164,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				boolean success = videoProcessor.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd,
-						minSizeBytes, maxSizeBytes, halveFramerate, textSize);
+						minSizeBytes, maxSizeBytes, decimator, textSize);
 				MainFrame.getMainFrame().setBusy(false);
 				if (success) {
 					statusArea.appendStatus("Done!");
@@ -182,7 +192,7 @@ public class MainPanel extends JPanel {
 	private void playClipFast() {
 		MainFrame.getMainFrame().setBusy(true);
 		
-		final boolean shouldHalfFramerate = this.cutFramerateInHalfCheckBox.isSelected();
+		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
 		
 		final double clipStart = startSlider.getValue() * scan.getShotDuration();
 		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
@@ -193,7 +203,7 @@ public class MainPanel extends JPanel {
 			@Override
 			public void run() {
 				try {
-					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
+					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.getLocation().toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v:0",
 							"-i", scan.getLocation().toString(), "-ss", Double.toString(clipStart),
 							"-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter);
@@ -218,7 +228,7 @@ public class MainPanel extends JPanel {
 		
 		final double clipStart = startSlider.getValue() * scan.getShotDuration();
 		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
-		final boolean shouldHalfFramerate = this.cutFramerateInHalfCheckBox.isSelected();
+		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
 		
 		final Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		final Resource ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
@@ -238,7 +248,7 @@ public class MainPanel extends JPanel {
 						statusArea.appendStatus("Error rendering clip :(");
 						return;
 					}
-					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, shouldHalfFramerate ? 1 : 0, scan.getWidth(), scan.getHeight(), textSize, overlay);
+					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
 					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-ss", Double.toString(clipStart), "-i",
 							scan.getLocation().toString(), "-map", "0:v:0", "-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter,
 							"-sws_flags", "lanczos", "-c", "ffv1", "-f", "nut", tempFile.toString());
@@ -269,12 +279,12 @@ public class MainPanel extends JPanel {
 		
 		if (maxSizeCheckBox.isSelected()) {
 			final int maxSizeBytes = 1000 * maxSize;
-			final boolean halveFramerate = cutFramerateInHalfCheckBox.isSelected();
+			final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
 			final double clipStart = startSlider.getValue() * scan.getShotDuration();
 			final double clipEnd = endSlider.getValue() * scan.getShotDuration();
-			double newWidth = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate()
-					* (halveFramerate ? 0.5D : 1D) * (clipEnd - clipStart) / (2D * maxSizeBytes));
-			if (newWidth < 300D) {
+			double widthGuess = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate()
+					/ (1D + decimator) * (clipEnd - clipStart) / (2D * maxSizeBytes));
+			if (widthGuess < 300D) {
 				int dialogResult = JOptionPane.showConfirmDialog(this,
 						String.format(
 								"This GIF will probably be less than 300 pixels wide, which means Tumblr won't expand it to fit the window. Is this okay?%n(If not then you should drag the sliders on the right to decrease the duration.)"),
@@ -494,9 +504,12 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
-		cutFramerateInHalfCheckBox = new JCheckBox(
-				"Cut Output Framerate in Half, to " + String.format("%.2f", scan.getFramerate() * 0.5D));
-		leftPanel.add(GUIHelper.wrapLeftAligned(cutFramerateInHalfCheckBox));
+		framerateDecimatorComboBox = new JComboBox<FramerateDecimator>();
+		DefaultComboBoxModel<FramerateDecimator> framerateDecimatorComboBoxModel = new DefaultComboBoxModel<>();
+		EnumSet.allOf(FramerateDecimator.class).stream().forEach(framerateDecimatorComboBoxModel::addElement);
+		framerateDecimatorComboBox.setModel(framerateDecimatorComboBoxModel);
+		framerateDecimatorComboBox.setSelectedItem(FramerateDecimator.HALF_RATE);
+		leftPanel.add(GUIHelper.wrapLeftAligned(framerateDecimatorComboBox));
 		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Halving the framerate will increase the physical size of the GIF.")));
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
@@ -548,7 +561,7 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(20));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(20));
-		onDisable.add(cutFramerateInHalfCheckBox);
+		onDisable.add(framerateDecimatorComboBox);
 		
 		JPanel createGIFPanel = new JPanel(new BorderLayout());
 		createGIFPanel.add(fireButton, BorderLayout.CENTER);
