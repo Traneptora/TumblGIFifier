@@ -249,6 +249,7 @@ public class MainPanel extends JPanel {
 		final Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 		final Resource ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
+		final Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
 		
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
@@ -265,10 +266,7 @@ public class MainPanel extends JPanel {
 						return;
 					}
 					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
-					ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-ss", Double.toString(clipStart), "-i",
-							scan.getLocation().toString(), "-map", "0:v:0", "-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter,
-							"-sws_flags", "lanczos", "-c", "ffv1", "-f", "nut", tempFile.toString());
-					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.getLocation().toString(), "-loop", "0", tempFile.toString());
+					ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(), "--loop-playlist=inf", "--osc=no", "--aid=no", "--sid=no", "--start=" + clipStart, "--end=" + clipEnd, "--vf=lavfi=\"" + videoFilter + "\"", scan.getLocation().toString());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
 					ConcurrenceManager.getConcurrenceManager().stopAll();
@@ -393,16 +391,19 @@ public class MainPanel extends JPanel {
 		onDisable.add(playButtonFast);
 		
 		playButtonSlow = new JButton("Play Clip (Slow, Accurate)");
-		playButtonSlow.addActionListener(new ActionListener(){
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				playClipSlow();
-			}
-		});
 		
-		onDisable.add(playButtonSlow);
-		
+		if (ResourcesManager.loadedPkgs.contains("mpv")) {
+			playButtonSlow.addActionListener(new ActionListener(){
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					playClipSlow();
+				}
+			});
+			onDisable.add(playButtonSlow);
+		} else {
+			playButtonSlow.setEnabled(false);
+		}
+
 		JPanel playButtonPanel = new JPanel(new BorderLayout());
 		playButtonPanel.add(playButtonFast, BorderLayout.WEST);
 		playButtonPanel.add(playButtonSlow, BorderLayout.EAST);

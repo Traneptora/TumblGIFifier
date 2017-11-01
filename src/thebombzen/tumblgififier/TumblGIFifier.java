@@ -108,6 +108,7 @@ public final class TumblGIFifier {
 
 	public static void log(String line) {
 		logFileOutputStream.println(line);
+		logFileOutputStream.flush();
 	}
 
 	public static void log(Throwable t) {

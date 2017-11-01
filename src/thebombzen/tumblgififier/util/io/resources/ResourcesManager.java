@@ -94,6 +94,7 @@ public class ResourcesManager {
 	private Resource ffplay = null;
 	private Resource ffprobe = null;
 	private Resource openSans = null;
+	private Resource mpv = null;
 	
 	/**
 	 * Returns the Open Sans font file resource.
@@ -151,6 +152,7 @@ public class ResourcesManager {
 		ResourcesManager.requiredPkgs.add("FFmpeg");
 		ResourcesManager.optionalPkgs.add("OpenSans");
 		ResourcesManager.optionalPkgs.add("gifsicle");
+		ResourcesManager.optionalPkgs.add("mpv");
 	}
 	
 	private ResourcesManager() {
@@ -176,6 +178,13 @@ public class ResourcesManager {
 			ffprobe = getXLocation("FFmpeg", "ffprobe");
 		}
 		return ffprobe;
+	}
+	
+	public Resource getMpvLocation() {
+		if (mpv == null) {
+			mpv = getXLocation("mpv", "mpv");
+		}
+		return mpv;
 	}
 	
 	public String getLatestVersion() {
@@ -442,6 +451,16 @@ public class ResourcesManager {
 		try {
 			mightHaveInternet = initializeMultiExePackage("gifsicle", new String[]{"gifsicle"}, getPkgVersionsLocation("gifsicle"), "gifsicle-versions.txt", mightHaveInternet, processor);
 			pkgs.add("gifsicle");
+		} catch (ResourceNotFoundException rnfe){
+			processor.appendStatus(rnfe.getMessage());
+			if (rnfe.getCause() != null){
+				log(rnfe.getCause());
+			}
+		}
+		
+		try {
+			mightHaveInternet = initializeMultiExePackage("mpv", new String[]{"mpv"}, getPkgVersionsLocation("mpv"), "mpv-versions.txt", mightHaveInternet, processor);
+			pkgs.add("mpv");
 		} catch (ResourceNotFoundException rnfe){
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null){
