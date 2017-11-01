@@ -343,10 +343,10 @@ public class ResourcesManager {
 			}
 			ArchiveEntry entry;
 			while (null != (entry = ain.getNextEntry())) {
-				String name = null;
+				String name = Paths.get(entry.getName()).getFileName().toString();
+				/*
 				boolean found = false;
 				for (String resource : resources) {
-					name = Paths.get(entry.getName()).getFileName().toString();
 					if (name.startsWith(resource)) {
 						found = true;
 						break;
@@ -355,6 +355,7 @@ public class ResourcesManager {
 				if (!found) {
 					continue;
 				}
+				*/
 				processor.appendStatus("Extracting " + name + "...");
 				Path path = getLocalFile(name);
 				Files.deleteIfExists(path);
