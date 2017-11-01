@@ -266,7 +266,7 @@ public class MainPanel extends JPanel {
 						return;
 					}
 					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
-					ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(), "--loop-playlist=inf", "--osc=no", "--aid=no", "--sid=no", "--start=" + clipStart, "--end=" + clipEnd, "--vf=lavfi=\"" + videoFilter + "\"", scan.getLocation().toString());
+					ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(), "--no-config", "--quiet", "--loop-playlist=inf", "--osc=no", "--aid=no", "--sid=no", "--start=" + clipStart, "--end=" + clipEnd, "--vf=lavfi=\"" + videoFilter + "\"", scan.getLocation().toString());
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
 					ConcurrenceManager.getConcurrenceManager().stopAll();
