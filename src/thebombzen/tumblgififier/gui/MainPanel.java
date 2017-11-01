@@ -483,9 +483,9 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(
 				GUIHelper.wrapLeftRightAligned(new JLabel("Framerate:"), new JLabel(String.format("%.2f", scan.getFramerate()))));
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(15));
 		targetSizeTextField = new JTextField("2000");
 		targetSizeTextField.setHorizontalAlignment(SwingConstants.RIGHT);
 		targetSizeTextField.setMaximumSize(new Dimension(200, 25));
@@ -565,19 +565,21 @@ public class MainPanel extends JPanel {
 		leftPanel.add(GUIHelper.wrapLeftRightAligned(targetSizeComboBox, targetSizeTextField));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("The maximum GIF filesize on Tumblr is 2000 Kilobytes.")));
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(15));
 		framerateDecimatorComboBox = new JComboBox<FramerateDecimator>();
 		DefaultComboBoxModel<FramerateDecimator> framerateDecimatorComboBoxModel = new DefaultComboBoxModel<>();
 		EnumSet.allOf(FramerateDecimator.class).stream().forEach(framerateDecimatorComboBoxModel::addElement);
 		framerateDecimatorComboBox.setModel(framerateDecimatorComboBoxModel);
 		framerateDecimatorComboBox.setSelectedItem(FramerateDecimator.HALF_RATE);
 		leftPanel.add(GUIHelper.wrapLeftAligned(framerateDecimatorComboBox));
-		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Halving the framerate will increase the physical size of the GIF.")));
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Cutting the framerate will decrease the filesize in Exact Width/Height mode.")));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("It will increase the width and height in Maximum Filesize mode.")));
+		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(15));
 		overlayTextField = new JTextField();
 		overlayTextField.setHorizontalAlignment(SwingConstants.RIGHT);
 		overlayTextField.setPreferredSize(new Dimension(200, 25));
@@ -622,9 +624,9 @@ public class MainPanel extends JPanel {
 		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Overlay text:"), overlayTextField));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Overlay text size:"), overlayTextSizeField));
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(15));
 		onDisable.add(framerateDecimatorComboBox);
 		
 		JPanel createGIFPanel = new JPanel(new BorderLayout());
@@ -645,7 +647,7 @@ public class MainPanel extends JPanel {
 		});
 		createGIFPanel.setMaximumSize(new Dimension(480, 30));
 		leftPanel.add(createGIFPanel);
-		leftPanel.add(Box.createVerticalStrut(20));
+		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Status:")));
 		leftPanel.add(Box.createVerticalStrut(5));
 		JScrollPane scrollPane = new JScrollPane();

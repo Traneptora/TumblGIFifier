@@ -10,9 +10,9 @@ public enum TargetSize {
 		case FILESIZE:
 			return "Maximum Filesize in Kilobytes";
 		case SCALE_W:
-			return "Exact Width";
+			return "Exact Width in Pixels";
 		case SCALE_H:
-			return "Exact Height";
+			return "Exact Height in Pixels";
 		default:
 				throw new Error();
 		}
