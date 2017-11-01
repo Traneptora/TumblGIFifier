@@ -73,7 +73,37 @@ public class ResourcesManager {
 	}
 	
 	private static String getPkgVersionsLocation(String pkg) {
-		return String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, OperatingSystem.getLocalOS().name());
+		OperatingSystem local = OperatingSystem.getLocalOS();
+		switch (pkg) {
+			case "FFmpeg":
+				switch (local) {
+					case WINDOWS_64:
+					case WINDOWS_32:
+					case MACOS_64:
+						String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
+					default:
+						return "";
+				}
+			case "gifsicle":
+				switch (OperatingSystem.getLocalOS()) {
+					case WINDOWS_64:
+					case WINDOWS_32:
+						String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
+					default:
+						return "";
+				}
+			case "mpv":
+				switch (OperatingSystem.getLocalOS()) {
+					case WINDOWS_64:
+					case WINDOWS_32:
+					case MACOS_64:
+						String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
+					default:
+						return "";
+				}
+			default:
+				return "";
+		}
 	}
 	
 	private static String getExeDownloadLocation(String pkg, String version) {
@@ -128,6 +158,15 @@ public class ResourcesManager {
 					default:
 						return "";
 				}
+			case "mpv":
+				switch (OperatingSystem.getLocalOS()) {
+				case WINDOWS_64:
+				case WINDOWS_32:
+				case MACOS_64:
+					return String.format("mpv-%s-%s.tar.xz", version, local.name());
+				default:
+					return "";
+			}
 			default:
 				return "";
 		}
@@ -152,7 +191,7 @@ public class ResourcesManager {
 		ResourcesManager.requiredPkgs.add("FFmpeg");
 		ResourcesManager.optionalPkgs.add("OpenSans");
 		ResourcesManager.optionalPkgs.add("gifsicle");
-		ResourcesManager.optionalPkgs.add("mpv");
+		ResourcesManager.requiredPkgs.add("mpv");
 	}
 	
 	private ResourcesManager() {
