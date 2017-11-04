@@ -80,7 +80,7 @@ public class ResourcesManager {
 					case WINDOWS_64:
 					case WINDOWS_32:
 					case MACOS_64:
-						String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
+						return String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
 					default:
 						return "";
 				}
@@ -88,7 +88,7 @@ public class ResourcesManager {
 				switch (OperatingSystem.getLocalOS()) {
 					case WINDOWS_64:
 					case WINDOWS_32:
-						String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
+						return String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
 					default:
 						return "";
 				}
@@ -97,7 +97,7 @@ public class ResourcesManager {
 					case WINDOWS_64:
 					case WINDOWS_32:
 					case MACOS_64:
-						String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
+						return String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg, pkg, local.name());
 					default:
 						return "";
 				}
@@ -151,7 +151,7 @@ public class ResourcesManager {
 						return "";
 				}
 			case "gifsicle":
-				switch (OperatingSystem.getLocalOS()) {
+				switch (local) {
 					case WINDOWS_64:
 					case WINDOWS_32:
 						return String.format("gifsicle-%s-%s.tar.xz", version, local.name());
@@ -159,7 +159,7 @@ public class ResourcesManager {
 						return "";
 				}
 			case "mpv":
-				switch (OperatingSystem.getLocalOS()) {
+				switch (local) {
 				case WINDOWS_64:
 				case WINDOWS_32:
 				case MACOS_64:
@@ -300,9 +300,16 @@ public class ResourcesManager {
 			if (!res.isInHouse() && Files.exists(resPath) && !Files.isDirectory(resPath) && Files.isExecutable(resPath)) {
 				processor.replaceStatus("Checking for " + resourceName + "... found in PATH.");
 				continue;
-			} else if (mightHaveInternet && !remoteVersionURL.isEmpty() && remoteVersion.equals("")) {
+			}
+			log("mightHaveInternet: " + mightHaveInternet);
+			log("remoteVersionURL: " + remoteVersionURL);
+			log("remoteVersion: " + remoteVersion);
+			log("localVersion: " + localVersion);
+			if (mightHaveInternet && !remoteVersionURL.isEmpty() && remoteVersion.equals("")) {
 				try {
+					log("Fetching remote version...");
 					remoteVersion = IOHelper.downloadFirstLineFromInternet(versions);
+					log("Remote version obtained: " + remoteVersion);
 				} catch (RuntimeIOException ioe) {
 					log(ioe);
 					mightHaveInternet = false;
@@ -318,7 +325,6 @@ public class ResourcesManager {
 				processor.appendStatus("Found Bad " + resourceName + ". Deleted.");
 				processor.appendStatus(" ");
 			}
-
 			if (!Files.exists(resPath)) {
 				processor.replaceStatus("Checking for " + resourceName + "... not found.");
 				needDL = true;

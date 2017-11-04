@@ -246,8 +246,6 @@ public class MainPanel extends JPanel {
 		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
 		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
 		
-		final Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
-		final Resource ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
 		final String overlay = overlayTextField.getText();
 		final Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
 		

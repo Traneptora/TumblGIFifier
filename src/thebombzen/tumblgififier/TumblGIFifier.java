@@ -113,6 +113,7 @@ public final class TumblGIFifier {
 
 	public static void log(Throwable t) {
 		t.printStackTrace(logFileOutputStream);
+		logFileOutputStream.flush();
 	}
 
 	/**
