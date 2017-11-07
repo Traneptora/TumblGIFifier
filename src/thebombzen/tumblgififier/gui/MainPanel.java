@@ -263,8 +263,19 @@ public class MainPanel extends JPanel {
 						statusArea.appendStatus("Error rendering clip :(");
 						return;
 					}
-					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
-					ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(), "--no-config", "--quiet", "--loop-playlist=inf", "--osc=no", "--aid=no", "--sid=no", "--start=" + clipStart, "--end=" + clipEnd, "--vf=lavfi=\"" + videoFilter + "\"", scan.getLocation().toString());
+					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, null, -1, -1, true, decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
+					ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(),
+							"--config=no", "--msg-level=all=v", "--msg-color=no",
+							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv.log"),
+							"--term-osd=force", "--video-osd=no", "--term-status-msg=", "--term-osd-bar=no",
+							"--title=TumblGIFifier Preview", "--force-window=yes", "--taskbar-progress=no",
+							"--ontop=yes", "--autofit-larger=480x270", "--cursor-autohide=no", "--input-terminal=no",
+							"--input-cursor=no", "--dscale=bicubic_fast", "--cscale=bicubic_fast",
+							"--hwdec=auto", "--hwdec-codecs=hevc,vp9", "--input-default-bindings=no",
+							"--loop-playlist=inf", "--osc=no", "--aid=no", "--sid=no",
+							"--vf=lavfi=\"" + videoFilter + "\"", scan.getLocation().toString(),
+							"--start=" + clipStart, "--end=" + clipEnd
+							);
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
 					ConcurrenceManager.getConcurrenceManager().stopAll();
