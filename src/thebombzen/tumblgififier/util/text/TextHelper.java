@@ -138,22 +138,49 @@ public final class TextHelper {
 		}
 	}
 
+	/**
+	 * Tests for a string's "validity." A string is "valid" provided that is is not null and is not empty.
+	 * @param The string to test for validity.
+	 * @return true if the string is non-null and non-empty, false otherwise.
+	 */
+	public static boolean validateString(String string) {
+		return string != null && !string.isEmpty();
+	}
+
 	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale, int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText){
+		log("Creating video filter.");
 		List<String> filters = new ArrayList<String>();
-		if (preprocess != null && !preprocess.isEmpty()){
+		if (!validateString(preprocess)){
+			log("Adding preprocess filter: " + preprocess);
 			filters.add(preprocess);
 		}
 		if (decimator > 0){
-			filters.add("framestep=" + (1 + decimator));
+			String framestep = "framestep=" + (1 + decimator);
+			log("Adding framestep: " + framestep);
+			filters.add(framestep);
 		}
-		if (!overlayText.isEmpty() && ResourcesManager.loadedPkgs.contains("OpenSans")){
-			filters.add(createDrawTextString(originalWidth, originalHeight, overlaySize, overlayText));
+		if (validateString(overlayText)) {
+			if (ResourcesManager.loadedPkgs.contains("OpenSans")){
+				String drawTextString = createDrawTextString(originalWidth, originalHeight, overlaySize, overlayText);
+				log("Adding Draw Text String: " + drawTextString);
+				filters.add(drawTextString);
+			} else {
+				log("No Open Sans, cannot overlay text: " + overlayText);
+			}
 		}
-		filters.add("scale=w=" + width + ":h=" + height + (boxedScale ? ":force_original_aspect_ratio=decrease" : ""));
-		if (postprocess != null && !postprocess.isEmpty()){
+		if (width != originalWidth || height != originalHeight) {
+			log(String.format("Adding Scaler. w: %s, h: %s, origw: %s, origh: %s", width, height, originalWidth, originalHeight));
+			String scaler = "scale=w=" + width + ":h=" + height + (boxedScale ? ":force_original_aspect_ratio=decrease" : "");
+			log("Scaler filter: " + scaler);
+			filters.add(scaler);
+		}
+		if (validateString(postprocess)){
+			log("Adding postprocess filter: " + preprocess);
 			filters.add(postprocess);
 		}
-		return String.join(",", filters);
+		String ret = String.join(",", filters);
+		log("Filter created: " + ret);
+		return ret;
 	}
 	
 }
