@@ -16,10 +16,16 @@ public enum OperatingSystem {
 	static {
 		WINDOWS_64.exeExtension = ".exe";
 		WINDOWS_64.localResourceLocation = Paths.get(System.getenv("appdata"), "tumblgififier");
+		WINDOWS_64.isUnix = false;
+		WINDOWS_64.isWindows = true;
 		WINDOWS_32.exeExtension = ".exe";
 		WINDOWS_32.localResourceLocation = Paths.get(System.getenv("appdata"), "tumblgififier");
+		WINDOWS_32.isUnix = false;
+		WINDOWS_32.isWindows = true;
 		MACOS_64.exeExtension = "";
 		MACOS_64.localResourceLocation = Paths.get(System.getProperty("user.home"), "Library", "Application Support", "tumblgififier");
+		MACOS_64.isUnix = true;
+		MACOS_64.isWindows = false;
 		String xdgConfigHome = System.getenv("XDG_CONFIG_HOME");
 		POSIX.exeExtension = "";
 		if (xdgConfigHome == null) {
@@ -27,6 +33,8 @@ public enum OperatingSystem {
 		} else {
 			POSIX.localResourceLocation = Paths.get(xdgConfigHome, "tumblgififier");
 		}
+		POSIX.isUnix = true;
+		POSIX.isWindows = false;
 		String osName = System.getProperty("os.name").toLowerCase().replaceAll("\\s", "");
 		if (osName.contains("windows")) {
 			String arch = System.getProperty("os.arch");
@@ -48,6 +56,8 @@ public enum OperatingSystem {
 	
 	private String exeExtension = null;
 	private Path localResourceLocation = null;
+	private boolean isUnix;
+	private boolean isWindows;
 
 	private OperatingSystem() {
 
@@ -61,4 +71,11 @@ public enum OperatingSystem {
 		return localResourceLocation;
 	}
 
+	public boolean isUnix() {
+		return isUnix;
+	}
+
+	public boolean isWindows() {
+		return isWindows;
+	}
 }
