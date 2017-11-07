@@ -144,7 +144,52 @@ public final class TextHelper {
 	 * @return true if the string is non-null and non-empty, false otherwise.
 	 */
 	public static boolean validateString(String string) {
-		return string != null && !string.isEmpty();
+		return !sanitizeString(string).isEmpty();
+	}
+
+	/**
+	 * Returns real strings unchanged. Replaces null with empty the empty string.
+	 */
+	public static String sanitizeString(String string) {
+		return string != null ? string : "";
+	}
+
+	/**
+	 * Replaces negative values with default ones. The first default value is for -1, the second is for -2, and so on.
+	 * @param value
+	 * @param defaultValue
+	 * @return
+	 */
+	public static int sanitizeInt(int value, int... defaultValues) {
+		if (value < 0) {
+			if (-value > defaultValues.length) {
+				if (defaultValues.length > 0) {
+					return defaultValues[0];
+				} else {
+					return 0;
+				}
+			} else {
+				return defaultValues[-value - 1];
+			}
+		} else {
+			return value;
+		}
+	}
+
+	public static int sanitizeInteger(Integer value, int... defaultValues) {
+		if (value == null) {
+			return sanitizeInt(-1, defaultValues);
+		} else {
+			return sanitizeInt(value.intValue(), defaultValues);
+		}
+	}
+
+	public static double sanitizeDouble(double value, double defaultValue) {
+		if (Double.isFinite(value) && value >= 0D) {
+			return value;
+		} else {
+			return defaultValue;
+		}
 	}
 
 	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale, int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText){
@@ -168,7 +213,7 @@ public final class TextHelper {
 				log("No Open Sans, cannot overlay text: " + overlayText);
 			}
 		}
-		if (width != originalWidth || height != originalHeight) {
+		if (width > 0 && width != originalWidth || height > 0 && height != originalHeight) {
 			log(String.format("Adding Scaler. w: %s, h: %s, origw: %s, origh: %s", width, height, originalWidth, originalHeight));
 			String scaler = "scale=w=" + width + ":h=" + height + (boxedScale ? ":force_original_aspect_ratio=decrease" : "");
 			log("Scaler filter: " + scaler);
