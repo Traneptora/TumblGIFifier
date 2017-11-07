@@ -40,6 +40,24 @@ import thebombzen.tumblgififier.util.text.StatusProcessor;
 public class ResourcesManager {
 	
 	private static ResourcesManager manager = new ResourcesManager();
+	private static Path localResourceLocation = null;
+
+	public static Path getLocalResourceLocation() {
+		if (localResourceLocation != null) {
+			return localResourceLocation;
+		}
+		try {
+			localResourceLocation = OperatingSystem.getLocalOS().getLocalResourceLocation().toAbsolutePath();
+			if (Files.exists(localResourceLocation) && !Files.isDirectory(localResourceLocation)) {
+				Files.delete(localResourceLocation);
+				System.err.println("Deleting existing tumblgififier non-directory.");
+			}
+			Files.createDirectories(localResourceLocation);
+			return localResourceLocation;
+		} catch (IOException ioe) {
+			throw new RuntimeIOException(ioe);
+		}
+	}
 	
 	private static String getLegacyApplicationDataLocation(){
 		String name = System.getProperty("os.name");
@@ -135,7 +153,7 @@ public class ResourcesManager {
 	}
 	
 	public Path getLocalFile(String name){
-		return LibraryLoader.getLocalResourceLocation().resolve(name);
+		return getLocalResourceLocation().resolve(name);
 	}
 	
 	private static String getExeDLPkg(String pkg, String version) {
@@ -242,7 +260,7 @@ public class ResourcesManager {
 	}
 	
 	public Path getTemporaryDirectory() {
-		Path dir = LibraryLoader.getLocalResourceLocation().resolve("temp");
+		Path dir = getLocalResourceLocation().resolve("temp");
 		try {
 			if (Files.exists(dir) && !Files.isDirectory(dir)) {
 				Files.delete(dir);
@@ -263,7 +281,7 @@ public class ResourcesManager {
 				return new Resource(pkg, x, path, false);
 			}
 		}
-		return new Resource(pkg, x, LibraryLoader.getLocalResourceLocation().resolve(name), true);
+		return new Resource(pkg, x, getLocalResourceLocation().resolve(name), true);
 	}
 	
 	
@@ -388,23 +406,14 @@ public class ResourcesManager {
 			}
 			ArchiveEntry entry;
 			while (null != (entry = ain.getNextEntry())) {
-				String name = Paths.get(entry.getName()).getFileName().toString();
-				/*
-				boolean found = false;
-				for (String resource : resources) {
-					if (name.startsWith(resource)) {
-						found = true;
-						break;
-					}
-				}
-				if (!found) {
-					continue;
-				}
-				*/
+				String name = entry.getName();
 				processor.appendStatus("Extracting " + name + "...");
 				Path path = getLocalFile(name);
-				Files.deleteIfExists(path);
-				Files.copy(ain, path, StandardCopyOption.REPLACE_EXISTING);
+				if (entry.isDirectory()) {
+					Files.createDirectories(path);
+				} else {
+					Files.copy(ain, path, StandardCopyOption.REPLACE_EXISTING);
+				}
 				if (EnumSet.of(OperatingSystem.MACOS_64, OperatingSystem.POSIX).contains(OperatingSystem.getLocalOS())){
 					try {
 						Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rwxr--r--"));

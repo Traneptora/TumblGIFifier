@@ -57,7 +57,7 @@ public final class LibraryLoader {
 		}
 	}
 
-	public static Path getLocalResourceLocation() {
+	private static Path getLocalResourceLocation() {
 		if (localResourceLocation != null) {
 			return localResourceLocation;
 		}
@@ -74,7 +74,7 @@ public final class LibraryLoader {
 		}
 	}
 
-	public static void extractExternalLibraries() {
+	private static void extractExternalLibraries() {
 		Path thisJarFile = null;
 		try {
 			thisJarFile = Paths.get(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
