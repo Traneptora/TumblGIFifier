@@ -33,8 +33,7 @@ public class AboutDialog extends JDialog {
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("TumblGIFifier version " + TumblGIFifier.VERSION)));
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("Copyright 2015-2017 Leo Izen (thebombzen)")));
 		box.add(Box.createVerticalStrut(10));
-		box.add(GUIHelper.wrapLeftAligned(new JLabel("Licensed under the MIT license")));
-		box.add(GUIHelper.wrapLeftAligned(new JLabel("with included public domain XZ Utils")));
+		box.add(GUIHelper.wrapLeftAligned(new JLabel("Licensed under the MIT license.")));
 		box.add(Box.createVerticalStrut(10));
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("See https://thebombzen.com/TumblGIFifier/ for details.")));
 		box.add(Box.createVerticalStrut(10));
