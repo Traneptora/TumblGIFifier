@@ -1,94 +1,74 @@
 package thebombzen.tumblgififier.video;
 
+import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.regex.Pattern;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
+import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
-import thebombzen.tumblgififier.util.text.TextHelper;
-import static thebombzen.tumblgififier.TumblGIFifier.log;
 
 public class VideoScan {
+	private final Path scanLocation;
 	private final double scanDuration;
 	private final double scanFramerate;
-	private final double scanPacketDuration;
 	private final int scanWidth;
-	private final Path scanLocation;
 	private final int scanHeight;
 
 	public static VideoScan scanFile(StatusProcessor processor, Path pathname) {
-		String line = null;
-		int width = -1;
-		int height = -1;
-		double duration = -1;
-		double framerate = -1;
-		double durationTime = -1;
+		//String line = null;
+		AtomicInteger widthA = new AtomicInteger(-1);
+		AtomicInteger heightA = new AtomicInteger(-1);
+		AtomicReference<Double> durationA = new AtomicReference<>(-1D);
+		AtomicReference<Double> framerateA = new AtomicReference<>(-1D);
 		processor.appendStatus("Scanning File... ");
-		Resource ffprobe = ResourcesManager.getResourcesManager().getFFprobeLocation();
-		try (BufferedReader br = new BufferedReader(
-				new InputStreamReader(ConcurrenceManager.getConcurrenceManager().exec(false, ffprobe.getLocation().toString(),
-						"-select_streams", "v", "-of", "flat", "-show_streams", "-show_format", pathname.toString()), Charset.forName("UTF-8")))) {
-			while (null != (line = br.readLine())) {
-				if (Pattern.compile("streams\\.stream\\.\\d+\\.width=").matcher(line).find()) {
+		Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new InputStreamReader(
+					ConcurrenceManager.getConcurrenceManager().exec(false, mpv.getLocation().toString(), "--config=no",
+							"--msg-level=all=v", "--msg-color=no",
+							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-probe.log"),
+							"--input-terminal=no", "-start=9999:99:99", "--vo=null", "--aid=no", "--sid=no",
+							"--script=" + ResourcesManager.getResourcesManager().getLocalFile("lib")
+									.resolve("playback-time.lua"),
+							"--keep-open=always", pathname.toString()),
+					StandardCharsets.UTF_8));
+			br.lines().forEach(line -> {
+				if (line.startsWith("[playback_time] ")) {
+					log("Found playback_time: " + line);
+					line = line.substring("[playback_time] ".length());
+					String[] parts = line.split(",");
 					try {
-						width = Integer.parseInt(line.replaceAll("streams\\.stream\\.\\d+\\.width=", ""));
+						durationA.set(Double.parseDouble(parts[0]));
+						widthA.set(Double.valueOf(parts[1]).intValue());
+						heightA.set(Double.valueOf(parts[2]).intValue());
+						framerateA.set(Double.parseDouble(parts[3]));
 					} catch (NumberFormatException nfe) {
-						processor.appendStatus("Error reading width: " + line);
-						continue;
-					}
-				} else if (Pattern.compile("streams\\.stream\\.\\d+\\.height=").matcher(line).find()) {
-					try {
-						height = Integer.parseInt(line.replaceAll("streams\\.stream\\.\\d+\\.height=", ""));
-					} catch (NumberFormatException nfe) {
-						processor.appendStatus("Error reading height: " + line);
-						continue;
-					}
-				} else if (Pattern.compile("streams\\.stream\\.\\d+\\.duration=").matcher(line).find()) {
-					try {
-						duration = Double.parseDouble(
-								line.replaceAll("streams\\.stream\\.\\d+\\.duration=", "").replace("\"", ""));
-					} catch (NumberFormatException nfe) {
-						continue;
-					}
-				} else if (Pattern.compile("streams\\.stream\\.\\d+\\.r_frame_rate=").matcher(line).find()) {
-					String rate = line.replaceAll("streams\\.stream\\.\\d+\\.r_frame_rate=", "").replace("\"", "");
-					try {
-						framerate = Double.parseDouble(rate);
-					} catch (NumberFormatException nfe) {
-						String[] rat = rate.split("/");
-						if (rat.length != 2) {
-							processor.appendStatus("Error reading framerate: " + line);
-							continue;
-						} else {
-							try {
-								double first = Double.parseDouble(rat[0]);
-								double second = Double.parseDouble(rat[1]);
-								framerate = first / second;
-							} catch (NumberFormatException e) {
-								processor.appendStatus("Error reading framerate: " + line);
-								continue;
-							}
-						}
-					}
-				} else if (line.contains("format.duration=") && duration < 0) {
-					try {
-						duration = Double.parseDouble(line.replace("format.duration=", "").replace("\"", ""));
-					} catch (NumberFormatException nfe) {
-						continue;
+						log(nfe);
+					} catch (ArrayIndexOutOfBoundsException aioobe) {
+						log(aioobe);
 					}
 				}
-			}
-		} catch (IOException ioe) {
-			log(ioe);
+			});
+		} catch (ProcessTerminatedException pte) {
+			log(pte);
+		} finally {
+			IOHelper.closeQuietly(br);
 		}
+		
+		double duration = durationA.get();
+		double framerate = framerateA.get();
+		int width = widthA.get();
+		int height = heightA.get();
 
-		if (duration < 0) {
+		/*if (duration < 0) {
 			log("Did not find duration in metadata, checking packets...");
 			Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
 			try {
@@ -97,36 +77,27 @@ public class VideoScan {
 			} catch (ProcessTerminatedException ex) {
 				log(ex);
 			}
-		}
+		}*/
 
-		durationTime = 1D / framerate;
-
-		if (duration < 0 || height < 0 || width < 0 || framerate < 0 || durationTime < 0) {
+		if (duration < 0 || height < 0 || width < 0 || framerate < 0) {
 			processor.appendStatus("File Format Error.");
 			return null;
 		}
 
-		if (Math.abs(duration - durationTime) < 0.001D) {
+		if (duration == 0D && framerate == 1D) {
 			processor.appendStatus("Did you really just open a still image or a text file?");
 			return null;
 		}
 
-		return new VideoScan(width, height, duration, pathname, framerate, durationTime);
+		return new VideoScan(width, height, duration, pathname, framerate);
 	}
 	
-	public VideoScan(int width, int height, double duration, Path location, double framerate,
-			double durationTime) {
+	public VideoScan(int width, int height, double duration, Path location, double framerate) {
 		this.scanWidth = width;
 		this.scanHeight = height;
 		this.scanDuration = duration;
 		this.scanLocation = location;
 		this.scanFramerate = framerate;
-		this.scanPacketDuration = durationTime;
-	}
-	
-	
-	public double getSinglePacketDuration() {
-		return scanPacketDuration;
 	}
 	
 	public double getFrameDuration(){
@@ -141,13 +112,12 @@ public class VideoScan {
 		return scanFramerate;
 	}
 	
-	public int getCachePrecision(){
-		int precision = (int)(Math.ceil(getFramerate() / 6D));
-		return precision < 4 ? 4 : precision;
+	public double getScreenshotsPerSecond(){
+		return getFramerate() / 6D;
 	}
 	
-	public double getShotDuration(){
-		return 1D / getCachePrecision(); 
+	public double getScreenshotDuration(){
+		return 1D / getScreenshotsPerSecond();
 	}
 	
 	public int getHeight() {
@@ -173,8 +143,6 @@ public class VideoScan {
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + scanHeight;
 		result = prime * result + ((scanLocation == null) ? 0 : scanLocation.hashCode());
-		temp = Double.doubleToLongBits(scanPacketDuration);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + scanWidth;
 		return result;
 	}
@@ -199,8 +167,6 @@ public class VideoScan {
 				return false;
 		} else if (!scanLocation.equals(other.scanLocation))
 			return false;
-		if (Double.doubleToLongBits(scanPacketDuration) != Double.doubleToLongBits(other.scanPacketDuration))
-			return false;
 		if (scanWidth != other.scanWidth)
 			return false;
 		return true;
@@ -208,10 +174,8 @@ public class VideoScan {
 
 	@Override
 	public String toString() {
-		return "VideoScan [scanDuration=" + scanDuration + ", scanFramerate=" + scanFramerate + ", scanPacketDuration="
-				+ scanPacketDuration + ", scanWidth=" + scanWidth + ", scanLocation=" + scanLocation + ", scanHeight="
-				+ scanHeight + "]";
+		return "VideoScan [scanLocation=" + scanLocation + ", scanDuration=" + scanDuration + ", scanFramerate="
+				+ scanFramerate + ", scanWidth=" + scanWidth + ", scanHeight=" + scanHeight + "]";
 	}
-
 	
 }

@@ -191,16 +191,31 @@ public final class TextHelper {
 			return defaultValue;
 		}
 	}
+	
+	public static String getTimeDurationFromSeconds(double seconds) {
+		int hours = (int)(seconds / 3600D);
+		seconds -= hours * 3600D;
+		int minutes = (int)(seconds / 60D);
+		seconds -= minutes * 60D;
+		if (hours > 0) {
+			return String.format("%02d:%02d:%06.3f", hours, minutes, seconds);
+		} else if (minutes > 0){
+			return String.format("%02d:%06.3f", minutes, seconds);
+		} else {
+			return String.format("%06.3f", seconds);
+		}
+	}
 
 	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale, int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText){
 		log("Creating video filter.");
 		List<String> filters = new ArrayList<String>();
-		if (!validateString(preprocess)){
+		filters.add("copy");
+		if (validateString(preprocess)){
 			log("Adding preprocess filter: " + preprocess);
 			filters.add(preprocess);
 		}
 		if (decimator > 0){
-			String framestep = "framestep=" + (1 + decimator);
+			String framestep = "select=not(mod(n\\," + (1 + decimator) + "))";
 			log("Adding framestep: " + framestep);
 			filters.add(framestep);
 		}

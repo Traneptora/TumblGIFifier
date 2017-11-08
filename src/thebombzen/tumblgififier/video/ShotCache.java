@@ -50,11 +50,11 @@ public class ShotCache {
 	public void screenShot(final Consumer<BufferedImage> callback, final ImagePanel parentPanel, final StatusProcessor processor, final String overlay, int frameNumber,
 			final int shotWidth, final int shotHeight, final int overlaySize, final boolean end) {
 		final Map<Integer, Path> shotFiles = end ? this.endShotFiles : this.shotFiles;
-		double time = frameNumber * scan.getShotDuration();
+		double time = frameNumber * scan.getScreenshotDuration();
 		if (time < 0 || time > scan.getDuration()) {
 			throw new IllegalArgumentException("Time out of bounds!");
 		}
-		final int frameNumberF = time + scan.getShotDuration() > scan.getDuration() ? frameNumber - 1 : frameNumber;
+		final int frameNumberF = time + scan.getScreenshotDuration() > scan.getDuration() ? frameNumber - 1 : frameNumber;
 		if (shotFiles.get(frameNumberF) == null) {
 			final boolean playing = parentPanel.isPlaying();
 			if (playing){
@@ -65,6 +65,7 @@ public class ShotCache {
 				public void run() {
 					try {
 						screenShot0(overlay, frameNumberF - 8, shotWidth, shotHeight, overlaySize, 17, end);
+						//singletonScreenshot0(overlay, frameNumberF, shotWidth, shotHeight, overlaySize, end);
 						callback.accept(ImageIO.read(Files.newInputStream(shotFiles.get(frameNumberF))));
 						if (playing){
 							if (parentPanel.isPlaying()){
@@ -90,30 +91,25 @@ public class ShotCache {
 	}
 
 	private void screenShot0(String overlay, int frameNumber, int shotWidth, int shotHeight, int overlaySize, int frames, boolean end) throws IOException {
+		log(String.format("Screenshotting: %s, %d, %d, %d, %d, %d, %b", overlay, frameNumber, shotWidth, shotHeight, overlaySize, frames, end));
 		if (frameNumber < 0) {
 			frameNumber = 0;
 		}
-		if (frameNumber + frames > scan.getDuration() * scan.getCachePrecision()) {
-			frames = (int)(scan.getDuration() * scan.getCachePrecision() - frameNumber); 
+		if (frameNumber + frames > scan.getDuration() * scan.getScreenshotsPerSecond()) {
+			frames = (int)(scan.getDuration() * scan.getScreenshotsPerSecond() - frameNumber); 
 		}
 		final Map<Integer, Path> shotFiles = end ? this.endShotFiles : this.shotFiles;
 		Path shotPath = IOHelper.createTempFile();
 		IOHelper.deleteTempFile(shotPath);
-		Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
-		
-		double ffmpegStartTime = frameNumber * scan.getShotDuration() - ( end ? scan.getFrameDuration() : 0);
-		String videoFilter = TextHelper.getTextHelper().createVideoFilter("fps=fps=" + scan.getCachePrecision(), "format=rgb24", shotWidth, shotHeight, true, 0, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
-		
-		double totalTime = TextHelper.scanTotalTimeConverted(ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(), "-y", "-ss", Double.toString(ffmpegStartTime),
-				"-i", scan.getLocation().toString(), "-map", "0:v:0", "-vf",
-				 videoFilter, "-sws_flags", "lanczos", "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
-				shotPath.toString() + "_%06d.png"));
-		if (totalTime <= 0) {
-			log("Video file has no index, using slow seeking.");
-			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-i", scan.getLocation().toString(), "-map", "0:v:0", "-ss", Double.toString(ffmpegStartTime), "-vf",
-					 videoFilter, "-sws_flags", "lanczos", "-vsync", "drop", "-frames:v", Integer.toString(frames), "-c", "png", "-f", "image2",
-					shotPath.toString() + "_%06d.png");
-		}
+		Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
+		double ffmpegStartTime = frameNumber * scan.getScreenshotDuration();// - ( end ? scan.getFrameDuration() : 0);
+		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=rgb24", shotWidth, shotHeight, true, 5, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
+		ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(),
+					scan.getLocation().toString(), "--config=no", "--msg-level=all=v", "--msg-color=no",
+					"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-screenshot.log"),
+					"--input-terminal=no", "--aid=no", "--sid=no", "--ofps=" + scan.getScreenshotsPerSecond(), "--of=image2", "--ovc=png",
+					"--term-status-msg=", "--lavfi-complex=[vid1]" + videoFilter + "[vo]",
+					"--start=" + ffmpegStartTime, "--frames=" + (frames - 1), "--o=" + shotPath.toString() + "_%06d.png");
 		for (int i = 0; i < frames; i++) {
 			String name = String.format("%s_%06d.png", shotPath.toString(), i + 1);
 			Path tempShotPath = Paths.get(name);

@@ -27,7 +27,6 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import thebombzen.tumblgififier.LibraryLoader;
 import thebombzen.tumblgififier.OperatingSystem;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.RuntimeFNFException;

@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -194,6 +195,7 @@ public final class ConcurrenceManager {
 				ByteArrayOutputStream bout = new ByteArrayOutputStream();
 				InputStream in = exec(bout, args);
 				TumblGIFifier.getLogFileOutputStream().write(bout.toByteArray());
+				TumblGIFifier.getLogFileOutputStream().flush();
 				return in;
 			} else {
 				return new BufferedInputStream(exec(null, args));
@@ -222,6 +224,36 @@ public final class ConcurrenceManager {
 		}
 		processes.clear();
 		cleaningUp = false;
+	}
+	
+	public static <T> T uncheckCall(Callable<T> callable) {
+		try {
+			return callable.call();
+		} catch (Exception e) {
+			return sneakyThrow(e);
+		}
+	}
+
+	public static void uncheckRun(RunnableExc r) {
+		try {
+			r.run();
+		} catch (Exception e) {
+			sneakyThrow(e);
+		}
+	}
+
+	@FunctionalInterface
+	public interface RunnableExc {
+		void run() throws Exception;
+	}
+
+	public static <T> T sneakyThrow(Throwable e) {
+		return ConcurrenceManager.<RuntimeException, T> sneakyThrow0(e);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <E extends Throwable, T> T sneakyThrow0(Throwable ex) throws E {
+		throw (E) ex;
 	}
 	
 	/**

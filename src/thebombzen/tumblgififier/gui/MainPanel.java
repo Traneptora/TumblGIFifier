@@ -1,7 +1,6 @@
 package thebombzen.tumblgififier.gui;
 
 import static thebombzen.tumblgififier.TumblGIFifier.log;
-
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
@@ -44,7 +42,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.Tuple;
 import thebombzen.tumblgififier.util.io.IOHelper;
@@ -72,7 +69,6 @@ public class MainPanel extends JPanel {
 	private JTextField targetSizeTextField;
 	private String mostRecentGIFDirectory = null;
 	
-	private JButton playButtonFast;
 	private JButton playButtonSlow;
 	
 	private ImagePanel previewImageEndPanel;
@@ -83,6 +79,9 @@ public class MainPanel extends JPanel {
 
 	private JSlider startSlider;
 	private JSlider endSlider;
+	
+	private JLabel startLabel;
+	private JLabel endLabel;
 
 	private StatusProcessorArea statusArea;
 	private JButton fireButton = new JButton("Create GIF");
@@ -173,8 +172,8 @@ public class MainPanel extends JPanel {
 		}
 
 		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
-		final double clipStart = startSlider.getValue() * scan.getShotDuration();
-		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
+		final double clipStart = startSlider.getValue() * scan.getScreenshotDuration();
+		final double clipEnd = endSlider.getValue() * scan.getScreenshotDuration();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			
 			@Override
@@ -205,45 +204,12 @@ public class MainPanel extends JPanel {
 		return statusArea;
 	}
 	
-	private void playClipFast() {
-		MainFrame.getMainFrame().setBusy(true);
-		
-		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
-		
-		final double clipStart = startSlider.getValue() * scan.getShotDuration();
-		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
-		final Resource ffplay = ResourcesManager.getResourcesManager().getFFplayLocation();
-		final String overlay = overlayTextField.getText();
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			
-			@Override
-			public void run() {
-				try {
-					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", -1, scan.getHeight() > 270 ? 270 : -1, true, decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
-					ConcurrenceManager.getConcurrenceManager().exec(true, ffplay.getLocation().toString(), "-loop", "0", "-an", "-sn", "-vst", "0:v:0",
-							"-i", scan.getLocation().toString(), "-ss", Double.toString(clipStart),
-							"-t", Double.toString(clipEnd - clipStart), "-vf", videoFilter);
-				} catch (ProcessTerminatedException ex) {
-					return;
-				} finally {
-					EventQueue.invokeLater(new Runnable(){
-						
-						@Override
-						public void run() {
-							MainFrame.getMainFrame().setBusy(false);
-						}
-					});
-				}
-			}
-		});
-	}
-	
 	private void playClipSlow() {
 		
 		MainFrame.getMainFrame().setBusy(true);
 		
-		final double clipStart = startSlider.getValue() * scan.getShotDuration();
-		final double clipEnd = endSlider.getValue() * scan.getShotDuration();
+		final double clipStart = startSlider.getValue() * scan.getScreenshotDuration();
+		final double clipEnd = endSlider.getValue() * scan.getScreenshotDuration();
 		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
 		
 		final String overlay = overlayTextField.getText();
@@ -272,8 +238,8 @@ public class MainPanel extends JPanel {
 							"--ontop=yes", "--autofit-larger=480x270", "--cursor-autohide=no", "--input-terminal=no",
 							"--input-cursor=no", "--dscale=bicubic_fast", "--cscale=bicubic_fast",
 							"--hwdec=auto", "--hwdec-codecs=hevc,vp9", "--input-default-bindings=no",
-							"--loop-playlist=inf", "--osc=no", "--aid=no", "--sid=no",
-							"--vf=lavfi=\"" + videoFilter + "\"", scan.getLocation().toString(),
+							"--loop-playlist=inf", "--osc=no", "--aid=no", "--sid=no", "--hr-seek=yes",
+							"--lavfi-complex=[vid1]" + videoFilter + "[vo]", scan.getLocation().toString(),
 							"--start=" + clipStart, "--end=" + clipEnd
 							);
 				} catch (ProcessTerminatedException ex) {
@@ -303,8 +269,8 @@ public class MainPanel extends JPanel {
 		if (TargetSize.FILESIZE.equals(targetSizeComboBox.getSelectedItem())) {
 			final int maxSizeBytes = 1000 * targetSize;
 			final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
-			final double clipStart = startSlider.getValue() * scan.getShotDuration();
-			final double clipEnd = endSlider.getValue() * scan.getShotDuration();
+			final double clipStart = startSlider.getValue() * scan.getScreenshotDuration();
+			final double clipEnd = endSlider.getValue() * scan.getScreenshotDuration();
 			double widthGuess = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate()
 					/ (1D + decimator) * (clipEnd - clipStart) / (2D * maxSizeBytes));
 			if (widthGuess < 300D) {
@@ -381,50 +347,47 @@ public class MainPanel extends JPanel {
 		rightBox.add(previewImageStartPanel);
 		rightBox.add(Box.createVerticalStrut(10));
 		startSlider = new JSlider();
+		//BoundedRangeModel startSliderModel = new BoundedRangeModel();
+		//startSliderModel.
 		startSlider.setMinimum(0);
-		startSlider.setMaximum((int) (scan.getDuration() * scan.getCachePrecision()));
+		startSlider.setMaximum((int) (scan.getDuration() * scan.getScreenshotsPerSecond()));
 		startSlider.setValue(startSlider.getMaximum() / 3);
 		rightBox.add(startSlider);
 		
 		onDisable.add(startSlider);
 		
-		playButtonFast = new JButton("Play Clip (Fast, Inaccurate)");
-		playButtonFast.addActionListener(new ActionListener(){
-			
+		playButtonSlow = new JButton("Preview Clip");
+		
+		playButtonSlow.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				playClipFast();
+				playClipSlow();
 			}
 		});
-		
-		onDisable.add(playButtonFast);
-		
-		playButtonSlow = new JButton("Play Clip (Slow, Accurate)");
-		
-		if (ResourcesManager.loadedPkgs.contains("mpv")) {
-			playButtonSlow.addActionListener(new ActionListener(){
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					playClipSlow();
-				}
-			});
-			onDisable.add(playButtonSlow);
-		} else {
-			playButtonSlow.setEnabled(false);
-		}
+		onDisable.add(playButtonSlow);
 
-		JPanel playButtonPanel = new JPanel(new BorderLayout());
-		playButtonPanel.add(playButtonFast, BorderLayout.WEST);
-		playButtonPanel.add(playButtonSlow, BorderLayout.EAST);
-		
-		rightBox.add(Box.createVerticalStrut(10));
-		rightBox.add(playButtonPanel);
-		rightBox.add(Box.createVerticalStrut(10));
-		
+		startLabel = new JLabel("Start: " + TextHelper.getTimeDurationFromSeconds(startSlider.getValue() * scan.getScreenshotDuration()));
+	
 		endSlider = new JSlider();
 		endSlider.setMinimum(0);
-		endSlider.setMaximum((int) (scan.getDuration() * scan.getCachePrecision()));
+		endSlider.setMaximum((int) (scan.getDuration() * scan.getScreenshotsPerSecond()));
 		endSlider.setValue(endSlider.getMaximum() * 2 / 3);
+		
+		endLabel = new JLabel("End: " + TextHelper.getTimeDurationFromSeconds(endSlider.getValue() * scan.getScreenshotDuration()));
+		
+		Box playButtonBox = Box.createHorizontalBox();
+		playButtonBox.add(Box.createHorizontalStrut(10));
+		playButtonBox.add(startLabel);
+		playButtonBox.add(Box.createHorizontalGlue());
+		playButtonBox.add(playButtonSlow);
+		playButtonBox.add(Box.createHorizontalGlue());
+		playButtonBox.add(endLabel);
+		playButtonBox.add(Box.createHorizontalStrut(10));
+		
+		rightBox.add(Box.createVerticalStrut(10));
+		rightBox.add(playButtonBox);
+		rightBox.add(Box.createVerticalStrut(10));
+		
 		rightBox.add(endSlider);
 		
 		onDisable.add(endSlider);
@@ -436,6 +399,7 @@ public class MainPanel extends JPanel {
 				if (startSlider.getValue() > endSlider.getValue()) {
 					startSlider.setValue(endSlider.getValue());
 				}
+				startLabel.setText("Start: " + TextHelper.getTimeDurationFromSeconds(startSlider.getValue() * scan.getScreenshotDuration()));
 				if (!startSlider.getValueIsAdjusting()) {
 					if (videoProcessor != null){
 						updateStartScreenshot();
@@ -454,6 +418,7 @@ public class MainPanel extends JPanel {
 				if (endSlider.getValue() < startSlider.getValue()) {
 					endSlider.setValue(startSlider.getValue());
 				}
+				endLabel.setText("End: " + TextHelper.getTimeDurationFromSeconds(endSlider.getValue() * scan.getScreenshotDuration()));
 				if (!endSlider.getValueIsAdjusting()) {
 					if (videoProcessor != null){
 						updateEndScreenshot();
@@ -489,7 +454,7 @@ public class MainPanel extends JPanel {
 		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Height:"), new JLabel(Integer.toString(scan.getHeight()))));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(
-				GUIHelper.wrapLeftRightAligned(new JLabel("Duration:"), new JLabel(String.format("%.2f", scan.getDuration()))));
+				GUIHelper.wrapLeftRightAligned(new JLabel("Duration:"), new JLabel(TextHelper.getTimeDurationFromSeconds(scan.getDuration()))));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(
 				GUIHelper.wrapLeftRightAligned(new JLabel("Framerate:"), new JLabel(String.format("%.2f", scan.getFramerate()))));
@@ -585,8 +550,8 @@ public class MainPanel extends JPanel {
 		framerateDecimatorComboBox.setSelectedItem(FramerateDecimator.HALF_RATE);
 		leftPanel.add(GUIHelper.wrapLeftAligned(framerateDecimatorComboBox));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Cutting the framerate will decrease the filesize in Exact Width/Height mode.")));
-		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("It will increase the width and height in Maximum Filesize mode.")));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Cutting the framerate will increase the width & height or")));
+		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("decrease the filesize, depending on the mode selected above.")));
 		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(15));
@@ -731,7 +696,7 @@ public class MainPanel extends JPanel {
 		});
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
 			public void run(){
-				startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageStartPanel, getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, true);
+				startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageStartPanel, getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, false);
 			}
 		});
 	}

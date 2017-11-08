@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -192,16 +193,21 @@ public class VideoProcessor {
 		
 		writer.flush();
 		
-		Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
+		//Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
+		Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
 		
 		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", newWidth, newHeight, false, decimator, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		
+		
+		
 		try {
 			scanPercentDone("Scaling Video... ", clipEndTime - clipStartTime, writer,
-					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(), "-y", "-ss",
-							Double.toString(this.clipStartTime), "-i", scan.getLocation().toString(), "-map", "0:v:0", "-vf", videoFilter,
-							"-sws_flags", "lanczos", "-t", Double.toString(this.clipEndTime - this.clipStartTime),
-							"-c", "ffv1", "-f", "nut", nutFile.toString()));
+					ConcurrenceManager.getConcurrenceManager().exec(false, mpv.getLocation().toString(),
+							scan.getLocation().toString(), "--config=no", "--msg-level=all=v", "--msg-color=no",
+							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-scale.log"),
+							"--input-terminal=no", "--aid=no", "--sid=no", "--oautofps", "--of=nut", "--ovc=ffv1",
+							"--term-status-msg=${=playback-time}", "--lavfi-complex=[vid1]" + videoFilter + "[vo]",
+							"--start=" + this.clipStartTime, "--end=" + this.clipEndTime, "--o=" + this.nutFile.toString()));
 		} catch (ProcessTerminatedException ex) {
 			log(ex);
 			writer.println("Scaling Video... Error.");
@@ -213,11 +219,18 @@ public class VideoProcessor {
 		
 		writer.print("Generating Palette... \r");
 		writer.flush();
-		
+		/*
+		ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-i",
+				this.nutFile.toString(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
+				this.paletteFile.toString());
+		*/
 		try {
-			ConcurrenceManager.getConcurrenceManager().exec(true, ffmpeg.getLocation().toString(), "-y", "-i",
-					this.nutFile.toString(), "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
-					this.paletteFile.toString());
+			ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(),
+					this.nutFile.toString(), "--config=no", "--msg-level=all=v", "--msg-color=no",
+					"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-palettegen.log"),
+					"--input-terminal=no", "--aid=no", "--sid=no", "--oautofps", "--of=image2", "--ovc=png",
+					"--lavfi-complex=[vid1]palettegen=max_colors=144[vo]", "--o=" + this.paletteFile.toString()
+					);
 		} catch (ProcessTerminatedException ex) {
 			log(ex);
 			writer.println("Generating Palette... Error.");
@@ -229,11 +242,21 @@ public class VideoProcessor {
 		
 		writer.print("Generating GIF... \r");
 		
-		try {
-			scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer,
+		/*
+		 * scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(), "-y", "-i",
 							this.nutFile.toString(), "-i", this.paletteFile.toString(), "-lavfi",
-							"paletteuse=dither=bayer:bayer_scale=3", "-c", "gif", "-f", "gif", this.gifFile.toString()));
+							", "-c", "gif", "-f", "gif", this.gifFile.toString()));
+		 */
+		
+		try {
+			scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer, ConcurrenceManager.getConcurrenceManager().exec(false,
+					mpv.getLocation().toString(), this.paletteFile.toString(), 
+					"--external-file=" + this.nutFile.toString(), "--config=no", "--msg-level=all=v", "--msg-color=no",
+					"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-paletteuse.log"),
+					"--input-terminal=no", "--aid=no", "--sid=no", "--oautofps", "--of=gif", "--ovc=gif", "--term-status-msg=${=playback-time}",
+					"--lavfi-complex=[vid2][vid1]paletteuse=dither=bayer:bayer_scale=3[vo]", "--o=" + this.gifFile.toString()
+					));
 		} catch (ProcessTerminatedException ex) {
 			log(ex);
 			writer.println("Generating GIF... Error.");
@@ -262,19 +285,21 @@ public class VideoProcessor {
 
 	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in)
 			throws ProcessTerminatedException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(in));
-		String line = null;
-		try {
-			while (null != (line = br.readLine())) {
-				if (line.startsWith("frame=")) {
-					double realTime = TextHelper.getFFmpegStatusTimeInSeconds(line);
-					double percent = realTime * 100D / length;
-					writer.format("%s%.2f%%\r", prefix, percent);
+		BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+		br.lines().forEachOrdered(line -> {
+			double realTime;
+			if (line.startsWith("frame=")) {
+				realTime = TextHelper.getFFmpegStatusTimeInSeconds(line);
+			} else {
+				try {
+					realTime = Double.parseDouble(line);
+				} catch (NumberFormatException nfe) {
+					return;
 				}
 			}
-		} catch (IOException ioe) {
-			throw new ProcessTerminatedException(ioe);
-		}
+			double percent = realTime * 100D / length;
+			writer.format("%s%.2f%%\r", prefix, percent);
+		});
 	}
 	
 }
