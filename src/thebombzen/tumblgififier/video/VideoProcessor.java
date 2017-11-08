@@ -192,15 +192,13 @@ public class VideoProcessor {
 
 		writer.flush();
 
-		// Resource ffmpeg =
-		// ResourcesManager.getResourcesManager().getFFmpegLocation();
 		Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
 
 		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", newWidth, newHeight,
 				false, decimator, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 
 		try {
-			scanPercentDone("Scaling Video... ", clipEndTime - clipStartTime, writer,
+			scanPercentDone("Scaling Video... ", clipStartTime, clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, mpv.getLocation().toString(),
 							scan.getLocation().toString(), "--config=no", "--msg-level=all=v", "--msg-color=no",
 							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-scale.log"),
@@ -220,12 +218,7 @@ public class VideoProcessor {
 
 		writer.print("Generating Palette... \r");
 		writer.flush();
-		/*
-		 * ConcurrenceManager.getConcurrenceManager().exec(true,
-		 * ffmpeg.getLocation().toString(), "-y", "-i", this.nutFile.toString(),
-		 * "-vf", "palettegen=max_colors=144", "-c", "png", "-f", "image2",
-		 * this.paletteFile.toString());
-		 */
+
 		try {
 			ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(), this.nutFile.toString(),
 					"--config=no", "--msg-level=all=v", "--msg-color=no",
@@ -243,16 +236,8 @@ public class VideoProcessor {
 
 		writer.print("Generating GIF... \r");
 
-		/*
-		 * scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime,
-		 * writer, ConcurrenceManager.getConcurrenceManager().exec(false,
-		 * ffmpeg.getLocation().toString(), "-y", "-i", this.nutFile.toString(),
-		 * "-i", this.paletteFile.toString(), "-lavfi",
-		 * ", "-c", "gif", "-f", "gif", this.gifFile.toString()));
-		 */
-
 		try {
-			scanPercentDone("Generating GIF... ", clipEndTime - clipStartTime, writer,
+			scanPercentDone("Generating GIF... ", 0D, clipEndTime - clipStartTime, writer,
 					ConcurrenceManager.getConcurrenceManager().exec(false, mpv.getLocation().toString(),
 							this.paletteFile.toString(), "--external-file=" + this.nutFile.toString(), "--config=no",
 							"--msg-level=all=v", "--msg-color=no",
@@ -288,21 +273,17 @@ public class VideoProcessor {
 		writer.flush();
 	}
 
-	private void scanPercentDone(String prefix, double length, PrintWriter writer, InputStream in)
+	private void scanPercentDone(String prefix, double startOffset, double length, PrintWriter writer, InputStream in)
 			throws ProcessTerminatedException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
 		br.lines().forEachOrdered(line -> {
 			double realTime;
-			if (line.startsWith("frame=")) {
-				realTime = TextHelper.getFFmpegStatusTimeInSeconds(line);
-			} else {
-				try {
-					realTime = Double.parseDouble(line);
-				} catch (NumberFormatException nfe) {
-					return;
-				}
+			try {
+				realTime = Double.parseDouble(line);
+			} catch (NumberFormatException nfe) {
+				return;
 			}
-			double percent = realTime * 100D / length;
+			double percent = (realTime - startOffset) * 100D / length;
 			writer.format("%s%.2f%%\r", prefix, percent);
 		});
 	}

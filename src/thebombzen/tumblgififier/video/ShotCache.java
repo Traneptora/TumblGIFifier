@@ -109,13 +109,7 @@ public class ShotCache {
 		Path shotPath = IOHelper.createTempFile();
 		IOHelper.deleteTempFile(shotPath);
 		Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
-		double ffmpegStartTime = frameNumber * scan.getScreenshotDuration();// -
-																			// (
-																			// end
-																			// ?
-																			// scan.getFrameDuration()
-																			// :
-																			// 0);
+		double startTimeCode = frameNumber * scan.getScreenshotDuration();
 		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=rgb24", shotWidth, shotHeight,
 				true, 5, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 		ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(),
@@ -125,7 +119,7 @@ public class ShotCache {
 				"--correct-downscaling", "--scale=spline36", "--dscale=spline36", "--cscale=spline36",
 				"--ofps=" + scan.getScreenshotsPerSecond(),
 				"--of=image2", "--ovc=png", "--term-status-msg=", "--sws-scaler=spline", "--lavfi-complex=sws_flags=spline;[vid1]" + videoFilter + "[vo]",
-				"--start=" + ffmpegStartTime, "--frames=" + (frames - 1), "--o=" + shotPath.toString() + "_%06d.png");
+				"--start=" + startTimeCode, "--frames=" + (frames - 1), "--o=" + shotPath.toString() + "_%06d.png");
 		for (int i = 0; i < frames; i++) {
 			String name = String.format("%s_%06d.png", shotPath.toString(), i + 1);
 			Path tempShotPath = Paths.get(name);

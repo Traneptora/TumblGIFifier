@@ -68,17 +68,6 @@ public class VideoScan {
 		int width = widthA.get();
 		int height = heightA.get();
 
-		/*
-		 * if (duration < 0) {
-		 * log("Did not find duration in metadata, checking packets...");
-		 * Resource ffmpeg =
-		 * ResourcesManager.getResourcesManager().getFFmpegLocation(); try {
-		 * duration = TextHelper.scanTotalTimeConverted(ConcurrenceManager.
-		 * getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(),
-		 * "-i", pathname.toString(), "-map", "0:v:0", "-f", "null", "-")); }
-		 * catch (ProcessTerminatedException ex) { log(ex); } }
-		 */
-
 		if (duration < 0 || height < 0 || width < 0 || framerate < 0) {
 			processor.appendStatus("File Format Error.");
 			return null;

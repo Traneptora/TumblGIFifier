@@ -25,7 +25,7 @@ public class Resource {
 	}
 
 	/**
-	 * This is the global package containing the resource. Example: "FFmpeg"
+	 * This is the global package containing the resource. Example: "mpv"
 	 */
 	public String getPackage() {
 		return pkg;

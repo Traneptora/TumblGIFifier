@@ -92,8 +92,8 @@ public class ResourcesManager {
 	private static String getPkgVersionsLocation(String pkg) {
 		OperatingSystem local = OperatingSystem.getLocalOS();
 		switch (pkg) {
-			case "FFmpeg":
-				switch (local) {
+			case "mpv":
+				switch (OperatingSystem.getLocalOS()) {
 					case WINDOWS_64:
 					case WINDOWS_32:
 					case MACOS_64:
@@ -106,16 +106,6 @@ public class ResourcesManager {
 				switch (OperatingSystem.getLocalOS()) {
 					case WINDOWS_64:
 					case WINDOWS_32:
-						return String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg,
-								pkg, local.name());
-					default:
-						return "";
-				}
-			case "mpv":
-				switch (OperatingSystem.getLocalOS()) {
-					case WINDOWS_64:
-					case WINDOWS_32:
-					case MACOS_64:
 						return String.format("https://thebombzen.com/TumblGIFifier/resources/%s/%s-%s-version.txt", pkg,
 								pkg, local.name());
 					default:
@@ -139,9 +129,6 @@ public class ResourcesManager {
 		return "https://thebombzen.com/TumblGIFifier/resources/OpenSans-Semibold.ttf.xz";
 	}
 
-	private Resource ffmpeg = null;
-	private Resource ffplay = null;
-	private Resource ffprobe = null;
 	private Resource openSans = null;
 	private Resource mpv = null;
 
@@ -161,15 +148,6 @@ public class ResourcesManager {
 	private static String getExeDLPkg(String pkg, String version) {
 		OperatingSystem local = OperatingSystem.getLocalOS();
 		switch (pkg) {
-			case "FFmpeg":
-				switch (local) {
-					case WINDOWS_64:
-					case WINDOWS_32:
-					case MACOS_64:
-						return String.format("FFmpeg-%s-%s.tar.xz", version, local.name());
-					default:
-						return "";
-				}
 			case "gifsicle":
 				switch (local) {
 					case WINDOWS_64:
@@ -209,35 +187,13 @@ public class ResourcesManager {
 	public static final Set<String> loadedPkgs = new HashSet<>();
 
 	static {
-		ResourcesManager.requiredPkgs.add("FFmpeg");
+		ResourcesManager.requiredPkgs.add("mpv");
 		ResourcesManager.optionalPkgs.add("OpenSans");
 		ResourcesManager.optionalPkgs.add("gifsicle");
-		ResourcesManager.requiredPkgs.add("mpv");
 	}
 
 	private ResourcesManager() {
 
-	}
-
-	public Resource getFFmpegLocation() {
-		if (ffmpeg == null) {
-			ffmpeg = getXLocation("FFmpeg", "ffmpeg");
-		}
-		return ffmpeg;
-	}
-
-	public Resource getFFplayLocation() {
-		if (ffplay == null) {
-			ffplay = getXLocation("FFmpeg", "ffplay");
-		}
-		return ffplay;
-	}
-
-	public Resource getFFprobeLocation() {
-		if (ffprobe == null) {
-			ffprobe = getXLocation("FFmpeg", "ffprobe");
-		}
-		return ffprobe;
 	}
 
 	public Resource getMpvLocation() {
@@ -495,10 +451,11 @@ public class ResourcesManager {
 		List<String> pkgs = new ArrayList<>();
 
 		boolean mightHaveInternet = true;
+
 		try {
-			mightHaveInternet = initializeMultiExePackage("FFmpeg", new String[]{"ffmpeg", "ffprobe", "ffplay"},
-					getPkgVersionsLocation("FFmpeg"), "FFmpeg-versions.txt", mightHaveInternet, processor);
-			pkgs.add("FFmpeg");
+			mightHaveInternet = initializeMultiExePackage("mpv", new String[]{"mpv"}, getPkgVersionsLocation("mpv"),
+					"mpv-versions.txt", mightHaveInternet, processor);
+			pkgs.add("mpv");
 		} catch (ResourceNotFoundException rnfe) {
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null) {
@@ -522,17 +479,6 @@ public class ResourcesManager {
 			mightHaveInternet = initializeMultiExePackage("gifsicle", new String[]{"gifsicle"},
 					getPkgVersionsLocation("gifsicle"), "gifsicle-versions.txt", mightHaveInternet, processor);
 			pkgs.add("gifsicle");
-		} catch (ResourceNotFoundException rnfe) {
-			processor.appendStatus(rnfe.getMessage());
-			if (rnfe.getCause() != null) {
-				log(rnfe.getCause());
-			}
-		}
-
-		try {
-			mightHaveInternet = initializeMultiExePackage("mpv", new String[]{"mpv"}, getPkgVersionsLocation("mpv"),
-					"mpv-versions.txt", mightHaveInternet, processor);
-			pkgs.add("mpv");
 		} catch (ResourceNotFoundException rnfe) {
 			processor.appendStatus(rnfe.getMessage());
 			if (rnfe.getCause() != null) {
