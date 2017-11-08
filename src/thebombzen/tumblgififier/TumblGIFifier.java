@@ -21,7 +21,7 @@ import thebombzen.tumblgififier.util.text.StatusProcessor;
 public final class TumblGIFifier {
 
 	/** The version of TumblGIFifier */
-	public static final String VERSION = "0.7.4";
+	public static final String VERSION = "0.8.0";
 
 	/**
 	 * This is so we can cleanup a mess left by older versions. The version
