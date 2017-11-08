@@ -205,7 +205,8 @@ public class VideoProcessor {
 							scan.getLocation().toString(), "--config=no", "--msg-level=all=v", "--msg-color=no",
 							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-scale.log"),
 							"--input-terminal=no", "--aid=no", "--sid=no", "--oautofps", "--of=nut", "--ovc=ffv1",
-							"--term-status-msg=${=playback-time}", "--lavfi-complex=[vid1]" + videoFilter + "[vo]",
+							"--correct-downscaling", "--scale=spline36", "--dscale=spline36", "--cscale=spline36",
+							"--term-status-msg=${=playback-time}", "--sws-scaler=spline", "--lavfi-complex=sws_flags=spline; [vid1]" + videoFilter + "[vo]",
 							"--start=" + this.clipStartTime, "--end=" + this.clipEndTime,
 							"--o=" + this.nutFile.toString()));
 		} catch (ProcessTerminatedException ex) {
@@ -258,7 +259,7 @@ public class VideoProcessor {
 							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-paletteuse.log"),
 							"--input-terminal=no", "--aid=no", "--sid=no", "--oautofps", "--of=gif", "--ovc=gif",
 							"--term-status-msg=${=playback-time}",
-							"--lavfi-complex=[vid2][vid1]paletteuse=dither=bayer:bayer_scale=3[vo]",
+							"--lavfi-complex=[vid2][vid1]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle[vo]",
 							"--o=" + this.gifFile.toString()));
 		} catch (ProcessTerminatedException ex) {
 			log(ex);

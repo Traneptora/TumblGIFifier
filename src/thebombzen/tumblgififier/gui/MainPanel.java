@@ -237,9 +237,9 @@ public class MainPanel extends JPanel {
 							"--term-osd=force", "--video-osd=no", "--term-status-msg=", "--term-osd-bar=no",
 							"--title=TumblGIFifier Preview", "--force-window=yes", "--taskbar-progress=no",
 							"--ontop=yes", "--autofit-larger=480x270", "--cursor-autohide=no", "--input-terminal=no",
-							"--input-cursor=no", "--dscale=bicubic_fast", "--cscale=bicubic_fast", "--hwdec=auto",
+							"--input-cursor=no", "--correct-downscaling", "--scale=spline36", "--dscale=spline36", "--cscale=spline36", "--hwdec=auto",
 							"--hwdec-codecs=hevc,vp9", "--input-default-bindings=no", "--loop-playlist=inf", "--osc=no",
-							"--aid=no", "--sid=no", "--hr-seek=yes", "--lavfi-complex=[vid1]" + videoFilter + "[vo]",
+							"--aid=no", "--sid=no", "--hr-seek=yes", "--sws-scaler=spline", "--lavfi-complex=sws_flags=spline;[vid1]" + videoFilter + "[vo]",
 							scan.getLocation().toString(), "--start=" + clipStart, "--end=" + clipEnd);
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");

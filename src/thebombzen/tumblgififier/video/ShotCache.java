@@ -121,8 +121,10 @@ public class ShotCache {
 		ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(),
 				scan.getLocation().toString(), "--config=no", "--msg-level=all=v", "--msg-color=no",
 				"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-screenshot.log"),
-				"--input-terminal=no", "--aid=no", "--sid=no", "--ofps=" + scan.getScreenshotsPerSecond(),
-				"--of=image2", "--ovc=png", "--term-status-msg=", "--lavfi-complex=[vid1]" + videoFilter + "[vo]",
+				"--input-terminal=no", "--aid=no", "--sid=no",
+				"--correct-downscaling", "--scale=spline36", "--dscale=spline36", "--cscale=spline36",
+				"--ofps=" + scan.getScreenshotsPerSecond(),
+				"--of=image2", "--ovc=png", "--term-status-msg=", "--sws-scaler=spline", "--lavfi-complex=sws_flags=spline;[vid1]" + videoFilter + "[vo]",
 				"--start=" + ffmpegStartTime, "--frames=" + (frames - 1), "--o=" + shotPath.toString() + "_%06d.png");
 		for (int i = 0; i < frames; i++) {
 			String name = String.format("%s_%06d.png", shotPath.toString(), i + 1);
