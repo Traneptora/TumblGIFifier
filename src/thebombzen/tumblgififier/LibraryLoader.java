@@ -28,7 +28,7 @@ public final class LibraryLoader {
 
 	public static void main(String[] args) throws Exception {
 		List<Path> libraries = extractExternalLibraries();
-		Path javaLocation = Paths.get(System.getProperty("java.home"), "bin", "java");
+		Path javaLocation = Paths.get(System.getProperty("java.home"), "bin", "java" + OperatingSystem.getLocalOS().getExeExtension());
 		Path thisJar = Paths.get(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 		if (thisJar.getFileName().toString().endsWith(".jar")) {
 			libraries.add(thisJar);
