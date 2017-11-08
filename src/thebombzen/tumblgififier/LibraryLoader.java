@@ -1,18 +1,19 @@
 package thebombzen.tumblgififier;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import thebombzen.tumblgififier.util.io.RuntimeIOException;
@@ -26,38 +27,32 @@ public final class LibraryLoader {
 	}
 
 	public static void main(String[] args) throws Exception {
-		extractExternalLibraries();
-		Class<?> clazz = Class.forName("thebombzen.tumblgififier.TumblGIFifier", false,
-				ClassLoader.getSystemClassLoader());
-		Method method = clazz.getMethod("main", String[].class);
-		method.invoke(null, (Object) args);
+		List<Path> libraries = extractExternalLibraries();
+		Path javaLocation = Paths.get(System.getProperty("java.home"), "bin", "java");
+		Path thisJar = Paths.get(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+		if (thisJar.getFileName().toString().endsWith(".jar")) {
+			libraries.add(thisJar);
+			String cp = String.join(File.pathSeparator,
+					libraries.stream().map(Path::toString).collect(Collectors.toList()));
+			List<String> newArgs = new ArrayList<String>();
+			newArgs.add(javaLocation.toString());
+			newArgs.add("-cp");
+			newArgs.add(cp);
+			newArgs.add("thebombzen.tumblgififier.TumblGIFifier");
+			newArgs.addAll(Arrays.asList(args));
+			ProcessBuilder builder = new ProcessBuilder(newArgs);
+			builder.inheritIO().start();
+			System.exit(0);
+		} else {
+			Class<?> clazz = Class.forName("thebombzen.tumblgififier.TumblGIFifier", false,
+					ClassLoader.getSystemClassLoader());
+			Method method = clazz.getMethod("main", String[].class);
+			method.invoke(null, (Object) args);
+		}
+
 	}
 
 	private static Path localResourceLocation = null;
-
-	/**
-	 * Add a Jar file to the class path.
-	 * 
-	 * From StackOverflow: https://stackoverflow.com/a/60766/
-	 * 
-	 * @param file
-	 */
-	private static void addToClasspath(Path path) {
-		URL url = null;
-		try {
-			url = path.toUri().toURL();
-		} catch (MalformedURLException ex) {
-			throw new ResourceNotFoundException("Malformed URL? " + path, ex);
-		}
-		ClassLoader loader = LibraryLoader.class.getClassLoader();
-		try {
-			Method addUrl = URLClassLoader.class.getDeclaredMethod("addURL", new Class<?>[]{URL.class});
-			addUrl.setAccessible(true);
-			addUrl.invoke(loader, url);
-		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-			throw new Error(ex);
-		}
-	}
 
 	private static Path getLocalResourceLocation() {
 		if (localResourceLocation != null) {
@@ -76,7 +71,8 @@ public final class LibraryLoader {
 		}
 	}
 
-	private static void extractExternalLibraries() {
+	private static List<Path> extractExternalLibraries() {
+		List<Path> ret = new ArrayList<Path>();
 		Path thisJarFile = null;
 		try {
 			thisJarFile = Paths.get(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
@@ -84,7 +80,7 @@ public final class LibraryLoader {
 			throw new ResourceNotFoundException("Error in URI syntax?", ex);
 		}
 		if (!Files.isRegularFile(thisJarFile)) {
-			return;
+			return ret;
 		}
 		Path libs = getLocalResourceLocation().resolve("lib");
 		ZipFile zipFile = null;
@@ -105,14 +101,14 @@ public final class LibraryLoader {
 						if (Files.exists(lib) && Files.getLastModifiedTime(lib).equals(entry.getLastModifiedTime())
 								&& Files.size(lib) == entry.getSize()) {
 							System.out.println("Found " + fname + ", not extracting.");
-							addToClasspath(lib);
+							ret.add(lib);
 							continue;
 						}
 						System.out.println("Extracting " + fname + ".");
 						in = zipFile.getInputStream(entry);
 						Files.copy(in, lib, StandardCopyOption.REPLACE_EXISTING);
 						Files.setLastModifiedTime(lib, entry.getLastModifiedTime());
-						addToClasspath(lib);
+						ret.add(lib);
 					} finally {
 						if (in != null) {
 							try {
@@ -135,6 +131,7 @@ public final class LibraryLoader {
 				}
 			}
 		}
+		return ret;
 	}
 
 }
