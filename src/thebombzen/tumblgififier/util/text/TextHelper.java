@@ -16,16 +16,16 @@ import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 
 public final class TextHelper {
-	
+
 	private static TextHelper instance = null;
-	
-	public static TextHelper getTextHelper(){
-		if (instance == null){
+
+	public static TextHelper getTextHelper() {
+		if (instance == null) {
 			instance = new TextHelper();
 		}
 		return instance;
 	}
-	
+
 	/**
 	 * We dump the overlay text to a file so we don't have to escape it.
 	 */
@@ -36,19 +36,19 @@ public final class TextHelper {
 	 */
 	private String tempOverlayEscapedFilename;
 	private String fontFile = null;
-	
+
 	/**
-	 * This is the escaped filename of the Open Sans font file location.
-	 * Using a getter allows it to be lazily populated.
+	 * This is the escaped filename of the Open Sans font file location. Using a
+	 * getter allows it to be lazily populated.
 	 */
-	private String getFontFile(){
-		if (fontFile == null){
-			fontFile = escapeForVideoFilter(ResourcesManager.getResourcesManager().getOpenSansResource().getLocation().toString());
+	private String getFontFile() {
+		if (fontFile == null) {
+			fontFile = escapeForVideoFilter(
+					ResourcesManager.getResourcesManager().getOpenSansResource().getLocation().toString());
 		}
 		return fontFile;
 	}
-	
-	
+
 	private TextHelper() {
 		tempOverlayPath = IOHelper.createTempFile();
 		tempOverlayEscapedFilename = escapeForVideoFilter(tempOverlayPath.toString());
@@ -64,8 +64,10 @@ public final class TextHelper {
 	 * @return An escaped string.
 	 */
 	public String escapeForVideoFilter(String input) {
-		//return input.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace(":", "\\:")
-		//		.replace("'", "\\'").replace("[", "\\[").replace("]", "\\]").replace("=", "\\=");
+		// return input.replace("\\", "\\\\").replace(",", "\\,").replace(";",
+		// "\\;").replace(":", "\\:")
+		// .replace("'", "\\'").replace("[", "\\[").replace("]",
+		// "\\]").replace("=", "\\=");
 		return "'" + input.replace("'", "'\\''") + "'";
 	}
 
@@ -103,7 +105,8 @@ public final class TextHelper {
 
 	public static double scanTotalTimeConverted(InputStream in) {
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-			return br.lines().filter(s -> s.startsWith("frame=")).mapToDouble(TextHelper::getFFmpegStatusTimeInSeconds).max().orElse(-1D);
+			return br.lines().filter(s -> s.startsWith("frame=")).mapToDouble(TextHelper::getFFmpegStatusTimeInSeconds)
+					.max().orElse(-1D);
 		} catch (IOException ioe) {
 			log(ioe);
 			return -1D;
@@ -115,7 +118,7 @@ public final class TextHelper {
 			throw new IllegalArgumentException("Must be an FFmpeg status Line!");
 		}
 		String time = "0";
-		try (Scanner sc2 = new Scanner(line)){
+		try (Scanner sc2 = new Scanner(line)) {
 			sc2.useDelimiter("\\s");
 			while (sc2.hasNext()) {
 				String part = sc2.next();
@@ -139,8 +142,11 @@ public final class TextHelper {
 	}
 
 	/**
-	 * Tests for a string's "validity." A string is "valid" provided that is is not null and is not empty.
-	 * @param The string to test for validity.
+	 * Tests for a string's "validity." A string is "valid" provided that is is
+	 * not null and is not empty.
+	 * 
+	 * @param The
+	 *            string to test for validity.
 	 * @return true if the string is non-null and non-empty, false otherwise.
 	 */
 	public static boolean validateString(String string) {
@@ -148,14 +154,17 @@ public final class TextHelper {
 	}
 
 	/**
-	 * Returns real strings unchanged. Replaces null with empty the empty string.
+	 * Returns real strings unchanged. Replaces null with empty the empty
+	 * string.
 	 */
 	public static String sanitizeString(String string) {
 		return string != null ? string : "";
 	}
 
 	/**
-	 * Replaces negative values with default ones. The first default value is for -1, the second is for -2, and so on.
+	 * Replaces negative values with default ones. The first default value is
+	 * for -1, the second is for -2, and so on.
+	 * 
 	 * @param value
 	 * @param defaultValue
 	 * @return
@@ -191,36 +200,37 @@ public final class TextHelper {
 			return defaultValue;
 		}
 	}
-	
+
 	public static String getTimeDurationFromSeconds(double seconds) {
-		int hours = (int)(seconds / 3600D);
+		int hours = (int) (seconds / 3600D);
 		seconds -= hours * 3600D;
-		int minutes = (int)(seconds / 60D);
+		int minutes = (int) (seconds / 60D);
 		seconds -= minutes * 60D;
 		if (hours > 0) {
 			return String.format("%02d:%02d:%06.3f", hours, minutes, seconds);
-		} else if (minutes > 0){
+		} else if (minutes > 0) {
 			return String.format("%02d:%06.3f", minutes, seconds);
 		} else {
 			return String.format("%06.3f", seconds);
 		}
 	}
 
-	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale, int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText){
+	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale,
+			int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText) {
 		log("Creating video filter.");
 		List<String> filters = new ArrayList<String>();
 		filters.add("copy");
-		if (validateString(preprocess)){
+		if (validateString(preprocess)) {
 			log("Adding preprocess filter: " + preprocess);
 			filters.add(preprocess);
 		}
-		if (decimator > 0){
+		if (decimator > 0) {
 			String framestep = "select=not(mod(n\\," + (1 + decimator) + "))";
 			log("Adding framestep: " + framestep);
 			filters.add(framestep);
 		}
 		if (validateString(overlayText)) {
-			if (ResourcesManager.loadedPkgs.contains("OpenSans")){
+			if (ResourcesManager.loadedPkgs.contains("OpenSans")) {
 				String drawTextString = createDrawTextString(originalWidth, originalHeight, overlaySize, overlayText);
 				log("Adding Draw Text String: " + drawTextString);
 				filters.add(drawTextString);
@@ -229,12 +239,14 @@ public final class TextHelper {
 			}
 		}
 		if (width > 0 && width != originalWidth || height > 0 && height != originalHeight) {
-			log(String.format("Adding Scaler. w: %s, h: %s, origw: %s, origh: %s", width, height, originalWidth, originalHeight));
-			String scaler = "scale=w=" + width + ":h=" + height + (boxedScale ? ":force_original_aspect_ratio=decrease" : "");
+			log(String.format("Adding Scaler. w: %s, h: %s, origw: %s, origh: %s", width, height, originalWidth,
+					originalHeight));
+			String scaler = "scale=w=" + width + ":h=" + height
+					+ (boxedScale ? ":force_original_aspect_ratio=decrease" : "");
 			log("Scaler filter: " + scaler);
 			filters.add(scaler);
 		}
-		if (validateString(postprocess)){
+		if (validateString(postprocess)) {
 			log("Adding postprocess filter: " + preprocess);
 			filters.add(postprocess);
 		}
@@ -242,5 +254,5 @@ public final class TextHelper {
 		log("Filter created: " + ret);
 		return ret;
 	}
-	
+
 }

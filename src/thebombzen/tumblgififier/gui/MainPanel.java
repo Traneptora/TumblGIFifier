@@ -57,9 +57,9 @@ import thebombzen.tumblgififier.video.VideoProcessor;
 import thebombzen.tumblgififier.video.VideoScan;
 
 public class MainPanel extends JPanel {
-	
+
 	private static final long serialVersionUID = 1L;
-	
+
 	private JComboBox<FramerateDecimator> framerateDecimatorComboBox;
 	private JPanel leftPanel;
 	private int targetSize = 2000;
@@ -68,9 +68,9 @@ public class MainPanel extends JPanel {
 	private JComboBox<TargetSize> targetSizeComboBox;
 	private JTextField targetSizeTextField;
 	private String mostRecentGIFDirectory = null;
-	
+
 	private JButton playButtonSlow;
-	
+
 	private ImagePanel previewImageEndPanel;
 	private ImagePanel previewImageStartPanel;
 
@@ -79,26 +79,26 @@ public class MainPanel extends JPanel {
 
 	private JSlider startSlider;
 	private JSlider endSlider;
-	
+
 	private JLabel startLabel;
 	private JLabel endLabel;
 
 	private StatusProcessorArea statusArea;
 	private JButton fireButton = new JButton("Create GIF");
-	
+
 	private List<Component> onDisable = new ArrayList<>();
 	private JTextField overlayTextField;
 	private JTextField overlayTextSizeField;
 	private int textSize = 96;
-	
+
 	private String currentText = "";
 	private Map<Tuple<String, Integer>, ShotCache> startCacheMap = new HashMap<>();
 	private Map<Tuple<String, Integer>, ShotCache> endCacheMap = new HashMap<>();
-	
+
 	public List<Component> getOnDisable() {
 		return onDisable;
 	}
-	
+
 	public MainPanel(final VideoScan videoScan) {
 		if (videoScan == null) {
 			throw new NullPointerException();
@@ -111,19 +111,19 @@ public class MainPanel extends JPanel {
 		updateStartScreenshot();
 		updateEndScreenshot();
 
-		if (ResourcesManager.loadedPkgs.contains("OpenSans")){
+		if (ResourcesManager.loadedPkgs.contains("OpenSans")) {
 			ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
-				
+
 				@Override
 				public void run() {
 					EventQueue.invokeLater(new Runnable(){
-						
+
 						@Override
 						public void run() {
 							int newTextSize = textSize;
 							try {
 								newTextSize = Integer.parseInt(overlayTextSizeField.getText());
-							} catch (NumberFormatException e){
+							} catch (NumberFormatException e) {
 								// nothing
 							}
 							boolean update = !currentText.equals(overlayTextField.getText()) || newTextSize != textSize;
@@ -131,10 +131,10 @@ public class MainPanel extends JPanel {
 							textSize = newTextSize;
 							if (update) {
 								Tuple<String, Integer> tuple = new Tuple<>(currentText, textSize);
-								if (startCacheMap.get(tuple) == null){
+								if (startCacheMap.get(tuple) == null) {
 									startCacheMap.put(tuple, new ShotCache(scan));
 								}
-								if (endCacheMap.get(tuple) == null){
+								if (endCacheMap.get(tuple) == null) {
 									endCacheMap.put(tuple, new ShotCache(scan));
 								}
 								updateStartScreenshot();
@@ -146,7 +146,7 @@ public class MainPanel extends JPanel {
 			}, 2500, TimeUnit.MILLISECONDS);
 		}
 	}
-	
+
 	private void createGIF(final Path path) {
 		final int maxSizeBytes;
 		final int minSizeBytes;
@@ -171,15 +171,15 @@ public class MainPanel extends JPanel {
 			minSizeBytes = 0;
 		}
 
-		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
+		final int decimator = ((FramerateDecimator) framerateDecimatorComboBox.getSelectedItem()).decimator;
 		final double clipStart = startSlider.getValue() * scan.getScreenshotDuration();
 		final double clipEnd = endSlider.getValue() * scan.getScreenshotDuration();
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			
+
 			@Override
 			public void run() {
-				boolean success = videoProcessor.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd,
-						minSizeBytes, maxSizeBytes, targetWidth, targetHeight, decimator, textSize);
+				boolean success = videoProcessor.convert(overlayTextField.getText(), statusArea, path, clipStart,
+						clipEnd, minSizeBytes, maxSizeBytes, targetWidth, targetHeight, decimator, textSize);
 				MainFrame.getMainFrame().setBusy(false);
 				if (success) {
 					statusArea.appendStatus("Done!");
@@ -194,29 +194,29 @@ public class MainPanel extends JPanel {
 			}
 		});
 	}
-	
+
 	@Override
 	public Dimension getPreferredSize() {
 		return new Dimension(990, 640);
 	}
-	
+
 	public StatusProcessor getStatusProcessor() {
 		return statusArea;
 	}
-	
+
 	private void playClipSlow() {
-		
+
 		MainFrame.getMainFrame().setBusy(true);
-		
+
 		final double clipStart = startSlider.getValue() * scan.getScreenshotDuration();
 		final double clipEnd = endSlider.getValue() * scan.getScreenshotDuration();
-		final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
-		
+		final int decimator = ((FramerateDecimator) framerateDecimatorComboBox.getSelectedItem()).decimator;
+
 		final String overlay = overlayTextField.getText();
 		final Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
-		
+
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			
+
 			@Override
 			public void run() {
 				Path tempFile = null;
@@ -229,19 +229,18 @@ public class MainPanel extends JPanel {
 						statusArea.appendStatus("Error rendering clip :(");
 						return;
 					}
-					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, null, -1, -1, true, decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
-					ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(),
-							"--config=no", "--msg-level=all=v", "--msg-color=no",
+					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, null, -1, -1, true,
+							decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
+					ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(), "--config=no",
+							"--msg-level=all=v", "--msg-color=no",
 							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv.log"),
 							"--term-osd=force", "--video-osd=no", "--term-status-msg=", "--term-osd-bar=no",
 							"--title=TumblGIFifier Preview", "--force-window=yes", "--taskbar-progress=no",
 							"--ontop=yes", "--autofit-larger=480x270", "--cursor-autohide=no", "--input-terminal=no",
-							"--input-cursor=no", "--dscale=bicubic_fast", "--cscale=bicubic_fast",
-							"--hwdec=auto", "--hwdec-codecs=hevc,vp9", "--input-default-bindings=no",
-							"--loop-playlist=inf", "--osc=no", "--aid=no", "--sid=no", "--hr-seek=yes",
-							"--lavfi-complex=[vid1]" + videoFilter + "[vo]", scan.getLocation().toString(),
-							"--start=" + clipStart, "--end=" + clipEnd
-							);
+							"--input-cursor=no", "--dscale=bicubic_fast", "--cscale=bicubic_fast", "--hwdec=auto",
+							"--hwdec-codecs=hevc,vp9", "--input-default-bindings=no", "--loop-playlist=inf", "--osc=no",
+							"--aid=no", "--sid=no", "--hr-seek=yes", "--lavfi-complex=[vid1]" + videoFilter + "[vo]",
+							scan.getLocation().toString(), "--start=" + clipStart, "--end=" + clipEnd);
 				} catch (ProcessTerminatedException ex) {
 					statusArea.appendStatus("Error rendering clip :(");
 					ConcurrenceManager.getConcurrenceManager().stopAll();
@@ -249,7 +248,7 @@ public class MainPanel extends JPanel {
 				} finally {
 					IOHelper.deleteTempFile(tempFile);
 					EventQueue.invokeLater(new Runnable(){
-						
+
 						@Override
 						public void run() {
 							MainFrame.getMainFrame().setBusy(false);
@@ -258,51 +257,50 @@ public class MainPanel extends JPanel {
 				}
 			}
 		});
-		
+
 	}
-	
+
 	/**
 	 * Execute this on the Event Dispatch thread
 	 */
 	private void fire() {
-		
+
 		if (TargetSize.FILESIZE.equals(targetSizeComboBox.getSelectedItem())) {
 			final int maxSizeBytes = 1000 * targetSize;
-			final int decimator = ((FramerateDecimator)framerateDecimatorComboBox.getSelectedItem()).decimator;
+			final int decimator = ((FramerateDecimator) framerateDecimatorComboBox.getSelectedItem()).decimator;
 			final double clipStart = startSlider.getValue() * scan.getScreenshotDuration();
 			final double clipEnd = endSlider.getValue() * scan.getScreenshotDuration();
 			double widthGuess = scan.getWidth() / Math.sqrt(scan.getWidth() * scan.getHeight() * scan.getFramerate()
 					/ (1D + decimator) * (clipEnd - clipStart) / (2D * maxSizeBytes));
 			if (widthGuess < 300D) {
-				int dialogResult = JOptionPane.showConfirmDialog(this,
-						String.format(
-								"This GIF will probably be less than 300 pixels wide, which means Tumblr won't expand it to fit the window. Is this okay?%n(If not then you should drag the sliders on the right to decrease the duration.)"),
+				int dialogResult = JOptionPane.showConfirmDialog(this, String.format(
+						"This GIF will probably be less than 300 pixels wide, which means Tumblr won't expand it to fit the window. Is this okay?%n(If not then you should drag the sliders on the right to decrease the duration.)"),
 						"Warning", JOptionPane.OK_CANCEL_OPTION);
 				if (dialogResult == JOptionPane.CANCEL_OPTION) {
 					return;
 				}
 			}
 		}
-		
+
 		FileDialog fileDialog = new FileDialog(MainFrame.getMainFrame(), "Save GIF as...", FileDialog.SAVE);
 		fileDialog.setMultipleMode(false);
-		
+
 		if (mostRecentGIFDirectory != null) {
 			fileDialog.setDirectory(mostRecentGIFDirectory);
 		}
-		
+
 		fileDialog.setFilenameFilter(new FilenameFilter(){
-			
+
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.toLowerCase().endsWith(".gif");
 			}
-			
+
 		});
-		
+
 		fileDialog.setVisible(true);
 		String filename = fileDialog.getFile();
-		
+
 		if (filename != null) {
 			if (!filename.toLowerCase().endsWith(".gif")) {
 				filename += ".gif";
@@ -319,7 +317,7 @@ public class MainPanel extends JPanel {
 			createGIF(Paths.get(mostRecentGIFDirectory, filename).toAbsolutePath());
 		}
 	}
-	
+
 	private void setupLayout() {
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		this.add(Box.createVerticalStrut(10));
@@ -347,17 +345,17 @@ public class MainPanel extends JPanel {
 		rightBox.add(previewImageStartPanel);
 		rightBox.add(Box.createVerticalStrut(10));
 		startSlider = new JSlider();
-		//BoundedRangeModel startSliderModel = new BoundedRangeModel();
-		//startSliderModel.
+		// BoundedRangeModel startSliderModel = new BoundedRangeModel();
+		// startSliderModel.
 		startSlider.setMinimum(0);
 		startSlider.setMaximum((int) (scan.getDuration() * scan.getScreenshotsPerSecond()));
 		startSlider.setValue(startSlider.getMaximum() / 3);
 		rightBox.add(startSlider);
-		
+
 		onDisable.add(startSlider);
-		
+
 		playButtonSlow = new JButton("Preview Clip");
-		
+
 		playButtonSlow.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -366,15 +364,17 @@ public class MainPanel extends JPanel {
 		});
 		onDisable.add(playButtonSlow);
 
-		startLabel = new JLabel("Start: " + TextHelper.getTimeDurationFromSeconds(startSlider.getValue() * scan.getScreenshotDuration()));
-	
+		startLabel = new JLabel("Start: "
+				+ TextHelper.getTimeDurationFromSeconds(startSlider.getValue() * scan.getScreenshotDuration()));
+
 		endSlider = new JSlider();
 		endSlider.setMinimum(0);
 		endSlider.setMaximum((int) (scan.getDuration() * scan.getScreenshotsPerSecond()));
 		endSlider.setValue(endSlider.getMaximum() * 2 / 3);
-		
-		endLabel = new JLabel("End: " + TextHelper.getTimeDurationFromSeconds(endSlider.getValue() * scan.getScreenshotDuration()));
-		
+
+		endLabel = new JLabel(
+				"End: " + TextHelper.getTimeDurationFromSeconds(endSlider.getValue() * scan.getScreenshotDuration()));
+
 		Box playButtonBox = Box.createHorizontalBox();
 		playButtonBox.add(Box.createHorizontalStrut(10));
 		playButtonBox.add(startLabel);
@@ -383,44 +383,46 @@ public class MainPanel extends JPanel {
 		playButtonBox.add(Box.createHorizontalGlue());
 		playButtonBox.add(endLabel);
 		playButtonBox.add(Box.createHorizontalStrut(10));
-		
+
 		rightBox.add(Box.createVerticalStrut(10));
 		rightBox.add(playButtonBox);
 		rightBox.add(Box.createVerticalStrut(10));
-		
+
 		rightBox.add(endSlider);
-		
+
 		onDisable.add(endSlider);
-		
+
 		startSlider.addChangeListener(new ChangeListener(){
-			
+
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				if (startSlider.getValue() > endSlider.getValue()) {
 					startSlider.setValue(endSlider.getValue());
 				}
-				startLabel.setText("Start: " + TextHelper.getTimeDurationFromSeconds(startSlider.getValue() * scan.getScreenshotDuration()));
+				startLabel.setText("Start: "
+						+ TextHelper.getTimeDurationFromSeconds(startSlider.getValue() * scan.getScreenshotDuration()));
 				if (!startSlider.getValueIsAdjusting()) {
-					if (videoProcessor != null){
+					if (videoProcessor != null) {
 						updateStartScreenshot();
 					}
 				} else {
 					previewImageStartPanel.stop();
 				}
-				
+
 			}
 		});
-		
+
 		endSlider.addChangeListener(new ChangeListener(){
-			
+
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				if (endSlider.getValue() < startSlider.getValue()) {
 					endSlider.setValue(startSlider.getValue());
 				}
-				endLabel.setText("End: " + TextHelper.getTimeDurationFromSeconds(endSlider.getValue() * scan.getScreenshotDuration()));
+				endLabel.setText("End: "
+						+ TextHelper.getTimeDurationFromSeconds(endSlider.getValue() * scan.getScreenshotDuration()));
 				if (!endSlider.getValueIsAdjusting()) {
-					if (videoProcessor != null){
+					if (videoProcessor != null) {
 						updateEndScreenshot();
 					}
 				} else {
@@ -428,7 +430,7 @@ public class MainPanel extends JPanel {
 				}
 			}
 		});
-		
+
 		rightBox.add(Box.createVerticalStrut(10));
 		previewImageEndPanel = new ImagePanel(null, new Consumer<Void>(){
 			@Override
@@ -445,19 +447,21 @@ public class MainPanel extends JPanel {
 		rightBox.add(previewImageEndPanel);
 		horizontalBox.add(rightBox);
 		horizontalBox.add(Box.createHorizontalStrut(10));
-		
+
 		leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Video Stats")));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Width:"), new JLabel(Integer.toString(scan.getWidth()))));
-		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Height:"), new JLabel(Integer.toString(scan.getHeight()))));
+		leftPanel.add(
+				GUIHelper.wrapLeftRightAligned(new JLabel("Width:"), new JLabel(Integer.toString(scan.getWidth()))));
 		leftPanel.add(Box.createVerticalStrut(5));
 		leftPanel.add(
-				GUIHelper.wrapLeftRightAligned(new JLabel("Duration:"), new JLabel(TextHelper.getTimeDurationFromSeconds(scan.getDuration()))));
+				GUIHelper.wrapLeftRightAligned(new JLabel("Height:"), new JLabel(Integer.toString(scan.getHeight()))));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(
-				GUIHelper.wrapLeftRightAligned(new JLabel("Framerate:"), new JLabel(String.format("%.2f", scan.getFramerate()))));
+		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Duration:"),
+				new JLabel(TextHelper.getTimeDurationFromSeconds(scan.getDuration()))));
+		leftPanel.add(Box.createVerticalStrut(5));
+		leftPanel.add(GUIHelper.wrapLeftRightAligned(new JLabel("Framerate:"),
+				new JLabel(String.format("%.2f", scan.getFramerate()))));
 		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(15));
@@ -470,40 +474,40 @@ public class MainPanel extends JPanel {
 			public void focusLost(FocusEvent e) {
 				try {
 					int size = Integer.parseInt(targetSizeTextField.getText());
-					switch ((TargetSize)targetSizeComboBox.getSelectedItem()) {
-					case FILESIZE:
-						if (size >= 1) {
-							targetSize = size;
-						} else {
-							targetSizeTextField.setText(Integer.toString(targetSize));
-						}
-						break;
-					case SCALE_W:
-						if (size >= 1) {
-							targetWidth = size;
-						} else {
-							targetSizeTextField.setText(Integer.toString(targetWidth));
-						}
-						break;
-					case SCALE_H:
-						if (size >= 1) {
-							targetHeight = size;
-						} else {
-							targetSizeTextField.setText(Integer.toString(targetHeight));
-						}
-						break;
+					switch ((TargetSize) targetSizeComboBox.getSelectedItem()) {
+						case FILESIZE:
+							if (size >= 1) {
+								targetSize = size;
+							} else {
+								targetSizeTextField.setText(Integer.toString(targetSize));
+							}
+							break;
+						case SCALE_W:
+							if (size >= 1) {
+								targetWidth = size;
+							} else {
+								targetSizeTextField.setText(Integer.toString(targetWidth));
+							}
+							break;
+						case SCALE_H:
+							if (size >= 1) {
+								targetHeight = size;
+							} else {
+								targetSizeTextField.setText(Integer.toString(targetHeight));
+							}
+							break;
 					}
 				} catch (NumberFormatException nfe) {
-					switch ((TargetSize)targetSizeComboBox.getSelectedItem()) {
-					case FILESIZE:
-						targetSizeTextField.setText(Integer.toString(targetSize));
-						break;
-					case SCALE_W:
-						targetSizeTextField.setText(Integer.toString(targetWidth));
-						break;
-					case SCALE_H:
-						targetSizeTextField.setText(Integer.toString(targetHeight));
-						break;
+					switch ((TargetSize) targetSizeComboBox.getSelectedItem()) {
+						case FILESIZE:
+							targetSizeTextField.setText(Integer.toString(targetSize));
+							break;
+						case SCALE_W:
+							targetSizeTextField.setText(Integer.toString(targetWidth));
+							break;
+						case SCALE_H:
+							targetSizeTextField.setText(Integer.toString(targetHeight));
+							break;
 					}
 				}
 			}
@@ -517,19 +521,19 @@ public class MainPanel extends JPanel {
 		targetSizeComboBox.setModel(targetSizeComboBoxModel);
 		targetSizeComboBox.setSelectedItem(TargetSize.FILESIZE);
 
-		targetSizeComboBox.addItemListener(new ItemListener() {
+		targetSizeComboBox.addItemListener(new ItemListener(){
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				switch ((TargetSize)targetSizeComboBox.getSelectedItem()) {
-				case FILESIZE:
-					targetSizeTextField.setText(Integer.toString(targetSize));
-					break;
-				case SCALE_W:
-					targetSizeTextField.setText(Integer.toString(targetWidth));
-					break;
-				case SCALE_H:
-					targetSizeTextField.setText(Integer.toString(targetHeight));
-					break;
+				switch ((TargetSize) targetSizeComboBox.getSelectedItem()) {
+					case FILESIZE:
+						targetSizeTextField.setText(Integer.toString(targetSize));
+						break;
+					case SCALE_W:
+						targetSizeTextField.setText(Integer.toString(targetWidth));
+						break;
+					case SCALE_H:
+						targetSizeTextField.setText(Integer.toString(targetHeight));
+						break;
 				}
 			}
 		});
@@ -550,8 +554,10 @@ public class MainPanel extends JPanel {
 		framerateDecimatorComboBox.setSelectedItem(FramerateDecimator.HALF_RATE);
 		leftPanel.add(GUIHelper.wrapLeftAligned(framerateDecimatorComboBox));
 		leftPanel.add(Box.createVerticalStrut(5));
-		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("Cutting the framerate will increase the width & height or")));
-		leftPanel.add(GUIHelper.wrapLeftAligned(new JLabel("decrease the filesize, depending on the mode selected above.")));
+		leftPanel.add(
+				GUIHelper.wrapLeftAligned(new JLabel("Cutting the framerate will increase the width & height or")));
+		leftPanel.add(
+				GUIHelper.wrapLeftAligned(new JLabel("decrease the filesize, depending on the mode selected above.")));
 		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(15));
@@ -559,19 +565,19 @@ public class MainPanel extends JPanel {
 		overlayTextField.setHorizontalAlignment(SwingConstants.RIGHT);
 		overlayTextField.setPreferredSize(new Dimension(200, 25));
 		overlayTextField.setMaximumSize(new Dimension(200, 25));
-		if (ResourcesManager.loadedPkgs.contains("OpenSans")){
+		if (ResourcesManager.loadedPkgs.contains("OpenSans")) {
 			onDisable.add(overlayTextField);
 		} else {
 			overlayTextField.setText("No Open Sans. Disabled.");
 			overlayTextField.setEnabled(false);
 		}
-		
+
 		overlayTextSizeField = new JTextField();
 		overlayTextSizeField.setHorizontalAlignment(SwingConstants.RIGHT);
 		overlayTextSizeField.setPreferredSize(new Dimension(200, 25));
 		overlayTextSizeField.setMaximumSize(new Dimension(200, 25));
-		
-		if (ResourcesManager.loadedPkgs.contains("OpenSans")){
+
+		if (ResourcesManager.loadedPkgs.contains("OpenSans")) {
 			overlayTextSizeField.setText("96");
 			onDisable.add(overlayTextSizeField);
 			overlayTextSizeField.addFocusListener(new FocusAdapter(){
@@ -603,20 +609,20 @@ public class MainPanel extends JPanel {
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(15));
 		onDisable.add(framerateDecimatorComboBox);
-		
+
 		JPanel createGIFPanel = new JPanel(new BorderLayout());
 		createGIFPanel.add(fireButton, BorderLayout.CENTER);
 		fireButton.addActionListener(new ActionListener(){
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				
+
 				if (fireButton.getText().equals("STOP")) {
 					ConcurrenceManager.getConcurrenceManager().stopAll();
 					MainFrame.getMainFrame().setBusy(false);
 					return;
 				}
-				
+
 				fire();
 			}
 		});
@@ -640,17 +646,18 @@ public class MainPanel extends JPanel {
 			}
 		}
 	}
-	
+
 	/**
 	 * This method may be executed from any thread asynchronously.
 	 */
 	private void updateEndScreenshot() {
 		final Consumer<BufferedImage> callback = new Consumer<BufferedImage>(){
-			public void accept(BufferedImage image){
+			@Override
+			public void accept(BufferedImage image) {
 				previewImageEndPanel.setImage(image);
 				EventQueue.invokeLater(new Runnable(){
 					@Override
-					public void run(){
+					public void run() {
 						endSlider.requestFocusInWindow();
 						endSlider.setEnabled(true);
 					}
@@ -659,28 +666,31 @@ public class MainPanel extends JPanel {
 		};
 		EventQueue.invokeLater(new Runnable(){
 			@Override
-			public void run(){
+			public void run() {
 				endSlider.requestFocusInWindow();
 				endSlider.setEnabled(false);
 			}
 		});
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			public void run(){
-				endCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageEndPanel, getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize, true);
+			@Override
+			public void run() {
+				endCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageEndPanel,
+						getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize, true);
 			}
 		});
 	}
-	
+
 	/**
 	 * This method may be executed from any thread asynchronously.
 	 */
 	private void updateStartScreenshot() {
 		final Consumer<BufferedImage> callback = new Consumer<BufferedImage>(){
-			public void accept(BufferedImage image){
+			@Override
+			public void accept(BufferedImage image) {
 				previewImageStartPanel.setImage(image);
 				EventQueue.invokeLater(new Runnable(){
 					@Override
-					public void run(){
+					public void run() {
 						startSlider.requestFocusInWindow();
 						startSlider.setEnabled(true);
 					}
@@ -689,18 +699,20 @@ public class MainPanel extends JPanel {
 		};
 		EventQueue.invokeLater(new Runnable(){
 			@Override
-			public void run(){
+			public void run() {
 				startSlider.requestFocusInWindow();
 				startSlider.setEnabled(false);
 			}
 		});
 		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			public void run(){
-				startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageStartPanel, getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, false);
+			@Override
+			public void run() {
+				startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageStartPanel,
+						getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, false);
 			}
 		});
 	}
-	
+
 	public JButton getFireButton() {
 		return fireButton;
 	}

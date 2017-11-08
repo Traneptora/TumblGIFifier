@@ -3,21 +3,21 @@ package thebombzen.tumblgififier.util.text;
 import thebombzen.tumblgififier.util.io.SimpleWriter;
 
 public class StatusProcessorWriter extends SimpleWriter {
-	
+
 	private boolean haveReturn = false;
 	private StringBuffer lineBuffer = new StringBuffer();
 	private StatusProcessor processor;
 	private boolean shouldReplace = false;
-	
+
 	public StatusProcessorWriter(StatusProcessor processor) {
 		this.processor = processor;
 	}
-	
+
 	@Override
 	public void flush() {
 		flushLine();
 	}
-	
+
 	private void flushLine() {
 		if (shouldReplace) {
 			processor.replaceStatus(lineBuffer.toString());
@@ -26,7 +26,7 @@ public class StatusProcessorWriter extends SimpleWriter {
 		}
 		lineBuffer = new StringBuffer();
 	}
-	
+
 	@Override
 	public void write(char c) {
 		switch (c) {
@@ -48,5 +48,5 @@ public class StatusProcessorWriter extends SimpleWriter {
 				break;
 		}
 	}
-	
+
 }

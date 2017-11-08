@@ -40,55 +40,55 @@ import thebombzen.tumblgififier.video.VideoScan;
  * central class with most of the utility methods.
  */
 public class MainFrame extends JFrame {
-	
+
 	/**
 	 * The singleton instance of MainFrame.
 	 */
 	private static MainFrame mainFrame;
-	
+
 	/**
 	 * I don't like to suppress warnings so this is here
 	 */
 	private static final long serialVersionUID = 1L;
-	
+
 	/**
 	 * Return the singleton instance of MainFrame.
 	 */
 	public static MainFrame getMainFrame() {
 		return mainFrame;
 	}
-	
+
 	/**
 	 * We use this panel on startup. It contains nothing but a
 	 * StatusProcessorArea.
 	 */
 	private JPanel defaultPanel = new JPanel();
-	
+
 	/**
 	 * Our main GUI panel.
 	 */
 	private MainPanel mainPanel;
-	
+
 	/**
 	 * This is the last directory used by the "Open..." command. We make sure we
 	 * return to the same location as last time.
 	 */
 	private String mostRecentOpenDirectory = null;
-	
+
 	/**
 	 * This is the StatusProcessorArea inside the default panel.
 	 */
 	private StatusProcessorArea statusArea = new StatusProcessorArea();
-	
+
 	private JMenuBar menuBar;
-	
+
 	/**
 	 * True if the program is marked as "busy," i.e. the interface should be
 	 * disabled. For example, rendering a clip or creating a GIF or scanning a
 	 * file make us "busy."
 	 */
 	public static volatile boolean busy = false;
-	
+
 	/**
 	 * Initialization and construction code.
 	 */
@@ -146,30 +146,30 @@ public class MainFrame extends JFrame {
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher(){
 			@Override
 			public boolean dispatchKeyEvent(KeyEvent e) {
-				if (e.getID() == KeyEvent.KEY_PRESSED){
-					switch (e.getKeyCode()){
-					case KeyEvent.VK_Q:
-						if (e.isControlDown() && !e.isShiftDown()){
-							ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-								@Override
-								public void run(){
-									TumblGIFifier.quit();
-								}
-							});
-							return true;
-						}
-						break;
-					case KeyEvent.VK_O:
-						if (e.isControlDown() && !e.isShiftDown()){
-							openDialog();
-							return true;
-						}
-						break;
+				if (e.getID() == KeyEvent.KEY_PRESSED) {
+					switch (e.getKeyCode()) {
+						case KeyEvent.VK_Q:
+							if (e.isControlDown() && !e.isShiftDown()) {
+								ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
+									@Override
+									public void run() {
+										TumblGIFifier.quit();
+									}
+								});
+								return true;
+							}
+							break;
+						case KeyEvent.VK_O:
+							if (e.isControlDown() && !e.isShiftDown()) {
+								openDialog();
+								return true;
+							}
+							break;
 					}
 				}
 				return false;
 			}
-			
+
 		});
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
@@ -183,28 +183,29 @@ public class MainFrame extends JFrame {
 			public void run() {
 				TumblGIFifier.executeOldVersionCleanup();
 				try {
-					ResourcesManager.loadedPkgs.addAll(ResourcesManager.getResourcesManager().initializeResources(getStatusProcessor()));
+					ResourcesManager.loadedPkgs
+							.addAll(ResourcesManager.getResourcesManager().initializeResources(getStatusProcessor()));
 					List<String> rpkgs = new ArrayList<>(ResourcesManager.requiredPkgs);
 					rpkgs.removeAll(ResourcesManager.loadedPkgs);
-					if (!rpkgs.isEmpty()){
+					if (!rpkgs.isEmpty()) {
 						getStatusProcessor().appendStatus("Unable to load all required resources.");
-						for (String pkg : rpkgs){
+						for (String pkg : rpkgs) {
 							getStatusProcessor().appendStatus("Missing: " + pkg);
 						}
 					} else {
 						List<String> opkgs = new ArrayList<>(ResourcesManager.optionalPkgs);
 						opkgs.removeAll(ResourcesManager.loadedPkgs);
-						for (String pkg : opkgs){
-							switch (pkg){
-							case "OpenSans":
-								getStatusProcessor().appendStatus("Missing Open Sans. Text overlay is disabled.");
-								break;
-							case "gifsicle":
-								getStatusProcessor().appendStatus("Missing gifsicle. GIFs will be less optimized.");
-								break;
-							default:
-								getStatusProcessor().appendStatus("Unknown missing package: " + pkg);
-								throw new Error("Unknown missing package.");
+						for (String pkg : opkgs) {
+							switch (pkg) {
+								case "OpenSans":
+									getStatusProcessor().appendStatus("Missing Open Sans. Text overlay is disabled.");
+									break;
+								case "gifsicle":
+									getStatusProcessor().appendStatus("Missing gifsicle. GIFs will be less optimized.");
+									break;
+								default:
+									getStatusProcessor().appendStatus("Unknown missing package: " + pkg);
+									throw new Error("Unknown missing package.");
 							}
 						}
 						setBusy(false);
@@ -215,15 +216,15 @@ public class MainFrame extends JFrame {
 							}
 						});
 					}
-				} catch (Throwable re){
+				} catch (Throwable re) {
 					log(re);
 					getStatusProcessor().appendStatus("Error initializing.");
 				}
 			}
 		});
 	}
-	
-	public void open(Path path){
+
+	public void open(Path path) {
 		if (isBusy()) {
 			JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
 		} else {
@@ -250,13 +251,12 @@ public class MainFrame extends JFrame {
 			setBusy(false);
 		}
 	}
-	
-	public void openDialog(){
+
+	public void openDialog() {
 		if (isBusy()) {
 			JOptionPane.showMessageDialog(MainFrame.this, "Busy right now!", "Busy", JOptionPane.ERROR_MESSAGE);
 		} else {
-			final FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File",
-					FileDialog.LOAD);
+			final FileDialog fileDialog = new FileDialog(MainFrame.this, "Select a Video File", FileDialog.LOAD);
 			fileDialog.setMultipleMode(false);
 			if (mostRecentOpenDirectory != null) {
 				fileDialog.setDirectory(mostRecentOpenDirectory);
@@ -283,7 +283,7 @@ public class MainFrame extends JFrame {
 			}
 		}
 	}
-	
+
 	/**
 	 * This returns the StatusProcessor that currently prints status lines.
 	 * Sometimes it's the stats area of the default panel, sometimes it's the
@@ -296,7 +296,7 @@ public class MainFrame extends JFrame {
 			return statusArea;
 		}
 	}
-	
+
 	/**
 	 * True if the program is marked as "busy," i.e. the interface should be
 	 * disabled. For example, rendering a clip or creating a GIF or scanning a
@@ -305,7 +305,7 @@ public class MainFrame extends JFrame {
 	public static boolean isBusy() {
 		return MainFrame.busy;
 	}
-	
+
 	/**
 	 * Set to true if the program is marked as "busy," i.e. the interface should
 	 * be disabled. For example, rendering a clip or creating a GIF or scanning
@@ -326,5 +326,5 @@ public class MainFrame extends JFrame {
 			mainPanel.getFireButton().requestFocusInWindow();
 		}
 	}
-	
+
 }

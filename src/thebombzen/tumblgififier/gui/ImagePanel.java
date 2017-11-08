@@ -12,24 +12,24 @@ import javax.swing.JPanel;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 
 public class ImagePanel extends JPanel {
-	
+
 	private static final long serialVersionUID = 1L;
-	
+
 	private BufferedImage image;
-	
+
 	private volatile boolean playing = false;
 	private volatile Future<?> playClock = null;
 	private final Consumer<?> playCallback;
-	
+
 	public ImagePanel(BufferedImage image, final Consumer<?> playCallback) {
 		this.image = image;
 		this.playCallback = playCallback;
-		if (playCallback != null){
+		if (playCallback != null) {
 			this.addMouseListener(new MouseAdapter(){
 				@Override
 				public void mouseClicked(MouseEvent e) {
-					if (e.getClickCount() == 2){
-						if (!playing){
+					if (e.getClickCount() == 2) {
+						if (!playing) {
 							play();
 						} else {
 							stop();
@@ -39,35 +39,36 @@ public class ImagePanel extends JPanel {
 			});
 		}
 	}
-	
+
 	public boolean isPlaying() {
 		return playing;
 	}
-	
-	public void play(){
+
+	public void play() {
 		playing = true;
-		if (playClock != null && !playClock.isCancelled()){
+		if (playClock != null && !playClock.isCancelled()) {
 			playClock.cancel(false);
 		}
 		playClock = ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
-			public void run(){
+			@Override
+			public void run() {
 				playCallback.accept(null);
 			}
 		}, 100, TimeUnit.MILLISECONDS);
 	}
-	
-	public void stop(){
+
+	public void stop() {
 		playing = false;
-		if (playClock != null){
+		if (playClock != null) {
 			playClock.cancel(false);
 			playClock = null;
 		}
 	}
-	
+
 	public BufferedImage getImage() {
 		return image;
 	}
-	
+
 	@Override
 	public void paint(Graphics g) {
 		if (image == null) {
@@ -87,15 +88,15 @@ public class ImagePanel extends JPanel {
 			g.drawImage(image, 0, 0, this.getWidth(), this.getHeight(), null);
 		}
 	}
-	
+
 	public void setImage(BufferedImage image) {
 		this.image = image;
 		repaint();
 	}
-	
+
 	@Override
 	public void update(Graphics g) {
 		paint(g);
 	}
-	
+
 }

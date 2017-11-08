@@ -1,47 +1,56 @@
 package thebombzen.tumblgififier.util;
 
 /**
- * This represents a tuple of two elements, i.e. an ordered pair. The purpose is to use a Tuple in a Map or a Set, so we can can create a set of ordered pairs or a Map whose domain is a set of ordered pairs.
+ * This represents a tuple of two elements, i.e. an ordered pair. The purpose is
+ * to use a Tuple in a Map or a Set, so we can can create a set of ordered pairs
+ * or a Map whose domain is a set of ordered pairs.
  *
- * There are no restrictions on the components, other than restrictions enforced by the generic typing.
- * @param <E> This is the type of the first component of the ordered pair. 
- * @param <F> This is the type of the second component of the ordered pair.
+ * There are no restrictions on the components, other than restrictions enforced
+ * by the generic typing.
+ * 
+ * @param <E>
+ *            This is the type of the first component of the ordered pair.
+ * @param <F>
+ *            This is the type of the second component of the ordered pair.
  */
 public class Tuple<E, F> {
 	private E e;
 	private F f;
-	
+
 	/**
 	 * Construct an ordered pair of two elements.
-	 * @param e the first component of the ordered pair
-	 * @param f the second component of the ordered pair
+	 * 
+	 * @param e
+	 *            the first component of the ordered pair
+	 * @param f
+	 *            the second component of the ordered pair
 	 */
-	public Tuple(E e, F f){
+	public Tuple(E e, F f) {
 		this.e = e;
 		this.f = f;
 	}
-	
+
 	/**
 	 * This is the getter for the first component.
 	 */
 	public E getFirst() {
 		return e;
 	}
-	
+
 	/**
 	 * This is the setter for the first component.
 	 */
 	public void setFirst(E e) {
 		this.e = e;
 	}
-	
+
 	/**
 	 * This is the getter for the second component.
 	 */
 	public F getSecond() {
 		return f;
 	}
-	
+
 	/**
 	 * This is the setter for the second component.
 	 */
@@ -50,7 +59,10 @@ public class Tuple<E, F> {
 	}
 
 	/**
-	 * The hash code function calls the hash code of its two components. Because this class is designed for easy usage in HashMaps and HashSets, it is advised to use E and F that implement some form of hashCode that isn't the identity hash code.
+	 * The hash code function calls the hash code of its two components. Because
+	 * this class is designed for easy usage in HashMaps and HashSets, it is
+	 * advised to use E and F that implement some form of hashCode that isn't
+	 * the identity hash code.
 	 */
 	@Override
 	public int hashCode() {
@@ -62,7 +74,10 @@ public class Tuple<E, F> {
 	}
 
 	/**
-	 * The equals function calls the equals function of its two components. An ordered pair is equal to another if and only if the components equal their respective counterparts, according to E and F's equals() method. Please override those so they are realistic and do not use ==.
+	 * The equals function calls the equals function of its two components. An
+	 * ordered pair is equal to another if and only if the components equal
+	 * their respective counterparts, according to E and F's equals() method.
+	 * Please override those so they are realistic and do not use ==.
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -87,11 +102,12 @@ public class Tuple<E, F> {
 	}
 
 	/**
-	 * This method returns a string of the form "(e, f)" where E and F are the first and second components, respectively.
+	 * This method returns a string of the form "(e, f)" where E and F are the
+	 * first and second components, respectively.
 	 */
 	@Override
 	public String toString() {
 		return "(" + e + ", " + f + ")";
 	}
-	
+
 }

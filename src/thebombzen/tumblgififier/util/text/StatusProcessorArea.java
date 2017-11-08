@@ -6,21 +6,21 @@ import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
 
 public class StatusProcessorArea extends JTextArea implements StatusProcessor {
-	
+
 	private static final long serialVersionUID = 1L;
 	private PrintWriter processorWriter = new PrintWriter(new StatusProcessorWriter(this));
-	
+
 	public StatusProcessorArea() {
 		setEditable(false);
 		DefaultCaret caret = (DefaultCaret) getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		this.setLineWrap(true);
 	}
-	
+
 	@Override
 	public void appendStatus(final String status) {
 		EventQueue.invokeLater(new Runnable(){
-			
+
 			@Override
 			public void run() {
 				String text = getText();
@@ -34,22 +34,22 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 		});
 		System.out.format("%n%s", status);
 	}
-	
+
 	@Override
 	public void clearStatus() {
 		EventQueue.invokeLater(new Runnable(){
-			
+
 			@Override
 			public void run() {
 				setText("");
 			}
 		});
 	}
-	
+
 	@Override
 	public void replaceStatus(final String status) {
 		EventQueue.invokeLater(new Runnable(){
-			
+
 			@Override
 			public void run() {
 				String text = getText();
@@ -61,7 +61,7 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 		});
 		System.out.print('\r' + status);
 	}
-	
+
 	@Override
 	public void setEnabled(boolean enabled) {
 		if (!this.isEditable() && !enabled) {
@@ -75,5 +75,5 @@ public class StatusProcessorArea extends JTextArea implements StatusProcessor {
 	public void processException(Throwable t) {
 		t.printStackTrace(processorWriter);
 	}
-	
+
 }

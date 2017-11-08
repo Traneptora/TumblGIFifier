@@ -20,9 +20,9 @@ import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 
 public class AboutDialog extends JDialog {
-	
+
 	private static final long serialVersionUID = 1L;
-	
+
 	public AboutDialog(Window parent) {
 		super(parent, "About");
 		this.setLayout(new BorderLayout());
@@ -36,8 +36,7 @@ public class AboutDialog extends JDialog {
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("Licensed under the MIT license")));
 		box.add(GUIHelper.wrapLeftAligned(new JLabel("with included public domain XZ Utils")));
 		box.add(Box.createVerticalStrut(10));
-		box.add(GUIHelper
-				.wrapLeftAligned(new JLabel("See https://thebombzen.com/TumblGIFifier/ for details.")));
+		box.add(GUIHelper.wrapLeftAligned(new JLabel("See https://thebombzen.com/TumblGIFifier/ for details.")));
 		box.add(Box.createVerticalStrut(10));
 		final JButton checkForUpdates = new JButton("Check for updates");
 		final JButton close = new JButton("Close");
@@ -46,28 +45,28 @@ public class AboutDialog extends JDialog {
 		outerBox.add(box);
 		outerBox.add(Box.createHorizontalStrut(10));
 		close.addActionListener(new ActionListener(){
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				AboutDialog.this.dispose();
 			}
 		});
 		checkForUpdates.addActionListener(new ActionListener(){
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				close.setEnabled(false);
 				checkForUpdates.setEnabled(false);
 				checkForUpdates.setText("Checking...");
 				ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-					
+
 					@Override
 					public void run() {
 						try {
 							final String latest = ResourcesManager.getResourcesManager().getLatestVersion();
 							if (latest.equals(TumblGIFifier.VERSION)) {
 								EventQueue.invokeLater(new Runnable(){
-									
+
 									@Override
 									public void run() {
 										checkForUpdates.setText("Up to date");
@@ -76,24 +75,20 @@ public class AboutDialog extends JDialog {
 								});
 							} else {
 								EventQueue.invokeLater(new Runnable(){
-									
+
 									@Override
 									public void run() {
-										int answer = JOptionPane.showConfirmDialog(AboutDialog.this,
-												String.format(
-														"Update Available!%nLatest Version: %s%nDo you want to download the latest version?",
-														latest),
-												"New Version", JOptionPane.YES_NO_OPTION);
+										int answer = JOptionPane.showConfirmDialog(AboutDialog.this, String.format(
+												"Update Available!%nLatest Version: %s%nDo you want to download the latest version?",
+												latest), "New Version", JOptionPane.YES_NO_OPTION);
 										close.setEnabled(true);
 										checkForUpdates.setText("Updates Available");
 										if (answer == JOptionPane.YES_OPTION) {
 											if (Desktop.isDesktopSupported()) {
 												try {
-													Desktop.getDesktop()
-															.browse(IOHelper
-																	.wrapSafeURL(
-																			"https://github.com/thebombzen/TumblGIFifier/releases/")
-																	.toURI());
+													Desktop.getDesktop().browse(IOHelper.wrapSafeURL(
+															"https://github.com/thebombzen/TumblGIFifier/releases/")
+															.toURI());
 												} catch (RuntimeException ex) {
 													throw ex;
 												} catch (Exception e) {

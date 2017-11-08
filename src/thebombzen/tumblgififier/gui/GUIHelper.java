@@ -5,8 +5,8 @@ import java.awt.Container;
 import javax.swing.Box;
 
 public final class GUIHelper {
-	private GUIHelper(){
-		
+	private GUIHelper() {
+
 	}
 
 	public static Component wrapLeftAligned(Component comp) {

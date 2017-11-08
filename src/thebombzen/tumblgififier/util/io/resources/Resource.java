@@ -7,7 +7,7 @@ import java.nio.file.Paths;
  * This class represents a resource provided by an external resource package.
  */
 public class Resource {
-	
+
 	protected String pkg;
 	protected String name;
 	protected Path location;
@@ -25,24 +25,22 @@ public class Resource {
 	}
 
 	/**
-	 * This is the global package containing the resource.
-	 * Example: "FFmpeg"
+	 * This is the global package containing the resource. Example: "FFmpeg"
 	 */
 	public String getPackage() {
 		return pkg;
 	}
 
 	/**
-	 * This is the local name of the resource.
-	 * Example: "ffplay"
+	 * This is the local name of the resource. Example: "ffplay"
 	 */
 	public String getName() {
 		return name;
 	}
 
 	/**
-	 * This is the filesystem location of the resource.
-	 * Example: "/usr/bin/ffprobe"
+	 * This is the filesystem location of the resource. Example:
+	 * "/usr/bin/ffprobe"
 	 */
 	public Path getLocation() {
 		return location;
@@ -50,7 +48,9 @@ public class Resource {
 
 	/**
 	 * Is this resource provided by us?
-	 * @return true if the resource is provided with TumblGIFifier, false if found on the system.
+	 * 
+	 * @return true if the resource is provided with TumblGIFifier, false if
+	 *         found on the system.
 	 */
 	public boolean isInHouse() {
 		return inHouse;

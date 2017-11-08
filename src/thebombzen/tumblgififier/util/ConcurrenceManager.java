@@ -22,48 +22,53 @@ import thebombzen.tumblgififier.util.io.NullInputStream;
 import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
 
 /**
- * This class handles all the program-wide concurrence utilities. 
+ * This class handles all the program-wide concurrence utilities.
  *
  */
 public final class ConcurrenceManager {
-	
+
 	private static final ConcurrenceManager instance = new ConcurrenceManager();
-	
+
 	/**
-	 * There is one instance of a ConcurrentManager. This returns the singleton instance.
+	 * There is one instance of a ConcurrentManager. This returns the singleton
+	 * instance.
 	 */
-	public static ConcurrenceManager getConcurrenceManager(){
+	public static ConcurrenceManager getConcurrenceManager() {
 		return instance;
 	}
-	
 
 	/**
 	 * A flag used to determine if we're cleaning up all the subprocesses we've
-	 * started. Normally, if a sub-process ends, it will be assumed to be "completed," and the next stage in the
-	 * GIF creation to continue. Setting this flag prevents the creation of new processes in order to safely clean up.
+	 * started. Normally, if a sub-process ends, it will be assumed to be
+	 * "completed," and the next stage in the GIF creation to continue. Setting
+	 * this flag prevents the creation of new processes in order to safely clean
+	 * up.
 	 */
 	private volatile boolean cleaningUp = false;
-	
+
 	/**
 	 * This is a list of all processes started by our program. It's used so we
 	 * can end them all upon exit.
 	 */
 	private volatile List<Process> processes = new ArrayList<>();
-	
+
 	/**
-	 * These are a list of jobs that must be executed when the program shuts down normally (instead of halting).
+	 * These are a list of jobs that must be executed when the program shuts
+	 * down normally (instead of halting).
 	 */
 	private volatile Queue<Task> cleanUpJobs = new PriorityBlockingQueue<Task>();
-	
+
 	/**
-	 * These are a list of jobs that must be executed after the program is fully initialized.
+	 * These are a list of jobs that must be executed after the program is fully
+	 * initialized.
 	 */
 	private volatile Queue<Task> postInitJobs = new PriorityBlockingQueue<Task>();
-	
+
 	/**
-	 * This constructor creates the singleton instance of this class. It's private so only there can only be one instance.
+	 * This constructor creates the singleton instance of this class. It's
+	 * private so only there can only be one instance.
 	 */
-	private ConcurrenceManager(){
+	private ConcurrenceManager() {
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
 			@Override
 			public void run() {
@@ -72,35 +77,39 @@ public final class ConcurrenceManager {
 		}));
 		addShutdownTask(new Task(){
 			@Override
-			public void run(){
+			public void run() {
 				System.out.println("Shutting Down...");
 			}
 		});
 		addPostInitTask(new Task(50){
 			@Override
-			public void run(){
-				MainFrame.getMainFrame().getStatusProcessor().appendStatus("Initialization successful. Now, open a video file with File -> Open.");
+			public void run() {
+				MainFrame.getMainFrame().getStatusProcessor()
+						.appendStatus("Initialization successful. Now, open a video file with File -> Open.");
 			}
 		});
 	}
-	
+
 	/**
 	 * Add a task to be executed on Post-Init. Priority zero is the default.
-	 * Lower numbers will be executed first, so negative refers to more immediate priority and positive numbers are less immediate.
-	 * The task object will be discarded upon execution.
+	 * Lower numbers will be executed first, so negative refers to more
+	 * immediate priority and positive numbers are less immediate. The task
+	 * object will be discarded upon execution.
 	 */
-	public void addPostInitTask(Task task){
+	public void addPostInitTask(Task task) {
 		postInitJobs.add(task);
 	}
-	
+
 	/**
-	 * Add a (runnable) task to be executed on Post-Init, with the given priority. Priority zero is the default.
-	 * Lower numbers will be executed first, so negative refers to more immediate priority and positive numbers are less immediate.
-	 * The task object will be discarded upon execution.
+	 * Add a (runnable) task to be executed on Post-Init, with the given
+	 * priority. Priority zero is the default. Lower numbers will be executed
+	 * first, so negative refers to more immediate priority and positive numbers
+	 * are less immediate. The task object will be discarded upon execution.
 	 */
-	public void addPostInitTask(final Runnable r, final int priority){
+	public void addPostInitTask(final Runnable r, final int priority) {
 		this.addPostInitTask(new Task(priority){
-			public void run(){
+			@Override
+			public void run() {
 				r.run();
 			}
 		});
@@ -108,32 +117,35 @@ public final class ConcurrenceManager {
 
 	/**
 	 * Add a task to be executed on shutdown. Priority zero is the default.
-	 * Lower numbers will be executed first, so negative refers to more immediate priority and positive numbers are less immediate.
-	 * The task object will be discarded upon execution.
+	 * Lower numbers will be executed first, so negative refers to more
+	 * immediate priority and positive numbers are less immediate. The task
+	 * object will be discarded upon execution.
 	 */
-	public void addShutdownTask(Task task){
+	public void addShutdownTask(Task task) {
 		cleanUpJobs.add(task);
 	}
-	
+
 	/**
-	 * Add a (runnable) task to be executed on shutdown, with the given priority. Priority zero is the default.
-	 * Lower numbers will be executed first, so negative refers to more immediate priority and positive numbers are less immediate.
-	 * The task object will be discarded upon execution.
+	 * Add a (runnable) task to be executed on shutdown, with the given
+	 * priority. Priority zero is the default. Lower numbers will be executed
+	 * first, so negative refers to more immediate priority and positive numbers
+	 * are less immediate. The task object will be discarded upon execution.
 	 */
-	public void addShutdownTask(final Runnable r, final int priority){
+	public void addShutdownTask(final Runnable r, final int priority) {
 		this.addShutdownTask(new Task(priority){
-			public void run(){
+			@Override
+			public void run() {
 				r.run();
 			}
 		});
 	}
-	
+
 	/**
 	 * Create a subprocess and execute the arguments. This automatically
 	 * redirects standard error to standard out. If the stream copyTo is not
-	 * null, it will automatically copy the standard output of the created process to
-	 * the OutputStream copyTo. Copying the stream will cause this method to
-	 * block until the process's output returns an end-of-file.
+	 * null, it will automatically copy the standard output of the created
+	 * process to the OutputStream copyTo. Copying the stream will cause this
+	 * method to block until the process's output returns an end-of-file.
 	 * Declining to copy will cause this method to return immediately.
 	 * 
 	 * @param copyTo
@@ -169,7 +181,7 @@ public final class ConcurrenceManager {
 		}
 		return p.getInputStream();
 	}
-	
+
 	/**
 	 * Create a subprocess and execute the arguments. This automatically
 	 * redirects standard error to standard out.
@@ -185,10 +197,12 @@ public final class ConcurrenceManager {
 	 * @return This returns an InputStream that reads from the Standard
 	 *         output/error stream of the process. If this method was set to
 	 *         block then this InputStream will have reached End-Of-File.
-	 * @throws ProcessTerminatedException if "join" is set to true but the process ends before its end-of-file is reached
+	 * @throws ProcessTerminatedException
+	 *             if "join" is set to true but the process ends before its
+	 *             end-of-file is reached
 	 */
 	public InputStream exec(boolean join, String... args) throws ProcessTerminatedException {
-		//System.err.println(TextHelper.getTextHelper().join(" ", args));
+		// System.err.println(TextHelper.getTextHelper().join(" ", args));
 		try {
 			if (join) {
 				log(String.join(" ", args));
@@ -211,9 +225,10 @@ public final class ConcurrenceManager {
 			}
 		}
 	}
-	
+
 	/**
-	 * Stop all subprocesses, but do not exit the program. This is uses to interrupt GIF creation.
+	 * Stop all subprocesses, but do not exit the program. This is uses to
+	 * interrupt GIF creation.
 	 */
 	public void stopAll() {
 		cleaningUp = true;
@@ -225,7 +240,7 @@ public final class ConcurrenceManager {
 		processes.clear();
 		cleaningUp = false;
 	}
-	
+
 	public static <T> T uncheckCall(Callable<T> callable) {
 		try {
 			return callable.call();
@@ -255,49 +270,57 @@ public final class ConcurrenceManager {
 	private static <E extends Throwable, T> T sneakyThrow0(Throwable ex) throws E {
 		throw (E) ex;
 	}
-	
+
 	/**
-	 * Stops all subprocesses, shuts down the thread pool, and executes shutdown tasks.
+	 * Stops all subprocesses, shuts down the thread pool, and executes shutdown
+	 * tasks.
 	 */
 	protected void cleanUp() {
 		stopAll();
 		threadPool.shutdown();
 		System.out.println();
 		Task task;
-		while (null != (task = cleanUpJobs.poll())){
+		while (null != (task = cleanUpJobs.poll())) {
 			task.run();
 		}
 		IOHelper.closeQuietly(TumblGIFifier.getLogFileOutputStream());
 	}
-	
+
 	/**
-	 * Initiate post-init tasks. Do not execute more than once or bad things might happen. 
+	 * Initiate post-init tasks. Do not execute more than once or bad things
+	 * might happen.
 	 */
-	public void postInit(){
+	public void postInit() {
 		Task task;
-		while (null != (task = postInitJobs.poll())){
+		while (null != (task = postInitJobs.poll())) {
 			task.run();
 		}
 	}
-	
+
 	/**
-	 * This is the thread pool on which we should run thread-pool tasks. We add 1 because this allows us to use all processors while one thread is waiting on I/O.
+	 * This is the thread pool on which we should run thread-pool tasks. We add
+	 * 1 because this allows us to use all processors while one thread is
+	 * waiting on I/O.
 	 */
 	private ScheduledExecutorService threadPool = Executors
 			.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
-	
+
 	/**
-	 * This queues a given Runnable to be executed "soon" but with unimportant timing.
+	 * This queues a given Runnable to be executed "soon" but with unimportant
+	 * timing.
 	 */
 	public Future<?> executeLater(Runnable r) {
 		return threadPool.submit(r);
 	}
-	
-	/** This queues a runnable to be executed at regular intervals.
-	 * It's called an "Imprecise" tick clock because there is no guarantee that the intervals will be exact, and if the tasks takes longer to complete, the longer it will be until the next iteration is executed.
+
+	/**
+	 * This queues a runnable to be executed at regular intervals. It's called
+	 * an "Imprecise" tick clock because there is no guarantee that the
+	 * intervals will be exact, and if the tasks takes longer to complete, the
+	 * longer it will be until the next iteration is executed.
 	 */
-	public Future<?> createImpreciseTickClock(Runnable r, long tickTime, TimeUnit timeUnit){
+	public Future<?> createImpreciseTickClock(Runnable r, long tickTime, TimeUnit timeUnit) {
 		return threadPool.scheduleWithFixedDelay(r, 0, tickTime, timeUnit);
 	}
-	
+
 }

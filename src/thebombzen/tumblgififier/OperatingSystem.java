@@ -6,10 +6,7 @@ import java.nio.file.Paths;
 @PreLoadable
 public enum OperatingSystem {
 
-	WINDOWS_64(),
-	WINDOWS_32(),
-	MACOS_64(),
-	POSIX();
+	WINDOWS_64(), WINDOWS_32(), MACOS_64(), POSIX();
 
 	private static final OperatingSystem LOCAL_OS;
 
@@ -25,14 +22,15 @@ public enum OperatingSystem {
 		WINDOWS_32.isWindows = true;
 		WINDOWS_32.nullStream = "NUL";
 		MACOS_64.exeExtension = "";
-		MACOS_64.localResourceLocation = Paths.get(System.getProperty("user.home"), "Library", "Application Support", "tumblgififier");
+		MACOS_64.localResourceLocation = Paths.get(System.getProperty("user.home"), "Library", "Application Support",
+				"tumblgififier");
 		MACOS_64.isUnix = true;
 		MACOS_64.isWindows = false;
 		MACOS_64.nullStream = "/dev/null";
 		String xdgConfigHome = System.getenv("XDG_CONFIG_HOME");
 		POSIX.exeExtension = "";
 		if (xdgConfigHome == null) {
-			POSIX.localResourceLocation = Paths.get(System.getProperty("user.home"), ".config", "tumblgififier"); 
+			POSIX.localResourceLocation = Paths.get(System.getProperty("user.home"), ".config", "tumblgififier");
 		} else {
 			POSIX.localResourceLocation = Paths.get(xdgConfigHome, "tumblgififier");
 		}
@@ -53,11 +51,11 @@ public enum OperatingSystem {
 			LOCAL_OS = POSIX;
 		}
 	}
-	
+
 	public static OperatingSystem getLocalOS() {
 		return LOCAL_OS;
 	}
-	
+
 	private String exeExtension = null;
 	private Path localResourceLocation = null;
 	private boolean isUnix;

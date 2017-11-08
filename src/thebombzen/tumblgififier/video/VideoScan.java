@@ -22,7 +22,7 @@ public class VideoScan {
 	private final int scanHeight;
 
 	public static VideoScan scanFile(StatusProcessor processor, Path pathname) {
-		//String line = null;
+		// String line = null;
 		AtomicInteger widthA = new AtomicInteger(-1);
 		AtomicInteger heightA = new AtomicInteger(-1);
 		AtomicReference<Double> durationA = new AtomicReference<>(-1D);
@@ -62,22 +62,22 @@ public class VideoScan {
 		} finally {
 			IOHelper.closeQuietly(br);
 		}
-		
+
 		double duration = durationA.get();
 		double framerate = framerateA.get();
 		int width = widthA.get();
 		int height = heightA.get();
 
-		/*if (duration < 0) {
-			log("Did not find duration in metadata, checking packets...");
-			Resource ffmpeg = ResourcesManager.getResourcesManager().getFFmpegLocation();
-			try {
-				duration = TextHelper.scanTotalTimeConverted(ConcurrenceManager.getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(),
-						"-i", pathname.toString(), "-map", "0:v:0", "-f", "null", "-"));
-			} catch (ProcessTerminatedException ex) {
-				log(ex);
-			}
-		}*/
+		/*
+		 * if (duration < 0) {
+		 * log("Did not find duration in metadata, checking packets...");
+		 * Resource ffmpeg =
+		 * ResourcesManager.getResourcesManager().getFFmpegLocation(); try {
+		 * duration = TextHelper.scanTotalTimeConverted(ConcurrenceManager.
+		 * getConcurrenceManager().exec(false, ffmpeg.getLocation().toString(),
+		 * "-i", pathname.toString(), "-map", "0:v:0", "-f", "null", "-")); }
+		 * catch (ProcessTerminatedException ex) { log(ex); } }
+		 */
 
 		if (duration < 0 || height < 0 || width < 0 || framerate < 0) {
 			processor.appendStatus("File Format Error.");
@@ -91,7 +91,7 @@ public class VideoScan {
 
 		return new VideoScan(width, height, duration, pathname, framerate);
 	}
-	
+
 	public VideoScan(int width, int height, double duration, Path location, double framerate) {
 		this.scanWidth = width;
 		this.scanHeight = height;
@@ -99,35 +99,35 @@ public class VideoScan {
 		this.scanLocation = location;
 		this.scanFramerate = framerate;
 	}
-	
-	public double getFrameDuration(){
+
+	public double getFrameDuration() {
 		return 1D / getFramerate();
 	}
-	
+
 	public double getDuration() {
 		return scanDuration;
 	}
-	
+
 	public double getFramerate() {
 		return scanFramerate;
 	}
-	
-	public double getScreenshotsPerSecond(){
+
+	public double getScreenshotsPerSecond() {
 		return getFramerate() / 6D;
 	}
-	
-	public double getScreenshotDuration(){
+
+	public double getScreenshotDuration() {
 		return 1D / getScreenshotsPerSecond();
 	}
-	
+
 	public int getHeight() {
 		return scanHeight;
 	}
-	
+
 	public Path getLocation() {
 		return scanLocation;
 	}
-	
+
 	public int getWidth() {
 		return scanWidth;
 	}
@@ -177,5 +177,5 @@ public class VideoScan {
 		return "VideoScan [scanLocation=" + scanLocation + ", scanDuration=" + scanDuration + ", scanFramerate="
 				+ scanFramerate + ", scanWidth=" + scanWidth + ", scanHeight=" + scanHeight + "]";
 	}
-	
+
 }

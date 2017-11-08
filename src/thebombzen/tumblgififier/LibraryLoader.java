@@ -20,29 +20,31 @@ import thebombzen.tumblgififier.util.io.resources.ResourceNotFoundException;
 
 @PreLoadable
 public final class LibraryLoader {
-	
+
 	private LibraryLoader() {
-		
+
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		extractExternalLibraries();
-		Class<?> clazz = Class.forName("thebombzen.tumblgififier.TumblGIFifier", false, ClassLoader.getSystemClassLoader());
+		Class<?> clazz = Class.forName("thebombzen.tumblgififier.TumblGIFifier", false,
+				ClassLoader.getSystemClassLoader());
 		Method method = clazz.getMethod("main", String[].class);
-		method.invoke(null, (Object)args);
+		method.invoke(null, (Object) args);
 	}
-	
+
 	private static Path localResourceLocation = null;
-	
+
 	/**
 	 * Add a Jar file to the class path.
 	 * 
 	 * From StackOverflow: https://stackoverflow.com/a/60766/
+	 * 
 	 * @param file
 	 */
 	private static void addToClasspath(Path path) {
 		URL url = null;
-		try {	
+		try {
 			url = path.toUri().toURL();
 		} catch (MalformedURLException ex) {
 			throw new ResourceNotFoundException("Malformed URL? " + path, ex);
@@ -100,7 +102,8 @@ public final class LibraryLoader {
 					InputStream in = null;
 					try {
 						Path lib = libs.resolve(fname);
-						if (Files.exists(lib) && Files.getLastModifiedTime(lib).equals(entry.getLastModifiedTime()) && Files.size(lib) == entry.getSize()){
+						if (Files.exists(lib) && Files.getLastModifiedTime(lib).equals(entry.getLastModifiedTime())
+								&& Files.size(lib) == entry.getSize()) {
 							System.out.println("Found " + fname + ", not extracting.");
 							addToClasspath(lib);
 							continue;
@@ -133,5 +136,5 @@ public final class LibraryLoader {
 			}
 		}
 	}
-	
+
 }
