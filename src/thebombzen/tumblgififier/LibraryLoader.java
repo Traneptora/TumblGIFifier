@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.resources.ResourceNotFoundException;
 
 @PreLoadable
@@ -28,13 +27,14 @@ public final class LibraryLoader {
 
 	public static void main(String[] args) throws Exception {
 		List<Path> libraries = extractExternalLibraries();
-		Path javaLocation = Paths.get(System.getProperty("java.home"), "bin", "java" + OperatingSystem.getLocalOS().getExeExtension());
+		Path javaLocation = Paths.get(System.getProperty("java.home"), "bin",
+				"java" + OperatingSystem.getLocalOS().getExeExtension());
 		Path thisJar = Paths.get(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 		if (thisJar.getFileName().toString().endsWith(".jar")) {
 			libraries.add(thisJar);
 			String cp = String.join(File.pathSeparator,
 					libraries.stream().map(Path::toString).collect(Collectors.toList()));
-			List<String> newArgs = new ArrayList<String>();
+			List<String> newArgs = new ArrayList<>();
 			newArgs.add(javaLocation.toString());
 			newArgs.add("-cp");
 			newArgs.add(cp);
@@ -49,30 +49,25 @@ public final class LibraryLoader {
 			Method method = clazz.getMethod("main", String[].class);
 			method.invoke(null, (Object) args);
 		}
-
 	}
 
 	private static Path localResourceLocation = null;
 
-	private static Path getLocalResourceLocation() {
+	private static Path getLocalResourceLocation() throws IOException {
 		if (localResourceLocation != null) {
 			return localResourceLocation;
 		}
-		try {
-			localResourceLocation = OperatingSystem.getLocalOS().getLocalResourceLocation().toAbsolutePath();
-			if (Files.exists(localResourceLocation) && !Files.isDirectory(localResourceLocation)) {
-				Files.delete(localResourceLocation);
-				System.err.println("Deleting existing tumblgififier non-directory.");
-			}
-			Files.createDirectories(localResourceLocation);
-			return localResourceLocation;
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
+		localResourceLocation = OperatingSystem.getLocalOS().getLocalResourceLocation().toAbsolutePath();
+		if (Files.exists(localResourceLocation) && !Files.isDirectory(localResourceLocation)) {
+			Files.delete(localResourceLocation);
+			System.err.println("Deleting existing tumblgififier non-directory.");
 		}
+		Files.createDirectories(localResourceLocation);
+		return localResourceLocation;
 	}
 
-	private static List<Path> extractExternalLibraries() {
-		List<Path> ret = new ArrayList<Path>();
+	private static List<Path> extractExternalLibraries() throws IOException, ResourceNotFoundException {
+		List<Path> ret = new ArrayList<>();
 		Path thisJarFile = null;
 		try {
 			thisJarFile = Paths.get(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
@@ -120,18 +115,11 @@ public final class LibraryLoader {
 					}
 				}
 			}
-		} catch (IOException ex) {
-			throw new RuntimeIOException(ex);
 		} finally {
 			if (zipFile != null) {
-				try {
-					zipFile.close();
-				} catch (IOException ioe) {
-					// don't care
-				}
+				zipFile.close();
 			}
 		}
 		return ret;
 	}
-
 }

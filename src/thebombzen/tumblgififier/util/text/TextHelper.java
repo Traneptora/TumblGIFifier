@@ -38,15 +38,22 @@ public final class TextHelper {
 	 */
 	private String getFontFile() {
 		if (fontFile == null) {
-			fontFile = escapeForVideoFilter(
-					ResourcesManager.getResourcesManager().getOpenSansResource().getLocation().toString());
+			fontFile = escapeForVideoFilter(ResourcesManager.getOpenSansResource().getLocation().toString());
 		}
 		return fontFile;
 	}
 
+	{
+		try {
+			tempOverlayPath = IOHelper.createTempFile();
+			tempOverlayEscapedFilename = escapeForVideoFilter(tempOverlayPath.toString());
+		} catch (IOException ioe) {
+			throw new Error();
+		}
+	}
+
 	private TextHelper() {
-		tempOverlayPath = IOHelper.createTempFile();
-		tempOverlayEscapedFilename = escapeForVideoFilter(tempOverlayPath.toString());
+
 	}
 
 	/**
@@ -58,7 +65,7 @@ public final class TextHelper {
 	 *            This is the input string to escape
 	 * @return An escaped string.
 	 */
-	public String escapeForVideoFilter(String input) {
+	public static String escapeForVideoFilter(String input) {
 		// return input.replace("\\", "\\\\").replace(",", "\\,").replace(";",
 		// "\\;").replace(":", "\\:")
 		// .replace("'", "\\'").replace("[", "\\[").replace("]",
@@ -175,7 +182,7 @@ public final class TextHelper {
 	public String createVideoFilter(String preprocess, String postprocess, int width, int height, boolean boxedScale,
 			int decimator, int originalWidth, int originalHeight, int overlaySize, String overlayText) {
 		log("Creating video filter.");
-		List<String> filters = new ArrayList<String>();
+		List<String> filters = new ArrayList<>();
 		filters.add("copy");
 		if (validateString(preprocess)) {
 			log("Adding preprocess filter: " + preprocess);

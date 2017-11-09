@@ -7,7 +7,7 @@ import thebombzen.tumblgififier.PreLoadable;
  * sometimes it's not, depending on the resource.
  */
 @PreLoadable
-public class ResourceNotFoundException extends RuntimeException {
+public class ResourceNotFoundException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 	public final String pkg;

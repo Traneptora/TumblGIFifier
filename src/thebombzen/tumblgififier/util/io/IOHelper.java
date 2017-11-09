@@ -8,11 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -20,7 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import org.tukaani.xz.XZInputStream;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
-import thebombzen.tumblgififier.util.Task;
+import thebombzen.tumblgififier.util.DefaultTask;
+import thebombzen.tumblgififier.util.ExceptionalConsumer;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 
 /**
@@ -45,14 +47,9 @@ public final class IOHelper {
 	 * safe.
 	 */
 	static {
-		ConcurrenceManager.getConcurrenceManager().addShutdownTask(new Task(){
-			@Override
-			public void run() {
-				for (Path path : tempFiles) {
-					path.toFile().delete();
-				}
-			}
-		});
+		ConcurrenceManager.addShutdownTask(new DefaultTask(0, () -> {
+			tempFiles.stream().forEach(ExceptionalConsumer.uncheck(Files::delete));
+		}));
 	}
 
 	/**
@@ -61,19 +58,15 @@ public final class IOHelper {
 	 * exits. This will usually not throw an I/O exception, but could in some
 	 * corner cases, like if the temp filesystem is mounted as read-only.
 	 */
-	public static Path createTempFile() {
-		return createTempFile(ResourcesManager.getResourcesManager().getTemporaryDirectory());
+	public static Path createTempFile() throws IOException {
+		return createTempFile(ResourcesManager.getTemporaryDirectory());
 	}
 
-	public static Path createTempFile(Path parentDirectory) {
-		try {
-			Path path = Files.createTempFile(parentDirectory, "tumblgififier", ".tmp").toAbsolutePath();
-			path.toFile().deleteOnExit();
-			tempFiles.add(path);
-			return path;
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
-		}
+	public static Path createTempFile(Path parentDirectory) throws IOException {
+		Path path = Files.createTempFile(parentDirectory, "tumblgififier", ".tmp").toAbsolutePath();
+		path.toFile().deleteOnExit();
+		tempFiles.add(path);
+		return path;
 	}
 
 	/**
@@ -91,12 +84,15 @@ public final class IOHelper {
 	 */
 	public static void closeQuietly(Closeable cl) {
 		if (cl == null) {
+			// Quietly means not throwing an NPE
 			return;
 		}
 		try {
 			cl.close();
 		} catch (IOException ioe) {
-			// do nothing
+			// the point of closing quietly is no IOException
+			// However, we log it anyway.
+			log(ioe);
 		}
 	}
 
@@ -137,13 +133,11 @@ public final class IOHelper {
 	 * downloading and doesn't provide a progress indicator. If an error occurs,
 	 * an exception will be thrown.
 	 */
-	public static void downloadFromInternet(URL url, Path target) throws RuntimeIOException {
+	public static void downloadFromInternet(URL url, Path target) throws IOException {
 		InputStream in = null;
 		try {
 			in = url.openStream();
 			Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
 		} finally {
 			closeQuietly(in);
 		}
@@ -155,12 +149,8 @@ public final class IOHelper {
 	 * that sort. If an error occurs an exception will be thrown. The file is
 	 * assumed to be in UTF-8.
 	 */
-	public static String downloadFirstLineFromInternet(URL url) throws RuntimeIOException {
-		try {
-			return IOHelper.getFirstLineOfInputStream(url.openStream());
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
-		}
+	public static String downloadFirstLineFromInternet(URL url) throws IOException {
+		return IOHelper.getFirstLineOfInputStream(url.openStream());
 	}
 
 	/**
@@ -169,13 +159,9 @@ public final class IOHelper {
 	 * closes the InputStream. If an I/O error occurs an exception will be
 	 * thrown, but the stream will still be closed.
 	 */
-	public static String getFirstLineOfInputStream(InputStream in) throws RuntimeIOException {
-		BufferedReader reader = null;
-		try {
-			reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+	public static String getFirstLineOfInputStream(InputStream in) throws IOException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			return reader.lines().findFirst().orElse("");
-		} finally {
-			closeQuietly(reader);
 		}
 	}
 
@@ -185,16 +171,8 @@ public final class IOHelper {
 	 * text. If an I/O error occurs an exception will be thrown, but the stream
 	 * will still be closed.
 	 */
-	public static String getFirstLineOfFile(Path path) throws RuntimeFNFException, RuntimeIOException {
-		try {
-			return getFirstLineOfInputStream(Files.newInputStream(path));
-		} catch (FileNotFoundException fnfe) {
-			throw new RuntimeFNFException(fnfe);
-		} catch (NoSuchFileException nsfe) {
-			throw new RuntimeFNFException(nsfe);
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
-		}
+	public static String getFirstLineOfFile(Path path) throws FileNotFoundException, IOException {
+		return getFirstLineOfInputStream(Files.newInputStream(path));
 	}
 
 	/**
@@ -202,13 +180,28 @@ public final class IOHelper {
 	 * construct a URL, via the checked exception MalformedURLException. If we
 	 * are certain that a URL is valid (for example, if it's hard-coded), this
 	 * will gives us an unchecked way to construct a URL. Please do not pass
-	 * un-safe URLs, or an Error will be thrown (not an Exception, an Error).
+	 * un-safe URLs.
 	 */
 	public static URL wrapSafeURL(String urlLocation) {
 		try {
 			return new URL(urlLocation);
 		} catch (MalformedURLException ex) {
-			throw new Error("You said it was safe!", ex);
+			return ConcurrenceManager.sneakyThrow(ex);
+		}
+	}
+
+	/**
+	 * Java checks if a String represents a valid URI before it allows you to
+	 * construct a URI, via the checked exception URISyntaxException. If we are
+	 * certain that a URI is valid (for example, if it's hard-coded), this will
+	 * gives us an unchecked way to construct a URI. Please do not pass un-safe
+	 * URIs.
+	 */
+	public static URI wrapSafeURI(String uriLocation) {
+		try {
+			return new URI(uriLocation);
+		} catch (URISyntaxException ex) {
+			return ConcurrenceManager.sneakyThrow(ex);
 		}
 	}
 
@@ -220,11 +213,9 @@ public final class IOHelper {
 	 * realtime as it saves it, so the version downloaded will be uncompressed.
 	 * If an error occurs, an exception will be thrown.
 	 */
-	public static void downloadFromInternetXZ(URL url, Path target) throws RuntimeIOException {
+	public static void downloadFromInternetXZ(URL url, Path target) throws IOException {
 		try (InputStream in = new XZInputStream(url.openStream())) {
 			Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
 		}
 	}
 
@@ -233,10 +224,14 @@ public final class IOHelper {
 	 * not existing or being null. This method essentially ensures that the file
 	 * doesn't exist.
 	 * 
+	 * It's not perfectly quiet in that it will throw a
+	 * DirectoryNotEmptyException if the directory is not empty.
+	 * 
 	 * @param The
 	 *            path to delete.
 	 * @return True if the file does not exist, False if it exists or it can't
 	 *         be determined.
+	 * @throws DirectoryNotEmptyException
 	 */
 	public static boolean deleteQuietly(Path path) {
 		if (path == null) {
@@ -245,9 +240,9 @@ public final class IOHelper {
 		try {
 			Files.deleteIfExists(path);
 		} catch (DirectoryNotEmptyException dnee) {
-
+			return ConcurrenceManager.sneakyThrow(dnee);
 		} catch (IOException ex) {
-
+			log(ex);
 		}
 		return Files.notExists(path);
 	}

@@ -13,7 +13,6 @@ import java.nio.file.StandardCopyOption;
 import thebombzen.tumblgififier.gui.MainFrame;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.io.IOHelper;
-import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
@@ -61,15 +60,11 @@ public class VideoProcessor {
 	private int prevHeight = -1;
 	private int prevPrevHeight = -2;
 
-	private void adjustScale() {
+	private void adjustScale() throws IOException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Checking Filesize... ");
 		long currFileSize;
-		try {
-			currFileSize = Files.size(gifFile);
-		} catch (IOException ex) {
-			throw new RuntimeIOException(ex);
-		}
+		currFileSize = Files.size(gifFile);
 		if (currFileSize > maxSize) {
 			sb.append("Too Big: ");
 			highscale = scale;
@@ -92,7 +87,7 @@ public class VideoProcessor {
 		try {
 			convert0(overlay, outputProcessor, path, startTime, endTime, minSize, maxSize, targetWidth, targetHeight,
 					decimator, overlaySize);
-		} catch (RuntimeIOException ioe) {
+		} catch (IOException ioe) {
 			log(ioe);
 			success = false;
 		}
@@ -104,7 +99,8 @@ public class VideoProcessor {
 	}
 
 	private void convert0(String overlay, StatusProcessor outputProcessor, Path path, double startTime, double endTime,
-			long minSize, long maxSize, int targetWidth, int targetHeight, int decimator, int overlaySize) {
+			long minSize, long maxSize, int targetWidth, int targetHeight, int decimator, int overlaySize)
+			throws IOException {
 		this.statusProcessor = outputProcessor;
 		this.clipStartTime = startTime;
 		this.clipEndTime = endTime;
@@ -132,20 +128,11 @@ public class VideoProcessor {
 		prevPrevWidth = -2;
 		prevPrevHeight = -2;
 
-		long gifLength;
-		try {
-			gifLength = Files.size(gifFile);
-		} catch (IOException ex) {
-			throw new RuntimeIOException(ex);
-		}
+		long gifLength = Files.size(gifFile);
 
 		while (gifLength == 0 || (gifLength < minSize && scale < 1) || gifLength > maxSize) {
 			createGif(overlay, overlaySize);
-			try {
-				gifLength = Files.size(gifFile);
-			} catch (IOException ex) {
-				throw new RuntimeIOException(ex);
-			}
+			gifLength = Files.size(gifFile);
 			adjustScale();
 			int newWidth = (int) (scan.getWidth() * scale);
 			int newHeight = (int) (scan.getHeight() * scale);
@@ -160,15 +147,11 @@ public class VideoProcessor {
 			prevHeight = newHeight;
 		}
 
-		try {
-			Files.copy(gifFile, path, StandardCopyOption.REPLACE_EXISTING);
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
-		}
+		Files.copy(gifFile, path, StandardCopyOption.REPLACE_EXISTING);
 
 	}
 
-	private void createGif(String overlay, int overlaySize) {
+	private void createGif(String overlay, int overlaySize) throws IOException {
 		int newWidth, newHeight;
 
 		if (targetWidth > 0) {
@@ -184,7 +167,7 @@ public class VideoProcessor {
 			newHeight = (int) Math.ceil(scan.getHeight() * scale);
 		}
 
-		PrintWriter writer = new PrintWriter(new StatusProcessorWriter(statusProcessor));
+		PrintWriter writer = new PrintWriter(new StatusProcessorWriter(statusProcessor), true);
 
 		writer.format("Testing Size: %dx%d%n%n", newWidth, newHeight);
 
@@ -192,26 +175,27 @@ public class VideoProcessor {
 
 		writer.flush();
 
-		Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
+		Resource mpv = ResourcesManager.getMpvLocation();
 
 		String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, "format=bgr0", newWidth, newHeight,
 				false, decimator, scan.getWidth(), scan.getHeight(), overlaySize, overlay);
 
 		try {
 			scanPercentDone("Scaling Video... ", clipStartTime, clipEndTime - clipStartTime, writer,
-					ConcurrenceManager.getConcurrenceManager().exec(false, mpv.getLocation().toString(),
-							scan.getLocation().toString(), "--config=no", "--msg-level=all=v", "--msg-color=no",
-							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-scale.log"),
-							"--input-terminal=no", "--aid=no", "--sid=no", "--oautofps", "--of=nut", "--ovc=ffv1",
-							"--correct-downscaling", "--scale=spline36", "--dscale=spline36", "--cscale=spline36",
-							"--term-status-msg=${=playback-time}", "--sws-scaler=spline", "--lavfi-complex=sws_flags=spline; [vid1]" + videoFilter + "[vo]",
+					ConcurrenceManager.exec(false, mpv.getLocation().toString(), scan.getLocation().toString(),
+							"--config=no", "--msg-level=all=v", "--msg-color=no",
+							"--log-file=" + ResourcesManager.getLocalFile("mpv-scale.log"), "--input-terminal=no",
+							"--aid=no", "--sid=no", "--oautofps", "--of=nut", "--ovc=ffv1", "--correct-downscaling",
+							"--scale=spline36", "--dscale=spline36", "--cscale=spline36",
+							"--term-status-msg=${=playback-time}", "--sws-scaler=spline",
+							"--lavfi-complex=sws_flags=spline; [vid1]" + videoFilter + "[vo]",
 							"--start=" + this.clipStartTime, "--end=" + this.clipEndTime,
 							"--o=" + this.nutFile.toString()));
 		} catch (ProcessTerminatedException ex) {
-			log(ex);
 			writer.println("Scaling Video... Error.");
-			ConcurrenceManager.getConcurrenceManager().stopAll();
-			throw new RuntimeIOException(ex);
+			ConcurrenceManager.stopAll();
+			IOHelper.closeQuietly(writer);
+			throw ex;
 		}
 
 		writer.println("Scaling Video... Done.");
@@ -220,16 +204,16 @@ public class VideoProcessor {
 		writer.flush();
 
 		try {
-			ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(), this.nutFile.toString(),
-					"--config=no", "--msg-level=all=v", "--msg-color=no",
-					"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-palettegen.log"),
-					"--input-terminal=no", "--aid=no", "--sid=no", "--oautofps", "--of=image2", "--ovc=png",
+			ConcurrenceManager.exec(false, true, mpv.getLocation().toString(), this.nutFile.toString(), "--config=no",
+					"--msg-level=all=v", "--msg-color=no",
+					"--log-file=" + ResourcesManager.getLocalFile("mpv-palettegen.log"), "--input-terminal=no",
+					"--aid=no", "--sid=no", "--oautofps", "--of=image2", "--ovc=png",
 					"--lavfi-complex=[vid1]palettegen=max_colors=144[vo]", "--o=" + this.paletteFile.toString());
 		} catch (ProcessTerminatedException ex) {
-			log(ex);
 			writer.println("Generating Palette... Error.");
-			ConcurrenceManager.getConcurrenceManager().stopAll();
-			throw new RuntimeIOException(ex);
+			ConcurrenceManager.stopAll();
+			IOHelper.closeQuietly(writer);
+			throw ex;
 		}
 
 		writer.println("Generating Palette... Done.");
@@ -238,43 +222,42 @@ public class VideoProcessor {
 
 		try {
 			scanPercentDone("Generating GIF... ", 0D, clipEndTime - clipStartTime, writer,
-					ConcurrenceManager.getConcurrenceManager().exec(false, mpv.getLocation().toString(),
-							this.paletteFile.toString(), "--external-file=" + this.nutFile.toString(), "--config=no",
-							"--msg-level=all=v", "--msg-color=no",
-							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-paletteuse.log"),
+					ConcurrenceManager.exec(false, mpv.getLocation().toString(), this.paletteFile.toString(),
+							"--external-file=" + this.nutFile.toString(), "--config=no", "--msg-level=all=v",
+							"--msg-color=no", "--log-file=" + ResourcesManager.getLocalFile("mpv-paletteuse.log"),
 							"--input-terminal=no", "--aid=no", "--sid=no", "--oautofps", "--of=gif", "--ovc=gif",
 							"--term-status-msg=${=playback-time}",
 							"--lavfi-complex=[vid2][vid1]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle[vo]",
 							"--o=" + this.gifFile.toString()));
 		} catch (ProcessTerminatedException ex) {
-			log(ex);
 			writer.println("Generating GIF... Error.");
-			ConcurrenceManager.getConcurrenceManager().stopAll();
-			throw new RuntimeIOException(ex);
+			ConcurrenceManager.stopAll();
+			IOHelper.closeQuietly(writer);
+			throw ex;
 		}
 
 		writer.println("Generating GIF... Done.");
 
 		if (ResourcesManager.loadedPkgs.contains("gifsicle")) {
 			try {
-				Resource gifsicle = ResourcesManager.getResourcesManager().getXLocation("gifsicle", "gifsicle");
+				Resource gifsicle = ResourcesManager.getXLocation("gifsicle", "gifsicle");
 				writer.print("Crushing GIF... \r");
-				ConcurrenceManager.getConcurrenceManager().exec(true, gifsicle.getLocation().toString(), "--batch",
-						"--unoptimize", "--optimize=3", this.gifFile.toString());
+				ConcurrenceManager.exec(true, true, gifsicle.getLocation().toString(), "--batch", "--unoptimize",
+						"--optimize=3", this.gifFile.toString());
 				writer.println("Crushing GIF... Done.");
 			} catch (ProcessTerminatedException ex) {
-				log(ex);
 				writer.println("Crushing GIF... Error.");
-				ConcurrenceManager.getConcurrenceManager().stopAll();
-				throw new RuntimeIOException(ex);
+				ConcurrenceManager.stopAll();
+				writer.close();
+				throw ex;
 			}
 		}
 
-		writer.flush();
+		writer.close();
 	}
 
-	private void scanPercentDone(String prefix, double startOffset, double length, PrintWriter writer, InputStream in)
-			throws ProcessTerminatedException {
+	private static void scanPercentDone(String prefix, double startOffset, double length, PrintWriter writer,
+			InputStream in) {
 		BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
 		br.lines().forEachOrdered(line -> {
 			double realTime;

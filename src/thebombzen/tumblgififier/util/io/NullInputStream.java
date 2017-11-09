@@ -34,12 +34,12 @@ public class NullInputStream extends InputStream {
 	}
 
 	@Override
-	public void mark(int readlimit) {
+	public synchronized void mark(int readlimit) {
 		// do nothing
 	}
 
 	@Override
-	public void reset() {
+	public synchronized void reset() {
 		// do nothing
 	}
 

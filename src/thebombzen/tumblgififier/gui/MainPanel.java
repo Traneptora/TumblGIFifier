@@ -45,7 +45,6 @@ import javax.swing.event.ChangeListener;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.Tuple;
 import thebombzen.tumblgififier.util.io.IOHelper;
-import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.io.resources.ProcessTerminatedException;
 import thebombzen.tumblgififier.util.io.resources.Resource;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
@@ -105,45 +104,41 @@ public class MainPanel extends JPanel {
 		}
 		this.scan = videoScan;
 		this.videoProcessor = new VideoProcessor(videoScan);
-		this.startCacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
-		this.endCacheMap.put(new Tuple<String, Integer>("", 96), new ShotCache(scan));
+		this.startCacheMap.put(new Tuple<>("", 96), new ShotCache(scan));
+		this.endCacheMap.put(new Tuple<>("", 96), new ShotCache(scan));
 		setupLayout();
 		updateStartScreenshot();
 		updateEndScreenshot();
-
 		if (ResourcesManager.loadedPkgs.contains("OpenSans")) {
-			ConcurrenceManager.getConcurrenceManager().createImpreciseTickClock(new Runnable(){
+			ConcurrenceManager.createImpreciseTickClock(2500, TimeUnit.MILLISECONDS,
+					GUIHelper.onEventQueue(this::refreshOverlayText));
+		}
+	}
 
-				@Override
-				public void run() {
-					EventQueue.invokeLater(new Runnable(){
-
-						@Override
-						public void run() {
-							int newTextSize = textSize;
-							try {
-								newTextSize = Integer.parseInt(overlayTextSizeField.getText());
-							} catch (NumberFormatException e) {
-								// nothing
-							}
-							boolean update = !currentText.equals(overlayTextField.getText()) || newTextSize != textSize;
-							currentText = overlayTextField.getText();
-							textSize = newTextSize;
-							if (update) {
-								Tuple<String, Integer> tuple = new Tuple<>(currentText, textSize);
-								if (startCacheMap.get(tuple) == null) {
-									startCacheMap.put(tuple, new ShotCache(scan));
-								}
-								if (endCacheMap.get(tuple) == null) {
-									endCacheMap.put(tuple, new ShotCache(scan));
-								}
-								updateStartScreenshot();
-								updateEndScreenshot();
-							}
-						}
-					});
-				}
-			}, 2500, TimeUnit.MILLISECONDS);
+	/**
+	 * Refresh the ShotCaches associated with the given Overlay Text. This
+	 * method should be executed on the Event Dispatch Thread.
+	 */
+	private void refreshOverlayText() {
+		int newTextSize = textSize;
+		try {
+			newTextSize = Integer.parseInt(overlayTextSizeField.getText());
+		} catch (NumberFormatException e) {
+			// nothing
+		}
+		boolean update = !currentText.equals(overlayTextField.getText()) || newTextSize != textSize;
+		currentText = overlayTextField.getText();
+		textSize = newTextSize;
+		if (update) {
+			Tuple<String, Integer> tuple = new Tuple<>(currentText, textSize);
+			if (startCacheMap.get(tuple) == null) {
+				startCacheMap.put(tuple, new ShotCache(scan));
+			}
+			if (endCacheMap.get(tuple) == null) {
+				endCacheMap.put(tuple, new ShotCache(scan));
+			}
+			updateStartScreenshot();
+			updateEndScreenshot();
 		}
 	}
 
@@ -174,23 +169,19 @@ public class MainPanel extends JPanel {
 		final int decimator = ((FramerateDecimator) framerateDecimatorComboBox.getSelectedItem()).decimator;
 		final double clipStart = startSlider.getValue() * scan.getScreenshotDuration();
 		final double clipEnd = endSlider.getValue() * scan.getScreenshotDuration();
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-
-			@Override
-			public void run() {
-				boolean success = videoProcessor.convert(overlayTextField.getText(), statusArea, path, clipStart,
-						clipEnd, minSizeBytes, maxSizeBytes, targetWidth, targetHeight, decimator, textSize);
-				MainFrame.getMainFrame().setBusy(false);
-				if (success) {
-					statusArea.appendStatus("Done!");
-					// JOptionPane.showMessageDialog(MainPanel.this, "Done!",
-					// "Success!", JOptionPane.INFORMATION_MESSAGE);
-				} else {
-					statusArea.appendStatus("Some error occured :(");
-					// JOptionPane.showMessageDialog(MainPanel.this, "Some error
-					// occured :(", "Error",
-					// JOptionPane.ERROR_MESSAGE);
-				}
+		ConcurrenceManager.executeLater(() -> {
+			boolean success = videoProcessor.convert(overlayTextField.getText(), statusArea, path, clipStart, clipEnd,
+					minSizeBytes, maxSizeBytes, targetWidth, targetHeight, decimator, textSize);
+			MainFrame.getMainFrame().setBusy(false);
+			if (success) {
+				statusArea.appendStatus("Done!");
+				// JOptionPane.showMessageDialog(MainPanel.this, "Done!",
+				// "Success!", JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				statusArea.appendStatus("Some error occured :(");
+				// JOptionPane.showMessageDialog(MainPanel.this, "Some error
+				// occured :(", "Error",
+				// JOptionPane.ERROR_MESSAGE);
 			}
 		});
 	}
@@ -213,51 +204,42 @@ public class MainPanel extends JPanel {
 		final int decimator = ((FramerateDecimator) framerateDecimatorComboBox.getSelectedItem()).decimator;
 
 		final String overlay = overlayTextField.getText();
-		final Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
+		final Resource mpv = ResourcesManager.getMpvLocation();
 
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-
-			@Override
-			public void run() {
-				Path tempFile = null;
+		ConcurrenceManager.executeLater(() -> {
+			Path tempFile = null;
+			try {
+				statusArea.appendStatus("Rendering Clip... ");
 				try {
-					statusArea.appendStatus("Rendering Clip... ");
-					try {
-						tempFile = IOHelper.createTempFile();
-					} catch (RuntimeIOException ioe) {
-						log(ioe);
-						statusArea.appendStatus("Error rendering clip :(");
-						return;
-					}
-					String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, null, -1, -1, true,
-							decimator, scan.getWidth(), scan.getHeight(), textSize, overlay);
-					ConcurrenceManager.getConcurrenceManager().exec(true, mpv.getLocation().toString(), "--config=no",
-							"--msg-level=all=v", "--msg-color=no",
-							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv.log"),
-							"--term-osd=force", "--video-osd=no", "--term-status-msg=", "--term-osd-bar=no",
-							"--title=TumblGIFifier Preview", "--force-window=yes", "--taskbar-progress=no",
-							"--ontop=yes", "--autofit-larger=480x270", "--cursor-autohide=no", "--input-terminal=no",
-							"--input-cursor=no", "--correct-downscaling", "--scale=spline36", "--dscale=spline36", "--cscale=spline36", "--hwdec=auto",
-							"--hwdec-codecs=hevc,vp9", "--input-default-bindings=no", "--loop-playlist=inf", "--osc=no",
-							"--aid=no", "--sid=no", "--hr-seek=yes", "--sws-scaler=spline", "--lavfi-complex=sws_flags=spline;[vid1]" + videoFilter + "[vo]",
-							scan.getLocation().toString(), "--start=" + clipStart, "--end=" + clipEnd);
-				} catch (ProcessTerminatedException ex) {
+					tempFile = IOHelper.createTempFile();
+				} catch (IOException ioe) {
+					log(ioe);
 					statusArea.appendStatus("Error rendering clip :(");
-					ConcurrenceManager.getConcurrenceManager().stopAll();
 					return;
-				} finally {
-					IOHelper.deleteTempFile(tempFile);
-					EventQueue.invokeLater(new Runnable(){
-
-						@Override
-						public void run() {
-							MainFrame.getMainFrame().setBusy(false);
-						}
-					});
 				}
+				String videoFilter = TextHelper.getTextHelper().createVideoFilter(null, null, -1, -1, true, decimator,
+						scan.getWidth(), scan.getHeight(), textSize, overlay);
+				ConcurrenceManager.exec(false, true, mpv.getLocation().toString(), "--config=no", "--msg-level=all=v",
+						"--msg-color=no", "--log-file=" + ResourcesManager.getLocalFile("mpv-preview.log"),
+						"--term-osd=force", "--video-osd=no", "--term-status-msg=", "--term-osd-bar=no",
+						"--title=TumblGIFifier Preview", "--force-window=yes", "--taskbar-progress=no", "--ontop=yes",
+						"--autofit-larger=480x270", "--cursor-autohide=no", "--input-terminal=no", "--input-cursor=no",
+						"--correct-downscaling", "--scale=spline36", "--dscale=spline36", "--cscale=spline36",
+						"--hwdec=auto", "--hwdec-codecs=hevc,vp9", "--input-default-bindings=no", "--loop-playlist=inf",
+						"--osc=no", "--aid=no", "--sid=no", "--hr-seek=yes", "--sws-scaler=spline",
+						"--lavfi-complex=sws_flags=spline;[vid1]" + videoFilter + "[vo]", scan.getLocation().toString(),
+						"--start=" + clipStart, "--end=" + clipEnd);
+			} catch (ProcessTerminatedException ex) {
+				statusArea.appendStatus("Error rendering clip :(");
+				ConcurrenceManager.stopAll();
+				return;
+			} finally {
+				IOHelper.deleteTempFile(tempFile);
+				EventQueue.invokeLater(() -> {
+					MainFrame.getMainFrame().setBusy(false);
+				});
 			}
 		});
-
 	}
 
 	/**
@@ -305,7 +287,7 @@ public class MainPanel extends JPanel {
 			if (!filename.toLowerCase().endsWith(".gif")) {
 				filename += ".gif";
 			}
-			Path recentGIFFile = ResourcesManager.getResourcesManager().getLocalFile("recent_gif.txt");
+			Path recentGIFFile = ResourcesManager.getLocalFile("recent_gif.txt");
 			mostRecentGIFDirectory = fileDialog.getDirectory();
 			try (Writer recentGIFWriter = Files.newBufferedWriter(recentGIFFile)) {
 				recentGIFWriter.write(mostRecentGIFDirectory);
@@ -330,17 +312,7 @@ public class MainPanel extends JPanel {
 		horizontalBox.add(leftPanel);
 		horizontalBox.add(Box.createHorizontalStrut(10));
 		Box rightBox = Box.createVerticalBox();
-		previewImageStartPanel = new ImagePanel(null, new Consumer<Void>(){
-			@Override
-			public void accept(Void t) {
-				int value = startSlider.getValue();
-				if (value < endSlider.getValue()) {
-					startSlider.setValue(value + 1);
-				} else {
-					previewImageStartPanel.stop();
-				}
-			}
-		});
+		previewImageStartPanel = new ImagePanel(null);
 		previewImageStartPanel.setPreferredSize(new Dimension(480, 270));
 		rightBox.add(previewImageStartPanel);
 		rightBox.add(Box.createVerticalStrut(10));
@@ -393,7 +365,6 @@ public class MainPanel extends JPanel {
 		onDisable.add(endSlider);
 
 		startSlider.addChangeListener(new ChangeListener(){
-
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				if (startSlider.getValue() > endSlider.getValue()) {
@@ -405,10 +376,7 @@ public class MainPanel extends JPanel {
 					if (videoProcessor != null) {
 						updateStartScreenshot();
 					}
-				} else {
-					previewImageStartPanel.stop();
 				}
-
 			}
 		});
 
@@ -425,24 +393,12 @@ public class MainPanel extends JPanel {
 					if (videoProcessor != null) {
 						updateEndScreenshot();
 					}
-				} else {
-					previewImageEndPanel.stop();
 				}
 			}
 		});
 
 		rightBox.add(Box.createVerticalStrut(10));
-		previewImageEndPanel = new ImagePanel(null, new Consumer<Void>(){
-			@Override
-			public void accept(Void t) {
-				int value = endSlider.getValue();
-				if (value < endSlider.getMaximum()) {
-					endSlider.setValue(value + 1);
-				} else {
-					previewImageEndPanel.stop();
-				}
-			}
-		});
+		previewImageEndPanel = new ImagePanel(null);
 		previewImageEndPanel.setPreferredSize(new Dimension(480, 270));
 		rightBox.add(previewImageEndPanel);
 		horizontalBox.add(rightBox);
@@ -515,7 +471,7 @@ public class MainPanel extends JPanel {
 
 		onDisable.add(targetSizeTextField);
 
-		targetSizeComboBox = new JComboBox<TargetSize>();
+		targetSizeComboBox = new JComboBox<>();
 		DefaultComboBoxModel<TargetSize> targetSizeComboBoxModel = new DefaultComboBoxModel<>();
 		EnumSet.allOf(TargetSize.class).stream().forEach(targetSizeComboBoxModel::addElement);
 		targetSizeComboBox.setModel(targetSizeComboBoxModel);
@@ -547,7 +503,7 @@ public class MainPanel extends JPanel {
 		leftPanel.add(Box.createVerticalStrut(15));
 		leftPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
 		leftPanel.add(Box.createVerticalStrut(15));
-		framerateDecimatorComboBox = new JComboBox<FramerateDecimator>();
+		framerateDecimatorComboBox = new JComboBox<>();
 		DefaultComboBoxModel<FramerateDecimator> framerateDecimatorComboBoxModel = new DefaultComboBoxModel<>();
 		EnumSet.allOf(FramerateDecimator.class).stream().forEach(framerateDecimatorComboBoxModel::addElement);
 		framerateDecimatorComboBox.setModel(framerateDecimatorComboBoxModel);
@@ -613,16 +569,13 @@ public class MainPanel extends JPanel {
 		JPanel createGIFPanel = new JPanel(new BorderLayout());
 		createGIFPanel.add(fireButton, BorderLayout.CENTER);
 		fireButton.addActionListener(new ActionListener(){
-
 			@Override
 			public void actionPerformed(ActionEvent e) {
-
 				if (fireButton.getText().equals("STOP")) {
-					ConcurrenceManager.getConcurrenceManager().stopAll();
+					ConcurrenceManager.stopAll();
 					MainFrame.getMainFrame().setBusy(false);
 					return;
 				}
-
 				fire();
 			}
 		});
@@ -637,11 +590,12 @@ public class MainPanel extends JPanel {
 		scrollPane.setViewportView(statusArea);
 		scrollPanePanel.add(scrollPane, BorderLayout.CENTER);
 		leftPanel.add(scrollPanePanel);
-		Path recentGIFFile = ResourcesManager.getResourcesManager().getLocalFile("recent_gif.txt");
+		Path recentGIFFile = ResourcesManager.getLocalFile("recent_gif.txt");
 		if (Files.exists(recentGIFFile)) {
 			try {
 				mostRecentGIFDirectory = IOHelper.getFirstLineOfFile(recentGIFFile);
-			} catch (RuntimeIOException ioe) {
+			} catch (IOException ioe) {
+				log(ioe);
 				mostRecentGIFDirectory = null;
 			}
 		}
@@ -651,66 +605,34 @@ public class MainPanel extends JPanel {
 	 * This method may be executed from any thread asynchronously.
 	 */
 	private void updateEndScreenshot() {
-		final Consumer<BufferedImage> callback = new Consumer<BufferedImage>(){
-			@Override
-			public void accept(BufferedImage image) {
-				previewImageEndPanel.setImage(image);
-				EventQueue.invokeLater(new Runnable(){
-					@Override
-					public void run() {
-						endSlider.requestFocusInWindow();
-						endSlider.setEnabled(true);
-					}
-				});
-			}
-		};
-		EventQueue.invokeLater(new Runnable(){
-			@Override
-			public void run() {
+		final Consumer<BufferedImage> callback = (image) -> {
+			previewImageEndPanel.setImage(image);
+			EventQueue.invokeLater(() -> {
 				endSlider.requestFocusInWindow();
-				endSlider.setEnabled(false);
-			}
-		});
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			@Override
-			public void run() {
-				endCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageEndPanel,
-						getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize, true);
-			}
-		});
+				endSlider.setEnabled(true);
+			});
+		};
+		EventQueue.invokeLater(() -> endSlider.setEnabled(false));
+		ConcurrenceManager.executeLater(
+				() -> endCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageEndPanel,
+						getStatusProcessor(), currentText, endSlider.getValue(), 480, 270, textSize, true));
 	}
 
 	/**
 	 * This method may be executed from any thread asynchronously.
 	 */
 	private void updateStartScreenshot() {
-		final Consumer<BufferedImage> callback = new Consumer<BufferedImage>(){
-			@Override
-			public void accept(BufferedImage image) {
-				previewImageStartPanel.setImage(image);
-				EventQueue.invokeLater(new Runnable(){
-					@Override
-					public void run() {
-						startSlider.requestFocusInWindow();
-						startSlider.setEnabled(true);
-					}
-				});
-			}
-		};
-		EventQueue.invokeLater(new Runnable(){
-			@Override
-			public void run() {
+		final Consumer<BufferedImage> callback = (image) -> {
+			previewImageStartPanel.setImage(image);
+			EventQueue.invokeLater(() -> {
 				startSlider.requestFocusInWindow();
-				startSlider.setEnabled(false);
-			}
-		});
-		ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-			@Override
-			public void run() {
-				startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageStartPanel,
-						getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, false);
-			}
-		});
+				startSlider.setEnabled(true);
+			});
+		};
+		EventQueue.invokeLater(() -> startSlider.setEnabled(false));
+		ConcurrenceManager.executeLater(
+				() -> startCacheMap.get(new Tuple<>(currentText, textSize)).screenShot(callback, previewImageStartPanel,
+						getStatusProcessor(), currentText, startSlider.getValue(), 480, 270, textSize, true));
 	}
 
 	public JButton getFireButton() {

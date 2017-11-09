@@ -8,6 +8,4 @@ public interface StatusProcessor {
 
 	public void replaceStatus(String status);
 
-	public void processException(Throwable t);
-
 }

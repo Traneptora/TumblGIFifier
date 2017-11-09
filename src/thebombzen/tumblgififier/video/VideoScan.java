@@ -22,22 +22,20 @@ public class VideoScan {
 	private final int scanHeight;
 
 	public static VideoScan scanFile(StatusProcessor processor, Path pathname) {
-		// String line = null;
+		// these are final or effectively final -_-
 		AtomicInteger widthA = new AtomicInteger(-1);
 		AtomicInteger heightA = new AtomicInteger(-1);
 		AtomicReference<Double> durationA = new AtomicReference<>(-1D);
 		AtomicReference<Double> framerateA = new AtomicReference<>(-1D);
 		processor.appendStatus("Scanning File... ");
-		Resource mpv = ResourcesManager.getResourcesManager().getMpvLocation();
+		Resource mpv = ResourcesManager.getMpvLocation();
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader(new InputStreamReader(
-					ConcurrenceManager.getConcurrenceManager().exec(false, mpv.getLocation().toString(), "--config=no",
-							"--msg-level=all=v", "--msg-color=no",
-							"--log-file=" + ResourcesManager.getResourcesManager().getLocalFile("mpv-probe.log"),
+					ConcurrenceManager.exec(false, mpv.getLocation().toString(), "--config=no", "--msg-level=all=v",
+							"--msg-color=no", "--log-file=" + ResourcesManager.getLocalFile("mpv-probe.log"),
 							"--input-terminal=no", "-start=9999:99:99", "--vo=null", "--aid=no", "--sid=no",
-							"--script=" + ResourcesManager.getResourcesManager().getLocalFile("lib")
-									.resolve("playback-time.lua"),
+							"--script=" + ResourcesManager.getLocalFile("lib").resolve("playback-time.lua"),
 							"--keep-open=always", pathname.toString()),
 					StandardCharsets.UTF_8));
 			br.lines().forEach(line -> {

@@ -2,6 +2,7 @@ package thebombzen.tumblgififier.gui;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.EventQueue;
 import javax.swing.Box;
 
 public final class GUIHelper {
@@ -30,6 +31,12 @@ public final class GUIHelper {
 		box.add(Box.createHorizontalGlue());
 		box.add(right);
 		return box;
+	}
+
+	public static Runnable onEventQueue(Runnable runnable) {
+		return () -> {
+			EventQueue.invokeLater(runnable);
+		};
 	}
 
 	/**

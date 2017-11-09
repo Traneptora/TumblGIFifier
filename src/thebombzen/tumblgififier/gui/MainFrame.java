@@ -3,12 +3,10 @@ package thebombzen.tumblgififier.gui;
 import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FileDialog;
-import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -28,7 +26,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
-import thebombzen.tumblgififier.util.Task;
+import thebombzen.tumblgififier.util.DefaultTask;
+import thebombzen.tumblgififier.util.DuplicateSingletonException;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
@@ -93,6 +92,9 @@ public class MainFrame extends JFrame {
 	 * Initialization and construction code.
 	 */
 	public MainFrame() {
+		if (mainFrame != null) {
+			throw new DuplicateSingletonException("MainFrame");
+		}
 		mainFrame = this;
 		setTitle("TumblGIFifier - Version " + TumblGIFifier.VERSION);
 		this.setLayout(new BorderLayout());
@@ -110,31 +112,16 @@ public class MainFrame extends JFrame {
 		menuBar.add(fileMenu);
 		menuBar.add(helpMenu);
 		this.add(menuBar, BorderLayout.NORTH);
-		quit.addActionListener(new ActionListener(){
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				TumblGIFifier.quit();
-			}
-		});
-		about.addActionListener(new ActionListener(){
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				new AboutDialog(MainFrame.this).setVisible(true);
-			}
-		});
-		ActionListener l = new ActionListener(){
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				openDialog();
-			}
-		};
+		quit.addActionListener(ae -> TumblGIFifier.quit());
+		about.addActionListener(ae -> new AboutDialog(MainFrame.this).setVisible(true));
 		defaultPanel.setLayout(new BorderLayout());
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setViewportView(statusArea);
 		defaultPanel.add(scrollPane, BorderLayout.CENTER);
-		open.addActionListener(l);
+		defaultPanel.setPreferredSize(new Dimension(990, 640));
+		open.addActionListener(ae -> openDialog());
 		open.setEnabled(false);
-		this.setSize(1280, 720);
+		pack();
 		setLocationRelativeTo(null);
 		this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		this.addWindowListener(new WindowAdapter(){
@@ -143,85 +130,68 @@ public class MainFrame extends JFrame {
 				TumblGIFifier.quit();
 			}
 		});
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher(){
-			@Override
-			public boolean dispatchKeyEvent(KeyEvent e) {
-				if (e.getID() == KeyEvent.KEY_PRESSED) {
-					switch (e.getKeyCode()) {
-						case KeyEvent.VK_Q:
-							if (e.isControlDown() && !e.isShiftDown()) {
-								ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-									@Override
-									public void run() {
-										TumblGIFifier.quit();
-									}
-								});
-								return true;
-							}
-							break;
-						case KeyEvent.VK_O:
-							if (e.isControlDown() && !e.isShiftDown()) {
-								openDialog();
-								return true;
-							}
-							break;
-					}
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+			if (e.getID() == KeyEvent.KEY_PRESSED) {
+				switch (e.getKeyCode()) {
+					case KeyEvent.VK_Q:
+						if (e.isControlDown() && !e.isShiftDown()) {
+							ConcurrenceManager.executeLater(TumblGIFifier::quit);
+							return true;
+						}
+						break;
+					case KeyEvent.VK_O:
+						if (e.isControlDown() && !e.isShiftDown()) {
+							openDialog();
+							return true;
+						}
+						break;
 				}
-				return false;
 			}
-
+			return false;
 		});
 		setBusy(true);
 		getStatusProcessor().appendStatus("Initializing Engine. This may take a while on the first execution.");
-		Path recentOpenPath = ResourcesManager.getResourcesManager().getLocalFile("recent_open.txt");
+		Path recentOpenPath = ResourcesManager.getLocalFile("recent_open.txt");
 		if (Files.exists(recentOpenPath)) {
-			mostRecentOpenDirectory = IOHelper.getFirstLineOfFile(recentOpenPath);
-		}
-
-		ConcurrenceManager.getConcurrenceManager().addPostInitTask(new Task(-50){
-			@Override
-			public void run() {
-				TumblGIFifier.executeOldVersionCleanup();
-				try {
-					ResourcesManager.loadedPkgs
-							.addAll(ResourcesManager.getResourcesManager().initializeResources(getStatusProcessor()));
-					List<String> rpkgs = new ArrayList<>(ResourcesManager.requiredPkgs);
-					rpkgs.removeAll(ResourcesManager.loadedPkgs);
-					if (!rpkgs.isEmpty()) {
-						getStatusProcessor().appendStatus("Unable to load all required resources.");
-						for (String pkg : rpkgs) {
-							getStatusProcessor().appendStatus("Missing: " + pkg);
-						}
-					} else {
-						List<String> opkgs = new ArrayList<>(ResourcesManager.optionalPkgs);
-						opkgs.removeAll(ResourcesManager.loadedPkgs);
-						for (String pkg : opkgs) {
-							switch (pkg) {
-								case "OpenSans":
-									getStatusProcessor().appendStatus("Missing Open Sans. Text overlay is disabled.");
-									break;
-								case "gifsicle":
-									getStatusProcessor().appendStatus("Missing gifsicle. GIFs will be less optimized.");
-									break;
-								default:
-									getStatusProcessor().appendStatus("Unknown missing package: " + pkg);
-									throw new Error("Unknown missing package.");
-							}
-						}
-						setBusy(false);
-						EventQueue.invokeLater(new Runnable(){
-							@Override
-							public void run() {
-								open.setEnabled(true);
-							}
-						});
-					}
-				} catch (Throwable re) {
-					log(re);
-					getStatusProcessor().appendStatus("Error initializing.");
-				}
+			try {
+				mostRecentOpenDirectory = IOHelper.getFirstLineOfFile(recentOpenPath);
+			} catch (IOException ioe) {
+				log(ioe);
+				mostRecentOpenDirectory = null;
 			}
-		});
+		}
+		ConcurrenceManager.addPostInitTask(new DefaultTask(-50, () -> {
+			TumblGIFifier.executeOldVersionCleanup();
+			ResourcesManager.loadedPkgs.addAll(ResourcesManager.initializeResources(getStatusProcessor()));
+			List<String> rpkgs = new ArrayList<>(ResourcesManager.requiredPkgs);
+			rpkgs.removeAll(ResourcesManager.loadedPkgs);
+			if (!rpkgs.isEmpty()) {
+				getStatusProcessor().appendStatus("Unable to load all required resources.");
+				for (String pkg : rpkgs) {
+					getStatusProcessor().appendStatus("Missing: " + pkg);
+				}
+			} else {
+				List<String> opkgs = new ArrayList<>(ResourcesManager.optionalPkgs);
+				opkgs.removeAll(ResourcesManager.loadedPkgs);
+				for (String pkg : opkgs) {
+					switch (pkg) {
+						case "OpenSans":
+							getStatusProcessor().appendStatus("Missing Open Sans. Text overlay is disabled.");
+							break;
+						case "gifsicle":
+							getStatusProcessor().appendStatus("Missing gifsicle. GIFs will be less optimized.");
+							break;
+						default:
+							getStatusProcessor().appendStatus("Unknown missing package: " + pkg);
+							throw new Error("Unknown missing package.");
+					}
+				}
+				setBusy(false);
+				EventQueue.invokeLater(() -> {
+					open.setEnabled(true);
+				});
+			}
+		}));
 	}
 
 	public void open(Path path) {
@@ -231,19 +201,16 @@ public class MainFrame extends JFrame {
 			setBusy(true);
 			final VideoScan scan = VideoScan.scanFile(getStatusProcessor(), path);
 			if (scan != null) {
-				EventQueue.invokeLater(new Runnable(){
-					@Override
-					public void run() {
-						if (mainPanel != null) {
-							MainFrame.this.remove(mainPanel);
-						} else {
-							MainFrame.this.remove(defaultPanel);
-						}
-						mainPanel = new MainPanel(scan);
-						MainFrame.this.add(mainPanel);
-						MainFrame.this.pack();
-						setLocationRelativeTo(null);
+				EventQueue.invokeLater(() -> {
+					if (mainPanel != null) {
+						MainFrame.this.remove(mainPanel);
+					} else {
+						MainFrame.this.remove(defaultPanel);
 					}
+					mainPanel = new MainPanel(scan);
+					MainFrame.this.add(mainPanel);
+					MainFrame.this.pack();
+					setLocationRelativeTo(null);
 				});
 			} else {
 				getStatusProcessor().appendStatus("Error scanning video file.");
@@ -266,19 +233,16 @@ public class MainFrame extends JFrame {
 			if (filename != null) {
 				mostRecentOpenDirectory = fileDialog.getDirectory();
 				final Path path = Paths.get(mostRecentOpenDirectory, filename);
-				ConcurrenceManager.getConcurrenceManager().executeLater(new Runnable(){
-					@Override
-					public void run() {
-						Path recentOpenPath = ResourcesManager.getResourcesManager().getLocalFile("recent_open.txt");
-						try (Writer recentOpenWriter = Files.newBufferedWriter(recentOpenPath)) {
-							recentOpenWriter.write(mostRecentOpenDirectory);
-						} catch (IOException ioe) {
-							// we don't really care if this fails, but
-							// we'd like to know on standard error
-							log(ioe);
-						}
-						open(path.toAbsolutePath());
+				ConcurrenceManager.executeLater(() -> {
+					Path recentOpenPath = ResourcesManager.getLocalFile("recent_open.txt");
+					try (Writer recentOpenWriter = Files.newBufferedWriter(recentOpenPath)) {
+						recentOpenWriter.write(mostRecentOpenDirectory);
+					} catch (IOException ioe) {
+						// we don't really care if this fails, but
+						// we'd like to know on standard error
+						log(ioe);
 					}
+					open(path.toAbsolutePath());
 				});
 			}
 		}

@@ -2,14 +2,11 @@ package thebombzen.tumblgififier.util.io.resources;
 
 import static thebombzen.tumblgififier.TumblGIFifier.log;
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,8 +26,6 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import thebombzen.tumblgififier.OperatingSystem;
 import thebombzen.tumblgififier.util.io.IOHelper;
-import thebombzen.tumblgififier.util.io.RuntimeFNFException;
-import thebombzen.tumblgififier.util.io.RuntimeIOException;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
 
 /**
@@ -38,7 +33,6 @@ import thebombzen.tumblgififier.util.text.StatusProcessor;
  */
 public class ResourcesManager {
 
-	private static ResourcesManager manager = new ResourcesManager();
 	private static Path localResourceLocation = null;
 
 	public static Path getLocalResourceLocation() {
@@ -46,16 +40,18 @@ public class ResourcesManager {
 			return localResourceLocation;
 		}
 		try {
-			localResourceLocation = OperatingSystem.getLocalOS().getLocalResourceLocation().toAbsolutePath();
-			if (Files.exists(localResourceLocation) && !Files.isDirectory(localResourceLocation)) {
-				Files.delete(localResourceLocation);
+			Path location = OperatingSystem.getLocalOS().getLocalResourceLocation().toAbsolutePath();
+			if (Files.exists(location) && !Files.isDirectory(location)) {
+				Files.delete(location);
 				System.err.println("Deleting existing tumblgififier non-directory.");
 			}
-			Files.createDirectories(localResourceLocation);
-			return localResourceLocation;
+			Files.createDirectories(location);
+			localResourceLocation = location;
 		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
+			log(ioe);
+			throw new Error("Can't access local resource location.", ioe);
 		}
+		return localResourceLocation;
 	}
 
 	private static String getLegacyApplicationDataLocation() {
@@ -76,13 +72,6 @@ public class ResourcesManager {
 	 */
 	public static Path getLegacyLocalResourceLocation() {
 		return Paths.get(getLegacyApplicationDataLocation(), ".tumblgififier").toAbsolutePath();
-	}
-
-	/**
-	 * Returns the singleton instance of this framework.
-	 */
-	public static ResourcesManager getResourcesManager() {
-		return manager;
 	}
 
 	private static String getLatestDownloadLocation() {
@@ -129,19 +118,19 @@ public class ResourcesManager {
 		return "https://thebombzen.com/TumblGIFifier/resources/OpenSans-Semibold.ttf.xz";
 	}
 
-	private Resource openSans = null;
-	private Resource mpv = null;
+	private static Resource openSans = null;
+	private static Resource mpv = null;
 
 	/**
 	 * Returns the Open Sans font file resource.
 	 * 
 	 * @return
 	 */
-	public Resource getOpenSansResource() {
+	public static Resource getOpenSansResource() {
 		return openSans;
 	}
 
-	public Path getLocalFile(String name) {
+	public static Path getLocalFile(String name) {
 		return getLocalResourceLocation().resolve(name);
 	}
 
@@ -192,46 +181,33 @@ public class ResourcesManager {
 		ResourcesManager.optionalPkgs.add("gifsicle");
 	}
 
-	private ResourcesManager() {
-
-	}
-
-	public Resource getMpvLocation() {
+	public static Resource getMpvLocation() {
 		if (mpv == null) {
 			mpv = getXLocation("mpv", "mpv");
 		}
 		return mpv;
 	}
 
-	public String getLatestVersion() {
+	public static String getLatestVersion() throws IOException {
 		URL latestURL;
 		try {
 			latestURL = new URL(getLatestDownloadLocation());
 		} catch (MalformedURLException ex) {
-			throw new Error(ex);
+			throw new IOException("Bad Download Location", ex);
 		}
-		try (BufferedReader reader = new BufferedReader(
-				new InputStreamReader(latestURL.openStream(), Charset.forName("UTF-8")))) {
-			return reader.readLine();
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
-		}
+		return IOHelper.downloadFirstLineFromInternet(latestURL);
 	}
 
-	public Path getTemporaryDirectory() {
+	public static Path getTemporaryDirectory() throws IOException {
 		Path dir = getLocalResourceLocation().resolve("temp");
-		try {
-			if (Files.exists(dir) && !Files.isDirectory(dir)) {
-				Files.delete(dir);
-			}
-			Files.createDirectories(dir);
-		} catch (IOException ioe) {
-			throw new RuntimeIOException(ioe);
+		if (Files.exists(dir) && !Files.isDirectory(dir)) {
+			Files.delete(dir);
 		}
+		Files.createDirectories(dir);
 		return dir;
 	}
 
-	public Resource getXLocation(String pkg, String x) {
+	public static Resource getXLocation(String pkg, String x) {
 		String[] pathElements = System.getenv("PATH").split(File.pathSeparator);
 		String name = x + OperatingSystem.getLocalOS().getExeExtension();
 		for (String el : pathElements) {
@@ -243,8 +219,9 @@ public class ResourcesManager {
 		return new Resource(pkg, x, getLocalResourceLocation().resolve(name), true);
 	}
 
-	private boolean initializeMultiExePackage(String pkg, String[] resources, String remoteVersionURL,
-			String localVersionFilename, boolean mightHaveInternet, StatusProcessor processor) {
+	private static boolean initializeMultiExePackage(String pkg, String[] resources, String remoteVersionURL,
+			String localVersionFilename, boolean mightHaveInternet, StatusProcessor processor)
+			throws ResourceNotFoundException {
 
 		boolean needDL = false;
 
@@ -256,12 +233,13 @@ public class ResourcesManager {
 			localVersionsFile = getLocalFile(localVersionFilename);
 			try {
 				localVersion = IOHelper.getFirstLineOfFile(localVersionsFile);
-			} catch (RuntimeFNFException fnfe) {
+			} catch (IOException ex) {
+				log(ex);
 				try {
 					if (mightHaveInternet) {
 						IOHelper.downloadFromInternet(versions, localVersionsFile);
 					}
-				} catch (RuntimeIOException ioe) {
+				} catch (IOException ioe) {
 					log(ioe);
 					mightHaveInternet = false;
 				}
@@ -288,7 +266,7 @@ public class ResourcesManager {
 					log("Fetching remote version...");
 					remoteVersion = IOHelper.downloadFirstLineFromInternet(versions);
 					log("Remote version obtained: " + remoteVersion);
-				} catch (RuntimeIOException ioe) {
+				} catch (IOException ioe) {
 					log(ioe);
 					mightHaveInternet = false;
 				}
@@ -342,14 +320,14 @@ public class ResourcesManager {
 		URL website = IOHelper.wrapSafeURL(getExeDownloadLocation(pkg, remoteVersion));
 		try {
 			IOHelper.downloadFromInternet(website, tempFile);
-		} catch (RuntimeIOException ioe) {
+		} catch (IOException ioe) {
 			log(ioe);
 			throw new ResourceNotFoundException(pkg, "Error downloading " + pkg + ": ", ioe);
 		}
 		if (!remoteVersionURL.isEmpty()) {
 			try {
 				IOHelper.downloadFromInternet(versions, localVersionsFile);
-			} catch (RuntimeIOException ioe) {
+			} catch (IOException ioe) {
 				log(ioe);
 				// we don't actually care, but logging it is nice
 			}
@@ -389,7 +367,7 @@ public class ResourcesManager {
 				}
 				processor.replaceStatus("Extracting " + name + "... extracted.");
 			}
-		} catch (IOException | RuntimeIOException e) {
+		} catch (IOException e) {
 			throw new ResourceNotFoundException(pkg, "Error downloading " + pkg + ".", e);
 		} finally {
 			IOHelper.closeQuietly(ain);
@@ -397,11 +375,10 @@ public class ResourcesManager {
 		}
 		processor.appendStatus("Done downloading.");
 		return mightHaveInternet;
-
 	}
 
-	private boolean initializeSingletonPackage(String pkg, String fullname, String localfilename, String dlLocation,
-			boolean mightHaveInternet, StatusProcessor processor) {
+	private static boolean initializeSingletonPackage(String pkg, String fullname, String localfilename,
+			String dlLocation, boolean mightHaveInternet, StatusProcessor processor) throws ResourceNotFoundException {
 		boolean needDL = false;
 		Path localfile = getLocalFile(localfilename);
 		processor.appendStatus("Checking for " + fullname + " ...");
@@ -435,7 +412,7 @@ public class ResourcesManager {
 		URL website = IOHelper.wrapSafeURL(dlLocation);
 		try {
 			IOHelper.downloadFromInternetXZ(website, localfile);
-		} catch (RuntimeIOException ioe) {
+		} catch (IOException ioe) {
 			throw new ResourceNotFoundException(pkg, "Error downloading.", ioe);
 		}
 		processor.appendStatus("Done downloading " + fullname + ".");
@@ -446,7 +423,7 @@ public class ResourcesManager {
 	/**
 	 * Returns a set of found packages.
 	 */
-	public List<String> initializeResources(StatusProcessor processor) {
+	public static List<String> initializeResources(StatusProcessor processor) {
 
 		List<String> pkgs = new ArrayList<>();
 
@@ -487,6 +464,10 @@ public class ResourcesManager {
 		}
 
 		return pkgs;
+	}
+
+	private ResourcesManager() {
 
 	}
+
 }
