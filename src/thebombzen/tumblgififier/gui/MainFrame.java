@@ -27,7 +27,6 @@ import javax.swing.JScrollPane;
 import thebombzen.tumblgififier.TumblGIFifier;
 import thebombzen.tumblgififier.util.ConcurrenceManager;
 import thebombzen.tumblgififier.util.DefaultTask;
-import thebombzen.tumblgififier.util.DuplicateSingletonException;
 import thebombzen.tumblgififier.util.io.IOHelper;
 import thebombzen.tumblgififier.util.io.resources.ResourcesManager;
 import thebombzen.tumblgififier.util.text.StatusProcessor;
@@ -93,7 +92,7 @@ public class MainFrame extends JFrame {
 	 */
 	public MainFrame() {
 		if (mainFrame != null) {
-			throw new DuplicateSingletonException("MainFrame");
+			throw new UnsupportedOperationException("There can only be one MainFrame, highlander!");
 		}
 		mainFrame = this;
 		setTitle("TumblGIFifier - Version " + TumblGIFifier.VERSION);
